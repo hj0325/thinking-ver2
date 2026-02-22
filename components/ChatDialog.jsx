@@ -56,12 +56,18 @@ export default function ChatDialog({ suggestion, onClose, onAddNodes, existingNo
                 messages: historyForApi,
                 user_message: text,
             };
-            const res = await axios.post("http://localhost:8000/chat", payload);
+            const res = await axios.post("/api/chat", payload);
             setMessages((prev) => [...prev, { role: "assistant", content: res.data.reply }]);
         } catch (err) {
             setMessages((prev) => [
                 ...prev,
-                { role: "assistant", content: "죄송합니다, 오류가 발생했습니다. 다시 시도해주세요." },
+                {
+                    role: "assistant",
+                    content:
+                        err?.response?.data?.error ||
+                        err?.response?.data?.detail ||
+                        "죄송합니다, 오류가 발생했습니다. 다시 시도해주세요.",
+                },
             ]);
         } finally {
             setIsLoading(false);
@@ -95,11 +101,15 @@ export default function ChatDialog({ suggestion, onClose, onAddNodes, existingNo
                     position: n.position,
                 })),
             };
-            const res = await axios.post("http://localhost:8000/chat-to-nodes", payload);
+            const res = await axios.post("/api/chat-to-nodes", payload);
             onAddNodes(res.data);
             onClose();
         } catch (err) {
-            alert("노드 변환에 실패했습니다. 백엔드 상태를 확인해주세요.");
+            const serverMsg =
+                err?.response?.data?.error ||
+                err?.response?.data?.detail ||
+                err?.message;
+            alert(serverMsg ? `노드 변환 실패: ${serverMsg}` : "노드 변환에 실패했습니다. 잠시 후 다시 시도해주세요.");
         } finally {
             setIsConverting(false);
         }

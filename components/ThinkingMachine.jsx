@@ -154,7 +154,7 @@ export default function ThinkingMachine() {
                 })),
             };
 
-            const response = await axios.post("http://localhost:8000/analyze", payload);
+            const response = await axios.post("/api/analyze", payload);
             const data = response.data;
 
             // 제안 노드(is_ai_generated=true)와 사용자 노드 분리
@@ -208,7 +208,11 @@ export default function ThinkingMachine() {
 
         } catch (error) {
             console.error("Failed to analyze input:", error);
-            alert("Failed to connect to AI Agent. Check if backend is running and OpenAI Key is set.");
+            const serverMsg =
+                error?.response?.data?.error ||
+                error?.response?.data?.detail ||
+                error?.message;
+            alert(serverMsg ? `AI Agent error: ${serverMsg}` : "AI Agent error. Please try again.");
         } finally {
             setIsAnalyzing(false);
         }
