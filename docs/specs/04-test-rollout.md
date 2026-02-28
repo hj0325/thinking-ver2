@@ -59,6 +59,25 @@
 - [ ] 비-POST 호출 시 405 반환 확인
 - [ ] 사용자 노출 텍스트(UI/오류/AI 응답)가 영어 전용인지 확인
 
+### 3.5 Manual QA Checklist (Canvas Pan + Font Policy)
+- [ ] 빈 캔버스 영역에서 마우스 드래그 시 viewport가 이동한다.
+- [ ] 노드 위에서 드래그 시작 시 pan이 아니라 node drag가 동작한다.
+- [ ] pan 동작에 `Space` 키 입력이 필요하지 않다(기본 drag pan).
+- [ ] 드래그 전 커서가 `grab`, 드래그 중 `grabbing`으로 보인다.
+- [ ] 트랙패드/휠 zoom 동작이 기존과 동일하게 동작한다.
+- [ ] 모바일/터치에서 single-finger drag는 pan, pinch는 zoom으로 동작한다.
+- [ ] 전체 UI 기본 텍스트가 `Instrument Sans`로 렌더링된다.
+- [ ] 제목급 텍스트(`h1~h6`, Node Card title, Suggestion/Chat title)가 `Inter` 우선으로 렌더링된다.
+- [ ] Node Card body/보조 텍스트는 `Instrument Sans` 우선으로 렌더링된다.
+- [ ] 웹 폰트 로드 실패 시 폴백 폰트(`Inter`, `system-ui`)로 UI가 깨지지 않는다.
+
+#### 3.5.1 Suggested Execution Steps
+1. Desktop Chrome에서 앱 로드 후, 빈 배경 drag pan / node drag를 연속으로 수행한다.
+2. 같은 화면에서 트랙패드 pinch 또는 휠로 zoom 동작을 확인한다.
+3. DevTools Elements에서 대표 텍스트의 `font-family` computed value를 확인한다.
+4. Network throttling/blocked fonts 조건에서 폴백 렌더링을 확인한다.
+5. 모바일 에뮬레이션에서 single-finger pan, pinch zoom을 확인한다.
+
 ## 4. Test Matrix
 
 | ID | Layer | Scenario | Expected | Priority | Status |

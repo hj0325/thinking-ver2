@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Update] 2026-02-28 - Added detailed QA checklist for canvas pan and font policy
+- Summary:
+  - `04-test-rollout`에 Canvas pan 및 폰트 정책 검증을 위한 상세 수동 QA 체크리스트를 추가했다.
+  - 마우스/트랙패드/터치 인터랙션, 커서 상태, 폰트 우선순위(`Instrument Sans` / `Inter`)와 폴백 렌더링 점검 항목을 포함했다.
+  - 실행 순서를 통일하기 위한 권장 검증 절차(3.5.1)도 함께 추가했다.
+- Scope: Frontend
+- Files: `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: 체크리스트 항목이 `06-frontend-style` 확정 정책(UI-006/UI-007)과 일치하는지 대조 확인
+- English-only Policy Impact: No
+- Spec: `docs/specs/04-test-rollout.md`, `docs/specs/06-frontend-style.md`
+
 ### [Patch] 2026-02-28 - Canvas drag pan and global font policy applied
 - Summary:
   - `NodeMap`에 빈 영역 기본 drag pan을 명시적으로 활성화하고(`panOnDrag`), 노드 drag 우선 동작을 유지하도록 설정했다.
