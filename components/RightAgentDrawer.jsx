@@ -39,51 +39,55 @@ export default function RightAgentDrawer({
   const isChat = mode === "chat";
 
   return (
-    <div className="pointer-events-none absolute inset-y-0 right-0 z-[45] flex">
-      <div className="pointer-events-auto relative w-[78px]">
-        <div className="absolute inset-y-0 right-0 w-7 bg-gradient-to-l from-white/35 to-transparent" />
-        <div className="absolute right-3 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-[10px]">
-          <button
-            type="button"
-            className={`relative inline-flex h-[52px] w-[52px] items-center justify-center rounded-full text-[13px] font-semibold leading-none text-[#111111] shadow-[0_4px_14px_rgba(0,0,0,0.14)] transition ${
-              isTip && isOpen ? "bg-white" : "bg-white/95 hover:bg-white"
-            }`}
-            onClick={() => onToggleMode("tip")}
-            aria-label="Open tip drawer"
-          >
-            Tip
-            {hasTipSignal && (
-              <span
-                className="absolute right-[-3px] top-[-3px] h-3 w-3 rounded-full border border-white/80"
-                style={{ backgroundColor: "#C084FC" }}
-                aria-hidden
-              />
-            )}
-          </button>
-          <button
-            type="button"
-            className={`inline-flex h-[52px] w-[52px] items-center justify-center rounded-full text-[13px] font-semibold text-[#111111] shadow-[0_4px_14px_rgba(0,0,0,0.14)] transition ${
-              isChat && isOpen ? "bg-white" : "bg-white/95 hover:bg-white"
-            }`}
-            onClick={() => onToggleMode("chat")}
-            aria-label="Open chat drawer"
-          >
-            Chat
-          </button>
-        </div>
-      </div>
-
+    <div className="pointer-events-none absolute inset-y-0 right-0 z-[45] overflow-hidden">
       <div
-        className={`pointer-events-auto relative h-full overflow-hidden transition-[width,opacity] duration-300 ${
-          isOpen ? "w-[430px] opacity-100" : "w-0 opacity-0"
+        className={`relative flex h-full w-[508px] transform-gpu transition-transform duration-300 ease-out ${
+          isOpen ? "translate-x-0" : "translate-x-[430px]"
         }`}
-        aria-hidden={!isOpen}
-        style={{
-          background:
-            "linear-gradient(90deg, rgba(174,231,208,0.96) 0%, rgba(174,231,208,0.9) 32%, rgba(221,240,195,0.9) 63%, rgba(215,232,238,0.94) 100%)",
-        }}
       >
-        {isOpen && (
+        <div className="pointer-events-auto relative w-[78px]">
+          <div className="absolute inset-y-0 right-0 w-7 bg-gradient-to-l from-white/35 to-transparent" />
+          <div className="absolute right-3 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-[10px]">
+            <button
+              type="button"
+              className={`relative inline-flex h-[52px] w-[52px] items-center justify-center rounded-full text-[13px] font-semibold leading-none text-[#111111] shadow-[0_4px_14px_rgba(0,0,0,0.14)] transition ${
+                isTip && isOpen ? "bg-white" : "bg-white/95 hover:bg-white"
+              }`}
+              onClick={() => onToggleMode("tip")}
+              aria-label="Open tip drawer"
+            >
+              Tip
+              {hasTipSignal && (
+                <span
+                  className="absolute right-[-3px] top-[-3px] h-3 w-3 rounded-full border border-white/80"
+                  style={{ backgroundColor: "#C084FC" }}
+                  aria-hidden
+                />
+              )}
+            </button>
+            <button
+              type="button"
+              className={`inline-flex h-[52px] w-[52px] items-center justify-center rounded-full text-[13px] font-semibold text-[#111111] shadow-[0_4px_14px_rgba(0,0,0,0.14)] transition ${
+                isChat && isOpen ? "bg-white" : "bg-white/95 hover:bg-white"
+              }`}
+              onClick={() => onToggleMode("chat")}
+              aria-label="Open chat drawer"
+            >
+              Chat
+            </button>
+          </div>
+        </div>
+
+        <div
+          className={`relative h-full w-[430px] overflow-hidden transition-opacity duration-200 ${
+            isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+          }`}
+          aria-hidden={!isOpen}
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(174,231,208,0.96) 0%, rgba(174,231,208,0.9) 32%, rgba(221,240,195,0.9) 63%, rgba(215,232,238,0.94) 100%)",
+          }}
+        >
           <div className="flex h-full flex-col gap-3 p-4">
             <div className="grid grid-cols-2 gap-2">
               {contextItems.length > 0 ? (
@@ -144,7 +148,7 @@ export default function RightAgentDrawer({
               </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

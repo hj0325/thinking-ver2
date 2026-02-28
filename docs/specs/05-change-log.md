@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Drawer transition changed to off-canvas slide
+- Summary:
+  - Right Agent Drawer open/close 애니메이션을 `width` 확장 방식에서 오프캔버스 `translate` 슬라이드 방식으로 변경했다.
+  - right field 폭을 고정(`430px`)하고 컨테이너를 화면 밖/안으로 이동시켜, 애니메이션 중 텍스트 줄바꿈이 바뀌는 현상을 제거했다.
+  - 기존 구조 요구사항(content panel 유지, glass 스타일, full-height, Tip/Chat rail 동작)은 그대로 유지했다.
+- Scope: Frontend
+- Files: `components/RightAgentDrawer.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/05-change-log.md`
+- Validation: 모션 구조(`width tween` 제거, `off-canvas slide` 적용) 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Drawer regression fix applied (content + full-height restored)
 - Summary:
   - Right Agent Drawer 시각 리파인 이후 발생한 회귀를 수정했다: content panel(글라스모피즘) 삭제 문제를 복구하고, `X` 닫기 액션을 다시 연결했다.

@@ -120,6 +120,8 @@
 | `--agent-field-grad-end` | `#D7E8EE` | 우측 drawer field gradient 끝 |
 | `--agent-drawer-inset-top` | `0px` | Drawer 상단 여백(기본 0) |
 | `--agent-drawer-inset-bottom` | `0px` | Drawer 하단 여백(기본 0) |
+| `--agent-drawer-motion` | `off-canvas-slide` | drawer open/close 모션(`width` tween 금지) |
+| `--agent-field-width` | `430px` | 우측 drawer field 고정 폭 |
 | `--agent-content-glass-bg` | `rgba(255,255,255,0.32)` | content panel 글라스 배경 |
 | `--agent-content-glass-border` | `rgba(255,255,255,0.65)` | content panel 글라스 보더 |
 | `--agent-content-glass-blur` | `12px` | content panel blur 강도 |
@@ -433,6 +435,7 @@
   - 우측 고정 drawer
   - rail은 캔버스와 right field 경계선에 인접
   - rail/right field는 viewport 높이를 꽉 채운다(`top: 0`, `bottom: 0`)
+  - drawer는 `field fixed width + off-canvas translate`로 열고 닫는다(중간 폭 리플로우로 인한 줄바꿈 변경 방지)
   - content panel은 right field 내부에서 상/중/하(헤더/메시지/입력)로 구성
 - Mobile:
   - 세부 규칙은 별도 확정(Open question)
