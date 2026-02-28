@@ -26,6 +26,28 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Single-surface canvas background applied in frontend
+- Summary:
+  - `NodeMap`의 기존 Problem/Solution 2분할 배경 레이어를 제거하고 단면(single-surface) 배경으로 전환했다.
+  - 기본 배경 `#A6FFD3` 위에 중앙 radial gradient를 적용하고, 초기 stage를 `research-diverge`로 고정했다.
+  - CSS에 단계별 색상 토큰(`research/ideation diverge/converge`)과 `data-stage` 매핑 클래스를 추가해 이후 단계 전환 확장을 준비했다.
+- Scope: Frontend
+- Files: `components/NodeMap.jsx`, `styles/globals.css`, `docs/specs/06-frontend-style.md`, `docs/specs/05-change-log.md`
+- Validation: 배경 레이어 구조/토큰 매핑 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`
+
+### [Update] 2026-02-28 - Single-surface stage background spec added (no edge glow)
+- Summary:
+  - 기존 2분할 배경 대신 단면(single-surface) 캔버스 배경 스펙을 추가했다.
+  - 기본색 `#A6FFD3` + 중앙 radial gradient 구조와 4단계 색상 토큰(리서치/아이디에이션 확산·수렴)을 정의했다.
+  - 우측 edge glow는 범위에서 제외하고, 단계 전환 로직은 추후 `data-stage` 연동 To-do로 분리했다.
+- Scope: Frontend
+- Files: `docs/specs/06-frontend-style.md`, `docs/specs/05-change-log.md`
+- Validation: 사용자 확정값(우측 glow 미적용, 단계별 색상)과 토큰/컴포넌트 섹션 일치 여부 수동 대조 완료
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`
+
 ### [Patch] 2026-02-28 - Prefer between-card corridor routing for vertical offsets
 - Summary:
   - connector 경로 점수 계산에 Y-band(두 포트 사이 범위) 이탈 패널티를 추가해 상단/하단 과도 우회를 억제했다.

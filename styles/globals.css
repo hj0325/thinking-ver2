@@ -7,6 +7,16 @@
   --font-family-ui: "Instrument Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-family-heading: "Inter", "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-family-node-body: "Instrument Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --canvas-bg-base: #a6ffd3;
+  --canvas-stage-research-diverge: #4dd6f8;
+  --canvas-stage-research-converge: #ffff86;
+  --canvas-stage-ideation-diverge: #ff969f;
+  --canvas-stage-ideation-converge: #d5a6ff;
+  --canvas-gradient-center-x: 50%;
+  --canvas-gradient-center-y: 62%;
+  --canvas-gradient-radius-x: 72%;
+  --canvas-gradient-radius-y: 78%;
+  --canvas-stage-rgb: 77, 214, 248;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -47,6 +57,49 @@ h6,
 
 .reactflow-canvas-pan .react-flow__pane.dragging {
   cursor: grabbing;
+}
+
+.tm-canvas-bg {
+  position: relative;
+  overflow: hidden;
+  background: var(--canvas-bg-base);
+}
+
+.tm-canvas-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse var(--canvas-gradient-radius-x) var(--canvas-gradient-radius-y) at var(--canvas-gradient-center-x)
+      var(--canvas-gradient-center-y),
+    rgba(var(--canvas-stage-rgb), 0.68) 0%,
+    rgba(var(--canvas-stage-rgb), 0.44) 36%,
+    rgba(var(--canvas-stage-rgb), 0) 78%
+  );
+}
+
+.tm-canvas-bg[data-stage="research-diverge"] {
+  --canvas-stage-rgb: 77, 214, 248;
+}
+
+.tm-canvas-bg[data-stage="research-converge"] {
+  --canvas-stage-rgb: 255, 255, 134;
+}
+
+.tm-canvas-bg[data-stage="ideation-diverge"] {
+  --canvas-stage-rgb: 255, 150, 159;
+}
+
+.tm-canvas-bg[data-stage="ideation-converge"] {
+  --canvas-stage-rgb: 213, 166, 255;
+}
+
+.tm-canvas-flow .react-flow__renderer,
+.tm-canvas-flow .react-flow__pane,
+.tm-canvas-flow .react-flow__viewport {
+  background: transparent;
 }
 
 /* AI suggestion connected node glow effect */

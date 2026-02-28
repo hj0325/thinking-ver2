@@ -4,11 +4,13 @@
 - [ ] [added: 2026-02-28] [status: decision-needed] Node image 비율/크롭 규칙(`cover` vs `contain`)을 Figma Inspect 기준으로 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] Title/Body 타이포(폰트 패밀리, 크기, 굵기, line-height) 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] 6하원칙 chip 토큰 이름(`--chip-when` vs `--chip-where`) 최종 확정
+- [ ] [added: 2026-02-28] [status: execution-needed] Canvas 단계 전환 상태(stage state)와 배경 토큰(`data-stage`) 매핑 로직을 연결한다.
+- [x] [added: 2026-02-28] [status: completed 2026-02-28] Canvas 단면 배경(base + 중앙 gradient) 스타일을 초기 stage(`research-diverge`) 기준으로 코드에 적용
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] 빈 캔버스 드래그 pan(배경 이동) 인터랙션을 NodeMap에 반영
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] `Instrument Sans` 웹 폰트를 설치하고 기본 UI/Node 텍스트에 적용
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] pan 동작의 modifier key 정책을 `기본 drag pan`으로 확정
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] `Instrument Sans` 적용 범위를 전체 UI로 확정하고, 제목급 텍스트는 `Inter` 예외 정책으로 확정
-- [x] [added: 2026-02-28] [status: completed 2026-02-28] (1차) 노드 연결선 프론트 스타일(4px 흰 선, 양 끝 포트, 52px 앵커, fanout/clearance)을 적용
+- [x] [added: 2026-02-28] [status: completed 2026-02-28] (1차) 노드 연결선 프론트 스타일(4px 흰 선, 연결 side 포트, 52px 앵커, fanout/clearance)을 적용
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] 노드 연결선 코너 처리 방식을 `orthogonal + arc`로 확정
 - [ ] [added: 2026-02-28] [status: execution-needed] (2차) 원인→결과 자동 정렬/정합 강화 규칙을 도입한다. 필요 이유: 현재는 source/target 의미 보존과 사용자 수동 배치 의도를 우선해야 하므로, 강제 재정렬은 의미 왜곡/UX 충돌 리스크가 있어 별도 단계로 분리
 
@@ -25,7 +27,7 @@
 
 ## 2. Purpose
 목업 기반 프론트엔드 구조와 스타일 규칙을 명시한다.  
-현재 문서는 우선 **Node Card 디자인**을 중심으로 확정/가확정 값을 정리한다.
+현재 문서는 **Node Card + Canvas Background** 디자인 규칙을 중심으로 확정/가확정 값을 정리한다.
 
 ## 3. Visual Direction
 - Keywords: `clean`, `compact`, `semantic chips`, `idea summary`
@@ -67,6 +69,15 @@
 | `--chip-problem-bg` | `#EFAEA8` | `Problem` chip 배경 |
 | `--chip-solution-bg` | `#E8A0E6` | `Solution` chip 배경 |
 | `--chip-text` | `#111111` | 공통 chip 텍스트 |
+| `--canvas-bg-base` | `#A6FFD3` | 단면 캔버스 기본 배경 |
+| `--canvas-stage-research-diverge` | `#4DD6F8` | 리서치 확산 단계 중심 gradient 색상 |
+| `--canvas-stage-research-converge` | `#FFFF86` | 리서치 수렴 단계 중심 gradient 색상 |
+| `--canvas-stage-ideation-diverge` | `#FF969F` | 아이디에이션 확산 단계 중심 gradient 색상 |
+| `--canvas-stage-ideation-converge` | `#D5A6FF` | 아이디에이션 수렴 단계 중심 gradient 색상 |
+| `--canvas-gradient-center-x` | `50%` | 중심 gradient X 위치 |
+| `--canvas-gradient-center-y` | `62%` | 중심 gradient Y 위치 |
+| `--canvas-gradient-radius-x` | `72%` | 중심 gradient 가로 반경 |
+| `--canvas-gradient-radius-y` | `78%` | 중심 gradient 세로 반경 |
 
 ### 6.2 Typography Tokens
 | Token | Value | Usage |
@@ -131,6 +142,7 @@
 | Suggestion Card |  | default/active/hover | category-based |  |
 | Chat Dialog |  | open/loading/error |  |  |
 | Node Card | `summary + body + (optional image) + chips` | default/highlighted | text-only / image | this section is detailed below |
+| Canvas Stage Background | `single-surface fill + central stage gradient` | fixed-stage (initial) | 4 stage color presets | right-edge glow excluded |
 | Canvas Pan Interaction | `empty-space drag` | idle/panning/dragging-node | modifier/no-modifier | NodeMap interaction spec |
 | Node Connector Edge | `edge + connected-side endpoint ports` | default/highlighted/overlapped | input/chat/cross | logical flow with fixed source/target semantics |
 
@@ -216,7 +228,41 @@
 - 제공된 스니펫(`background: var(--Chips-When, #9DBCFF);`)은 색상값 기준으로 `When` chip에 매칭된다.
 - 문구상 `Where` 스타일로 전달되었으므로, 토큰 네이밍은 UI-005에서 최종 확정한다.
 
-### 7.3 Canvas Pan Interaction (Miro/Figma-style)
+### 7.3 Canvas Background (Single-Surface Stage Gradient)
+#### A. Goal
+- 기존 `Problem/Solution` 2분할 배경을 제거하고 단면(single-surface) 캔버스를 사용한다.
+- 기본 배경(`--canvas-bg-base`) 위에 중앙 radial gradient를 중첩해 단계별 분위기만 교체 가능하게 설계한다.
+
+#### B. Visual Rules
+1. Base fill:
+   - color: `--canvas-bg-base` (`#A6FFD3`)
+2. Central gradient:
+   - type: radial gradient
+   - position: `50% 62%`
+   - size: `72% x 78%`
+   - stage color: 아래 단계 토큰 중 1개 선택
+     - research-diverge: `--canvas-stage-research-diverge` (`#4DD6F8`)
+     - research-converge: `--canvas-stage-research-converge` (`#FFFF86`)
+     - ideation-diverge: `--canvas-stage-ideation-diverge` (`#FF969F`)
+     - ideation-converge: `--canvas-stage-ideation-converge` (`#D5A6FF`)
+3. Exclusion:
+   - 우측 edge glow(세로형 yellow strip)는 현재 범위에서 적용하지 않는다.
+
+#### C. Stage Policy (Initial)
+- 현재 구현 범위는 프론트 스타일 고정값이다.
+- 초기 기본 stage는 `research-diverge`를 사용한다.
+- 단계 전환 로직은 이후 작업으로 분리한다(`Follow-up To-do` 참조).
+
+#### D. Implementation Targets
+- `components/NodeMap.jsx`:
+  - 기존 배경 분할 레이어 제거
+  - 단일 배경 레이어 클래스 적용
+- `styles/globals.css`:
+  - canvas 배경 토큰 및 stage별 gradient 스타일 정의
+- `components/ThinkingMachine.jsx`:
+  - 필요 시 stage 전달 prop/data attribute 정의 (초기에는 고정값 허용)
+
+### 7.4 Canvas Pan Interaction (Miro/Figma-style)
 #### A. Goal
 - 사용자가 빈 배경 영역을 drag할 때 캔버스(viewport)가 이동해야 한다.
 - 노드를 drag할 때는 노드 이동이 우선되어야 하며 pan이 개입하면 안 된다.
@@ -246,7 +292,7 @@
 - QA baseline:
   - 노드/엣지가 많은 상태에서도 프레임 드랍 없이 drag pan 동작
 
-### 7.4 Node Connector Edge (Mockup V2)
+### 7.5 Node Connector Edge (Mockup V2)
 #### A. Scope and Rollout
 - 이번 범위(1차): 프론트엔드 안전 적용
   - 연결선/포트 시각 스타일
@@ -319,6 +365,7 @@
   - empty-space drag pan enabled
   - node drag precedence over pan
   - cursor affordance (`grab`/`grabbing`)
+  - single-surface stage gradient background (base + central radial)
 - Edge interaction:
   - direction normalized (`Problem -> Solution`, else left-to-right`)
   - endpoint ports shown only on connected sides (per node)
@@ -348,6 +395,7 @@
 | Interaction panels | `components/InputPanel.jsx`, `components/SuggestionPanel.jsx`, `components/ChatDialog.jsx` |
 | Web font loading (`Instrument Sans`) | `styles/globals.css` |
 | Heading font exception (`Inter` priority) | `components/ThinkingMachine.jsx`, `components/SuggestionPanel.jsx`, `components/ChatDialog.jsx`, `styles/globals.css` |
+| Canvas single-surface stage background | `components/NodeMap.jsx`, `styles/globals.css` |
 | Canvas pan behavior | `components/NodeMap.jsx` |
 | Connector edge style/routing | `components/NodeMap.jsx`, `components/ThinkingMachine.jsx`, `styles/globals.css`, `components/nodes/ThinkingNode.jsx`, `components/edges/ConnectorEdge.jsx` |
 
@@ -361,7 +409,9 @@
 | UI-005 | 전달된 `Where` 스타일의 토큰 이름이 `--Chips-When`인 이유(오타/의도) 확인 필요 |  |  | Open |
 | UI-006 | Canvas pan을 기본 drag로 둘지, `Space+drag`로 제한할지? |  |  | Resolved (기본 drag pan, 2026-02-28) |
 | UI-007 | `Instrument Sans` 적용 범위를 전체 UI로 확장할지 Node/Card 우선으로 둘지? |  |  | Resolved (전체 UI + 제목급 Inter 예외, 2026-02-28) |
-| UI-008 | 노드 연결선 포트 표시 범위를 시작점만/양 끝점 모두 중 무엇으로 할지? |  |  | Resolved (양 끝점 모두, 2026-02-28) |
+| UI-008 | 노드 연결선 포트 표시 범위를 시작점만/양 끝점 모두 중 무엇으로 할지? |  |  | Resolved (edge 양 끝점 기준 + 노드에서는 연결된 side만 표시, 2026-02-28) |
 | UI-009 | 노드 연결선 두께를 몇 px로 확정할지? |  |  | Resolved (`4px`, 2026-02-28) |
 | UI-010 | 노드 좌우 이동 후 방향 처리를 source/target 스왑할지 여부 |  |  | Resolved (Problem->Solution 우선 정규화 + 좌->우 정렬, 2026-02-28) |
 | UI-011 | 직교 경로 코너 처리 방식을 `arc`/`quadratic` 중 무엇으로 할지 |  |  | Resolved (`arc`, 2026-02-28) |
+| UI-012 | Canvas stage 전환 트리거를 어떤 상태값/이벤트로 연결할지? |  |  | Open |
+| UI-013 | Canvas 우측 edge glow를 포함할지? |  |  | Resolved (미포함, 2026-02-28) |
