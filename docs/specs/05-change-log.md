@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Legacy AI Suggestions panel hidden in primary flow
+- Summary:
+  - 사용자가 요청한 기존 `AI Suggestions` 패널 UI를 기본 화면에서 제거했다.
+  - `SuggestionPanel`은 완전 삭제하지 않고 legacy fallback 경로(`?legacyChat=1`)에서만 렌더링되도록 조건화했다.
+  - 기본 사용자는 Drawer 기반 흐름(Tip/Chat + context cards)만 보게 하여 중복 UI를 줄였다.
+- Scope: Frontend
+- Files: `components/ThinkingMachine.jsx`, `docs/specs/03-architecture.md`, `docs/specs/05-change-log.md`
+- Validation: primary/fallback 렌더 조건(`legacyChatFallbackEnabled`) 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/03-architecture.md`, `docs/specs/06-frontend-style.md`
+
 ### [Patch] 2026-02-28 - Phase 2 chat migrated into Drawer Chat body
 - Summary:
   - `SuggestionPanel` 카드 클릭의 기본 동선을 `ChatDialog`에서 `RightAgentDrawer(chat mode)`로 전환하고, 기존 `/api/chat`, `/api/chat-to-nodes` 호출 로직을 Drawer Chat 본문에 이관했다.

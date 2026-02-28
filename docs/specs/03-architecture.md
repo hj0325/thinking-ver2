@@ -40,7 +40,7 @@ flowchart LR
 | `pages/index.jsx` | 앱 엔트리 | `ThinkingMachine` 렌더링 |
 | `components/ThinkingMachine.jsx` | 오케스트레이션 | nodes, edges, suggestions, activeSuggestion, highlightedNodeIds |
 | `components/NodeMap.jsx` | 그래프 렌더링 | ReactFlow 노드/엣지 표시, 강조 class 반영 |
-| `components/SuggestionPanel.jsx` | 제안 카드 목록 UI | 카드 선택/닫기 |
+| `components/SuggestionPanel.jsx` | 제안 카드 목록 UI (legacy fallback) | `?legacyChat=1` 경로에서 카드 선택/닫기 |
 | `components/ChatDialog.jsx` | 제안별 대화/변환 | `/api/chat`, `/api/chat-to-nodes` 호출 |
 | `components/RightAgentDrawer.jsx` | Tip/Chat 통합 서랍 + 채팅 본문 | drawer open state, mode(`tip/chat`), context shelf, `/api/chat`, `/api/chat-to-nodes` |
 | `components/InputPanel.jsx` | 입력 폼 | Enter 제출, 로딩 상태 반영 |

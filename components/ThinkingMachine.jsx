@@ -701,14 +701,16 @@ export default function ThinkingMachine() {
                     highlightedNodeIds={highlightedNodeIds}
                 />
 
-                {/* AI 제안 우측 패널 */}
-                <SuggestionPanel
-                    suggestions={suggestions}
-                    onDismiss={handleDismissSuggestion}
-                    onSuggestionClick={handleSuggestionClick}
-                    activeSuggestionId={activeSuggestion?.id}
-                    drawerOpen={isDrawerOpen}
-                />
+                {/* Legacy fallback suggestion panel (`?legacyChat=1`) */}
+                {legacyChatFallbackEnabled && (
+                    <SuggestionPanel
+                        suggestions={suggestions}
+                        onDismiss={handleDismissSuggestion}
+                        onSuggestionClick={handleSuggestionClick}
+                        activeSuggestionId={activeSuggestion?.id}
+                        drawerOpen={isDrawerOpen}
+                    />
+                )}
 
                 <RightAgentDrawer
                     isOpen={isDrawerOpen}
