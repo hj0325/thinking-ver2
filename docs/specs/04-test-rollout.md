@@ -107,6 +107,14 @@
 - [ ] 관리자 모드 OFF 상태에서는 프로토타입 상태 UI가 완전히 숨겨진다.
 - [ ] 관리자 모드 상태가 새로고침 후에도 유지된다(localStorage).
 
+### 3.8 Manual QA Checklist (Right Agent Drawer Tip/Chat)
+- [ ] `Tip`/`Chat` rail 버튼과 우측 filled field+content가 하나의 drawer 단위로 동시에 열리고 닫힌다.
+- [ ] 같은 모드 버튼을 다시 누르면 drawer가 닫힌다.
+- [ ] open 상태에서 `Tip`과 `Chat` 간 전환 시 drawer는 닫히지 않고 mode만 바뀐다.
+- [ ] `X` 버튼 및 `Esc` 입력으로 drawer가 닫힌다.
+- [ ] drawer가 닫힌 상태에서 우측 filled field와 content panel은 표시되지 않는다.
+- [ ] context shelf 카드(첨부 노드 카드)는 상단 영역에 유지되고, 삭제/변경 시 상태가 즉시 반영된다.
+
 ## 4. Test Matrix
 
 | ID | Layer | Scenario | Expected | Priority | Status |
@@ -127,6 +135,9 @@
 | T-014 | UI | connector corner style | orthogonal 경로 코너가 arc 반지름으로 일관 렌더링 | P1 | Planned |
 | T-015 | UI | admin shortcut hint | 최초 진입 단축키 안내 표시 + 세션 dismiss 동작 | P1 | Planned |
 | T-016 | UI | admin mode status overlay | 단축키 토글 + prototype status 관리자 모드 한정 노출 | P1 | Planned |
+| T-017 | UI | right agent drawer boundary | rail + filled field + content가 하나의 열림/닫힘 단위로 동작 | P0 | Planned |
+| T-018 | UI | tip/chat mode switch | open 상태에서 Tip/Chat 전환 시 drawer 유지 + body만 전환 | P1 | Planned |
+| T-019 | UI | context shelf behavior | 상단 첨부 카드 상태 표시/삭제 및 렌더 동기화 | P1 | Planned |
 
 ## 5. Go / No-Go Criteria
 - P0 결함 0건
@@ -152,6 +163,17 @@
 - 에러율/응답시간 모니터링
 - 실제 사용자 입력 1건 분석 시나리오 확인
 - 제안 채팅 및 변환 시나리오 확인
+
+### 6.4 Phased Rollout Gates (Right Agent Drawer)
+1. Phase 1 gate:
+   - pass: `T-017`, `T-018`
+   - must-keep: 기존 SuggestionPanel 클릭 흐름이 깨지지 않을 것
+2. Phase 2 gate:
+   - pass: `T-005`, `T-006`, `T-016`, `T-018`
+   - must-keep: legacy `ChatDialog` fallback 경로 유지
+3. Phase 3 gate:
+   - pass: `T-019` + `T-005`, `T-006` 회귀 없음
+   - must-keep: context shelf 첨부 실패 시에도 기본 채팅 성공
 
 ## 7. Rollback Plan
 

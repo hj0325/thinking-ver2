@@ -4,6 +4,9 @@
 - [ ] [added: 2026-02-28] [status: decision-needed] Node image 비율/크롭 규칙(`cover` vs `contain`)을 Figma Inspect 기준으로 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] Title/Body 타이포(폰트 패밀리, 크기, 굵기, line-height) 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] 6하원칙 chip 토큰 이름(`--chip-when` vs `--chip-where`) 최종 확정
+- [ ] [added: 2026-02-28] [status: execution-needed] [Phase 1] 우측 Agent Drawer(`Glow rail + filled field + content panel`) 열기/닫기 구조를 Tip/Chat 토글과 함께 구현한다.
+- [ ] [added: 2026-02-28] [status: execution-needed] [Phase 2] 기존 `ChatDialog` 로직을 Drawer Chat body로 이관/재사용해 채팅 기능을 유지한다.
+- [ ] [added: 2026-02-28] [status: execution-needed] [Phase 3] 우측 상단 context shelf에 노드 드래그 첨부 UI를 연결하고, 첨부 카드 맥락을 AI 응답 입력 컨텍스트로 전달한다.
 - [ ] [added: 2026-02-28] [status: execution-needed] Canvas 단계 전환 상태(stage state)와 배경 토큰(`data-stage`) 매핑 로직을 연결한다.
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] Canvas 단면 배경(base + 중앙 gradient) 스타일을 초기 stage(`research-diverge`) 기준으로 코드에 적용
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] 관리자 모드 단축키(`Ctrl/Cmd+Shift+A`)와 초기 진입 안내 UI를 추가하고, 프로토타입 상태 배지를 관리자 모드로 제한
@@ -28,7 +31,7 @@
 
 ## 2. Purpose
 목업 기반 프론트엔드 구조와 스타일 규칙을 명시한다.  
-현재 문서는 **Node Card + Canvas Background** 디자인 규칙을 중심으로 확정/가확정 값을 정리한다.
+현재 문서는 **Node Card + Canvas Background + Right Agent Drawer** 디자인 규칙을 중심으로 확정/가확정 값을 정리한다.
 
 ## 3. Visual Direction
 - Keywords: `clean`, `compact`, `semantic chips`, `idea summary`
@@ -101,6 +104,9 @@
 | `--admin-shortcut` | `Ctrl/Cmd + Shift + A` | 관리자 모드 토글 단축키 |
 | `--admin-mode-default` | `off` | 초기 관리자 모드 상태 |
 | `--admin-shortcut-hint` | `on-first-entry` | 초기 진입 시 단축키 안내 노출 정책 |
+| `--agent-drawer-default-mode` | `chat` | Drawer 초기 모드 |
+| `--agent-drawer-open-state` | `closed` | Drawer 초기 열림 상태 |
+| `--agent-context-max-items` | `2` (initial) | 상단 context shelf 카드 최대 개수(초기값) |
 
 ### 6.3 Radius / Shadow / Border
 | Token | Value | Usage |
@@ -150,6 +156,7 @@
 | Canvas Pan Interaction | `empty-space drag` | idle/panning/dragging-node | modifier/no-modifier | NodeMap interaction spec |
 | Node Connector Edge | `edge + connected-side endpoint ports` | default/highlighted/overlapped | input/chat/cross | logical flow with fixed source/target semantics |
 | Admin Shortcut + Status Overlay | `shortcut hint + admin status badge` | hint-visible/admin-off/admin-on | first-entry / dismissed | prototype status visibility control |
+| Right Agent Drawer (Tip/Chat) | `glow rail + filled field + content panel` | closed/open-tip/open-chat | with-context / no-context | drawer boundary includes rail and right field |
 
 ### 7.1 Node Card (Mockup V1 Spec)
 #### A. Container
@@ -332,7 +339,112 @@
 - `styles/globals.css`:
   - 필요 시 오버레이 스타일 토큰 확장
 
-### 7.6 Node Connector Edge (Mockup V2)
+### 7.6 Right Agent Drawer (Tip/Chat)
+#### A. Boundary Definition (Resolved)
+- Drawer는 다음 3개를 하나의 단위로 연다/닫는다.
+  1. `Glow rail`: Tip/Chat 버튼이 배치되는 세로 영역
+  2. `Filled right field`: rail 우측의 채워진 배경 영역
+  3. `Content panel`: field 내부의 실제 Tip/Chat 콘텐츠 패널
+- 즉, rail만 독립적으로 열고 닫지 않으며, rail + right field + content가 동시 전환된다.
+
+#### B. Modes and States
+1. `closed`:
+   - rail 축약 상태만 노출(또는 최소 인터랙션 핸들)
+   - right field/content는 비노출
+2. `open-tip`:
+   - rail + right field + tip content panel 노출
+3. `open-chat`:
+   - rail + right field + chat content panel 노출
+
+#### C. Interaction Rules
+1. Rail toggle:
+   - `Tip` 버튼 클릭 시 `open-tip`
+   - `Chat` 버튼 클릭 시 `open-chat`
+2. Same-button toggle:
+   - 현재 활성 모드 버튼 재클릭 시 `closed`
+3. Cross-mode switch:
+   - open 상태에서 다른 버튼 클릭 시 닫지 않고 mode만 즉시 전환
+4. Close actions:
+   - panel `X` 버튼으로 `closed`
+   - `Esc`로 `closed`
+
+#### D. Context Shelf (Top-right Cards)
+1. Purpose:
+   - 우측 상단 작은 카드 영역은 AI 응답 참고용 context shelf다.
+2. Attachment source:
+   - 사용자가 canvas 노드를 drag하여 shelf에 첨부한다.
+3. AI context:
+   - shelf 카드의 title/body/chips 메타와 현재 대화 맥락을 함께 프롬프트 컨텍스트로 전달한다.
+4. Initial rollout:
+   - 1차: shelf UI/상태 구조 확정
+   - 2차: 실제 drag attach 및 프롬프트 결합 로직 연결
+
+#### E. Layout Rules
+- Desktop:
+  - 우측 고정 drawer
+  - rail은 캔버스와 right field 경계선에 인접
+  - content panel은 right field 내부에서 상/중/하(헤더/메시지/입력)로 구성
+- Mobile:
+  - 세부 규칙은 별도 확정(Open question)
+
+#### F. Implementation Targets
+- `components/ThinkingMachine.jsx`:
+  - drawer open/mode state 및 keyboard close(`Esc`) 관리
+- `components/SuggestionPanel.jsx`:
+  - 필요 시 rail/context shelf와의 상호작용 이벤트 연결
+- `components/ChatDialog.jsx`:
+  - 기존 dialog 패턴을 drawer body 구조로 이관하거나 분리
+- `styles/globals.css`:
+  - rail glow, right field fill, drawer transition 스타일 정의
+
+#### G. Phased Execution Plan (Approved Sequence)
+1. Phase 1 - Drawer Shell and Mode Toggle
+   - Scope:
+     - `rail + field + content`를 단일 drawer 컨테이너로 열고 닫기
+     - `Tip`/`Chat` mode 전환 및 same-button close
+     - `X`, `Esc` 닫기 동작
+   - Non-goals:
+     - API 채팅 호출 연결
+     - context shelf 드래그 첨부
+   - Exit criteria:
+     - `T-017`, `T-018` 통과
+     - 기존 SuggestionPanel/노드 캔버스 동작 회귀 없음
+2. Phase 2 - Chat Feature Migration (No Backend Change)
+   - Scope:
+     - 기존 `ChatDialog`의 메시지/요청/로딩/에러/변환 흐름을 Drawer Chat body로 이관 또는 재사용
+     - `/api/chat`, `/api/chat-to-nodes` 경로 및 payload 계약은 유지
+   - Backward-compatibility rule:
+     - migration 완료 전까지 기존 `ChatDialog` fallback 경로를 유지한다.
+   - Exit criteria:
+     - 기존 채팅 기능 parity 확보(메시지 생성, 변환, 오류 표시)
+     - `T-005`, `T-006`, `T-016`, `T-018` 통과
+3. Phase 3 - Context Shelf Attachment and Prompt Context Merge
+   - Scope:
+     - 노드 드래그 첨부 UI 구현(상단 shelf)
+     - 첨부 카드 메타(title/body/chips)를 채팅 프롬프트 context block에 병합
+   - Risk control:
+     - 첨부 context는 토큰 budget을 넘지 않도록 요약/컷오프 규칙 적용
+     - 첨부 실패 시 채팅 기본 경로는 계속 동작해야 함
+   - Exit criteria:
+     - 첨부/제거 상태가 UI와 요청 payload에 일치
+     - `T-019` + 채팅 회귀(`T-005`, `T-006`) 통과
+
+#### H. Data Contract Notes (Phase 2/3)
+1. Phase 2:
+   - 기존 chat 계약 유지:
+     - `/api/chat`: `suggestion + messages + history`
+     - `/api/chat-to-nodes`: `messages + existingNodes`
+   - Drawer 도입으로 endpoint/payload key를 변경하지 않는다.
+2. Phase 3:
+   - `attachedContextNodes`(initial key name) 필드를 optional 확장으로 추가한다.
+   - 각 item 최소 필드:
+     - `nodeId`, `title`, `contentPreview`, `category`, `phase`
+   - 서버/agent에서 context 미지원이더라도 기본 채팅 경로는 fallback으로 유지한다.
+3. Size guardrail:
+   - context shelf 입력은 최대 `--agent-context-max-items` 이내로 제한
+   - per-item content는 preview 길이 제한(세부 수치 TBD)
+
+### 7.7 Node Connector Edge (Mockup V2)
 #### A. Scope and Rollout
 - 이번 범위(1차): 프론트엔드 안전 적용
   - 연결선/포트 시각 스타일
@@ -408,6 +520,7 @@
   - single-surface stage gradient background (base + central radial)
   - shortcut hint appears on first entry (`Ctrl/Cmd + Shift + A`)
   - prototype status overlay is visible only in admin mode
+  - right agent drawer opens/closes as one unit (`rail + field + content`)
 - Edge interaction:
   - direction normalized (`Problem -> Solution`, else left-to-right`)
   - endpoint ports shown only on connected sides (per node)
@@ -440,6 +553,7 @@
 | Canvas single-surface stage background | `components/NodeMap.jsx`, `styles/globals.css` |
 | Canvas pan behavior | `components/NodeMap.jsx` |
 | Admin shortcut / prototype status overlay | `components/ThinkingMachine.jsx` |
+| Right agent drawer / context shelf | `components/ThinkingMachine.jsx`, `components/SuggestionPanel.jsx`, `components/ChatDialog.jsx`, `styles/globals.css` |
 | Connector edge style/routing | `components/NodeMap.jsx`, `components/ThinkingMachine.jsx`, `styles/globals.css`, `components/nodes/ThinkingNode.jsx`, `components/edges/ConnectorEdge.jsx` |
 
 ## 12. Open Questions
@@ -459,3 +573,6 @@
 | UI-012 | Canvas stage 전환 트리거를 어떤 상태값/이벤트로 연결할지? |  |  | Open |
 | UI-013 | Canvas 우측 edge glow를 포함할지? |  |  | Resolved (미포함, 2026-02-28) |
 | UI-014 | 관리자 단축키를 어떤 키 조합으로 고정할지? |  |  | Resolved (`Ctrl/Cmd + Shift + A`, 2026-02-28) |
+| UI-015 | Agent Drawer의 닫기 정책에 outside click까지 포함할지? |  |  | Open |
+| UI-016 | Mobile에서 Agent Drawer를 right panel로 유지할지 bottom sheet로 전환할지? |  |  | Open |
+| UI-017 | Context shelf 최대 카드 수/정렬 규칙(최신순, 수동정렬)을 어떻게 확정할지? |  |  | Open |

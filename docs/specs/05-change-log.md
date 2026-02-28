@@ -26,6 +26,28 @@
 ```
 
 ## 4. Change Entries
+### [Update] 2026-02-28 - Three-phase execution spec for agent drawer migration
+- Summary:
+  - Right Agent Drawer 구현을 3단계(Phase 1 shell, Phase 2 chat migration, Phase 3 context attachment)로 분리하고 각 단계의 범위/비범위/완료 기준을 문서화했다.
+  - `03-architecture`에 상태 모델과 호환성/롤백 규칙(legacy `ChatDialog` fallback 유지)을 추가했다.
+  - `04-test-rollout`에 Phase gate 기준(`T-017~T-019` + 기존 채팅 회귀 항목)을 추가해 단계별 출시 조건을 명확히 했다.
+- Scope: Frontend
+- Files: `docs/specs/06-frontend-style.md`, `docs/specs/03-architecture.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: 사용자 승인된 3단계 순서와 문서 간 단계/게이트 정의 일치 여부 수동 대조 완료
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/03-architecture.md`, `docs/specs/04-test-rollout.md`
+
+### [Update] 2026-02-28 - Right agent drawer spec updated (rail + field + content boundary)
+- Summary:
+  - Tip/Chat 우측 UI를 단순 패널이 아닌 `Glow rail + filled right field + content panel` 단일 drawer 경계로 정의했다.
+  - 우측 상단 context shelf를 노드 drag 첨부 영역으로 명시하고, 첨부 카드 맥락을 AI 응답 컨텍스트에 포함하는 정책을 추가했다.
+  - `06-frontend-style`에 Drawer 상태(`closed/open-tip/open-chat`), 토글 규칙, 구현 타깃을 추가하고 `04-test-rollout`에 전용 QA/T-matrix 항목(`T-017~T-019`)을 반영했다.
+- Scope: Frontend
+- Files: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: 사용자 확인 요구사항(drawer 경계에 rail+field 포함)과 스펙/테스트 항목 일치 여부 수동 대조 완료
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Admin shortcut mode and first-entry hint UI applied
 - Summary:
   - Canvas gradient 토큰 값을 `center-y: 80%`, `radius-x: 60%`로 조정해 배경 중심감을 수정했다.

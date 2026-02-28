@@ -2,6 +2,8 @@
 
 ## Follow-up To-do
 - [ ] [added: 2026-02-28] [P0] [status: execution-needed] 사용자 노출 문자열을 중앙 관리하는 단일 텍스트 레이어를 도입한다 (UI literal 분산 제거).
+- [ ] [added: 2026-02-28] [P1] [status: execution-needed] [Phase 2] `ChatDialog` 비즈니스 로직을 Drawer Chat body로 이관하고 legacy fallback을 병행 운영한다.
+- [ ] [added: 2026-02-28] [P1] [status: execution-needed] [Phase 3] `attachedContextNodes` optional contract를 `/api/chat` 경로에 확장한다.
 - [x] [added: 2026-02-28] [P0] [status: completed 2026-02-28] `lib/thinkingAgent.js`의 한국어 기본 라벨/fallback 문구를 영어 기본값으로 교체한다.
 - [ ] [added: 2026-02-28] [P1] [status: execution-needed] Python backend 유지 시 `backend/logic.py` 프롬프트/출력 언어를 영어 정책과 동기화한다.
 - [ ] [added: 2026-02-28] [P1] [status: decision-needed] 중복 구현(JS/Python) 정리 전략을 문서화한다 (단일 소스 또는 생성 파이프라인).
@@ -40,6 +42,7 @@ flowchart LR
 | `components/NodeMap.jsx` | 그래프 렌더링 | ReactFlow 노드/엣지 표시, 강조 class 반영 |
 | `components/SuggestionPanel.jsx` | 제안 카드 목록 UI | 카드 선택/닫기 |
 | `components/ChatDialog.jsx` | 제안별 대화/변환 | `/api/chat`, `/api/chat-to-nodes` 호출 |
+| `Right Agent Drawer` (planned) | Tip/Chat 통합 서랍 | drawer open state, mode(`tip/chat`), context shelf |
 | `components/InputPanel.jsx` | 입력 폼 | Enter 제출, 로딩 상태 반영 |
 
 Frontend visual/style details are managed in `./06-frontend-style.md`.
@@ -103,3 +106,37 @@ Frontend visual/style details are managed in `./06-frontend-style.md`.
 1. 운영 경로를 Next API로 단일화하거나, 반대로 Python을 표준으로 정하고 프런트 경로를 분리해 중복 제거.
 2. API contract를 OpenAPI/JSON Schema로 추출해 프론트/백엔드 동기화 자동화.
 3. 관측성(요청 ID, 실패 원인 코드)을 명시적으로 추가해 장애 분석 속도 개선.
+
+## 10. Right Agent Drawer Migration Plan (3 Phases)
+
+### 10.1 Objectives
+1. 기존 `SuggestionPanel + ChatDialog` 기능을 유지하면서 UI를 Drawer 기반으로 전환한다.
+2. 백엔드 API 계약(`/api/chat`, `/api/chat-to-nodes`)은 단계 2까지 변경하지 않는다.
+3. 단계 3에서 context shelf 첨부 정보를 프롬프트 컨텍스트에 결합한다.
+
+### 10.2 State Model (Target)
+- `isDrawerOpen: boolean`
+- `drawerMode: "tip" | "chat"`
+- `drawerAnchorNodeId: string | null`
+- `attachedContextNodeIds: string[]`
+- `chatMessagesByAnchor: Record<string, Message[]>`
+
+### 10.3 Phase Breakdown
+1. Phase 1 (UI shell):
+   - Drawer 경계(`rail + right field + content`) 구현
+   - mode toggle/close 행동 구현
+   - 기존 채팅 로직은 `ChatDialog`에 유지
+2. Phase 2 (chat migration):
+   - `ChatDialog`의 비즈니스 로직을 Drawer Chat body로 이관/재사용
+   - API payload/response 계약은 동일하게 유지
+   - migration 안정화 전까지 legacy fallback 유지
+3. Phase 3 (context attachment):
+   - context shelf drag attach state 연결
+   - API 호출 시 context block을 프롬프트에 병합
+
+### 10.4 Compatibility and Rollback Rules
+1. Compatibility:
+   - Phase 2 완료 전에는 `ChatDialog` fallback 경로를 제거하지 않는다.
+   - context shelf 오류는 채팅 장애로 전파하지 않고 무시 가능한 부가 컨텍스트로 처리한다.
+2. Rollback:
+   - Drawer 관련 결함 발생 시 `isDrawerOpen=false` 기본 정책 + legacy chat fallback으로 즉시 복구 가능해야 한다.
