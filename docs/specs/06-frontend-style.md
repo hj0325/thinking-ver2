@@ -263,8 +263,10 @@
    - 카드 측면 기준 `top: 52px` 지점
    - source는 우측 포트, target은 좌측 포트
 4. Data semantics:
-   - source/target 데이터 의미는 변경하지 않는다.
-   - 노드가 이동해 좌우 위치가 바뀌어도 source/target 스왑 금지
+   - 방향 정규화 규칙:
+     - `Problem`/`Solution` 쌍은 항상 `Problem -> Solution`
+     - 그 외 케이스는 좌->우 시각 흐름을 우선
+   - 위 규칙은 프론트 렌더 단계에서 적용한다.
 
 #### C. Overlap Risk Mitigation
 1. Multi-edge overlap (same side, same node):
@@ -277,7 +279,7 @@
    - 목적: 선이 카드 본문/라운드 코너 영역을 가로지르지 않도록 보장
 
 #### D. Logical Flow Policy
-- 현재 정책: 데이터 의미 유지(source->target) + 시각적 우선순위 적용
+- 현재 정책: `Problem -> Solution` 우선 + 좌->우 시각 흐름 정규화
 - 원인/결과 자동 재정렬은 2차 범위에서 별도 도입
 
 #### E. Implementation Targets
@@ -305,7 +307,7 @@
   - node drag precedence over pan
   - cursor affordance (`grab`/`grabbing`)
 - Edge interaction:
-  - data semantics preserve (`source`/`target` immutable)
+  - direction normalized (`Problem -> Solution`, else left-to-right`)
   - endpoint ports shown on both sides
   - fanout and clearance routing for overlap prevention
 
@@ -347,4 +349,4 @@
 | UI-007 | `Instrument Sans` 적용 범위를 전체 UI로 확장할지 Node/Card 우선으로 둘지? |  |  | Resolved (전체 UI + 제목급 Inter 예외, 2026-02-28) |
 | UI-008 | 노드 연결선 포트 표시 범위를 시작점만/양 끝점 모두 중 무엇으로 할지? |  |  | Resolved (양 끝점 모두, 2026-02-28) |
 | UI-009 | 노드 연결선 두께를 몇 px로 확정할지? |  |  | Resolved (`4px`, 2026-02-28) |
-| UI-010 | 노드 좌우 이동 후 방향 처리를 source/target 스왑할지 여부 |  |  | Resolved (스왑 금지, 데이터 의미 유지, 2026-02-28) |
+| UI-010 | 노드 좌우 이동 후 방향 처리를 source/target 스왑할지 여부 |  |  | Resolved (Problem->Solution 우선 정규화 + 좌->우 정렬, 2026-02-28) |

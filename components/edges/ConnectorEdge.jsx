@@ -19,6 +19,7 @@ const DEFAULT_LINE_WIDTH = 4;
 const DEFAULT_CLEARANCE = 20;
 const OUTER_RADIUS = 10;
 const INNER_RADIUS = 6;
+const MIN_CLEARANCE = 8;
 
 function pickColor(label) {
   return CATEGORY_COLORS[label] || DEFAULT_PORT_COLOR;
@@ -29,9 +30,16 @@ function toFiniteNumber(value, fallback = 0) {
 }
 
 function buildConnectorPath(sourceX, sourceY, targetX, targetY, clearance) {
-  const c1x = sourceX + clearance;
-  const c2x = targetX - clearance;
-  return `M ${sourceX} ${sourceY} C ${c1x} ${sourceY}, ${c2x} ${targetY}, ${targetX} ${targetY}`;
+  const pathStartX = sourceX + OUTER_RADIUS;
+  const pathEndX = targetX - OUTER_RADIUS;
+  const span = Math.max(pathEndX - pathStartX, 0);
+  const effectiveClearance = Math.max(
+    MIN_CLEARANCE,
+    Math.min(clearance, span > 0 ? span / 3 : clearance)
+  );
+  const c1x = pathStartX + effectiveClearance;
+  const c2x = pathEndX - effectiveClearance;
+  return `M ${pathStartX} ${sourceY} C ${c1x} ${sourceY}, ${c2x} ${targetY}, ${pathEndX} ${targetY}`;
 }
 
 export default function ConnectorEdge({

@@ -26,6 +26,18 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Connector edge fixes for overlap and direction issues
+- Summary:
+  - endpoint 포트 앵커를 카드 측면 중앙선(상단 기준 52px)으로 보정해 포트가 카드에 반쯤 겹치도록 수정했다.
+  - 방향 정규화 로직을 추가해 `Problem`/`Solution` 연결은 `Problem -> Solution`으로 우선 렌더링하고, 그 외 연결은 좌->우 시각 흐름으로 렌더링한다.
+  - edge 경로 시작/종료점을 포트 바깥으로 이동해 선이 카드 본문 아래로 가려지는 현상을 줄였다.
+  - 관련 스펙/테스트 문서의 방향 규칙(`UI-010`, `T-012`)을 코드 동작에 맞게 동기화했다.
+- Scope: Frontend
+- Files: `components/ThinkingMachine.jsx`, `components/nodes/ThinkingNode.jsx`, `components/edges/ConnectorEdge.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: 변경 코드 경로/수식 수동 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Connector edge UI implemented (V1 safe rollout)
 - Summary:
   - ReactFlow를 custom node/edge 구성으로 전환해 노드 연결선을 `4px` 흰색 곡선으로 렌더링했다.

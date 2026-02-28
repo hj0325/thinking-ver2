@@ -20,14 +20,14 @@ export default function ThinkingNode({ data }) {
         id="right-source"
         type="source"
         position={Position.Right}
-        style={{ ...HANDLE_STYLE, right: -10 }}
+        style={{ ...HANDLE_STYLE }}
         isConnectable={false}
       />
       <Handle
         id="left-target"
         type="target"
         position={Position.Left}
-        style={{ ...HANDLE_STYLE, left: -10 }}
+        style={{ ...HANDLE_STYLE }}
         isConnectable={false}
       />
     </div>

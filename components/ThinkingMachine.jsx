@@ -124,16 +124,59 @@ function buildNodeCategoryMap(nodeList) {
     return map;
 }
 
+function buildNodeMap(nodeList) {
+    const map = new Map();
+    nodeList.forEach((node) => {
+        if (node?.id) map.set(node.id, node);
+    });
+    return map;
+}
+
+function getNodeX(node) {
+    const x = node?.position?.x;
+    return Number.isFinite(x) ? Number(x) : 0;
+}
+
+function normalizeEdgeDirection(edge, nodeMap) {
+    const sourceNode = nodeMap.get(edge.source);
+    const targetNode = nodeMap.get(edge.target);
+    if (!sourceNode || !targetNode) return edge;
+
+    const sourcePhase = sourceNode?.data?.phase;
+    const targetPhase = targetNode?.data?.phase;
+    const sourceX = getNodeX(sourceNode);
+    const targetX = getNodeX(targetNode);
+
+    let shouldSwap = false;
+
+    // Problem -> Solution 흐름을 우선 적용
+    if (sourcePhase === "Solution" && targetPhase === "Problem") {
+        shouldSwap = true;
+    } else if (sourceX > targetX) {
+        // 좌->우 시각 흐름 유지 (동일 phase 포함)
+        shouldSwap = true;
+    }
+
+    if (!shouldSwap) return edge;
+    return {
+        ...edge,
+        source: edge.target,
+        target: edge.source,
+    };
+}
+
 function toConnectorEdges(rawEdges, nodeList, currentEdges = []) {
     const counts = new Map();
     const categoryMap = buildNodeCategoryMap(nodeList);
+    const nodeMap = buildNodeMap(nodeList);
     seedEdgeSideCounts(counts, currentEdges);
 
     return rawEdges.map((edge) => {
+        const normalizedEdge = normalizeEdgeDirection(edge, nodeMap);
         const sourceHandle = SOURCE_HANDLE_ID;
         const targetHandle = TARGET_HANDLE_ID;
-        const sourceKey = `${edge.source}:${sourceHandle}`;
-        const targetKey = `${edge.target}:${targetHandle}`;
+        const sourceKey = `${normalizedEdge.source}:${sourceHandle}`;
+        const targetKey = `${normalizedEdge.target}:${targetHandle}`;
 
         const sourceIndex = counts.get(sourceKey) || 0;
         const targetIndex = counts.get(targetKey) || 0;
@@ -141,17 +184,17 @@ function toConnectorEdges(rawEdges, nodeList, currentEdges = []) {
         counts.set(targetKey, targetIndex + 1);
 
         return {
-            id: edge.id,
-            source: edge.source,
-            target: edge.target,
-            label: edge.label,
+            id: normalizedEdge.id,
+            source: normalizedEdge.source,
+            target: normalizedEdge.target,
+            label: normalizedEdge.label,
             type: "connectorEdge",
             animated: false,
             sourceHandle,
             targetHandle,
             data: {
-                sourceCategory: categoryMap.get(edge.source) || "What",
-                targetCategory: categoryMap.get(edge.target) || "What",
+                sourceCategory: categoryMap.get(normalizedEdge.source) || "What",
+                targetCategory: categoryMap.get(normalizedEdge.target) || "What",
                 sourceOffsetY: getFanoutOffset(sourceIndex),
                 targetOffsetY: getFanoutOffset(targetIndex),
                 clearanceX: EDGE_CLEARANCE_X,

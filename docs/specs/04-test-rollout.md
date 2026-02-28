@@ -84,7 +84,8 @@
 - [ ] endpoint 포트는 white ring + 내부 category color 조합으로 렌더링된다.
 - [ ] 포트 기준점이 카드 상단 기준 `52px` 위치에 고정된다.
 - [ ] 다중 연결 시 포트/선이 동일 위치에 완전히 겹치지 않고 fanout 오프셋으로 분산된다.
-- [ ] source/target 의미가 유지되며, 노드 이동 후에도 source/target이 교환되지 않는다.
+- [ ] `Problem`/`Solution` 연결은 항상 `Problem -> Solution` 방향으로 렌더링된다.
+- [ ] 그 외 연결은 노드 좌->우 방향으로 정규화되어 렌더링된다.
 - [ ] 선이 카드 본문을 가로지르지 않고 card boundary 바깥 clearance 경로를 따른다.
 - [ ] `e-input-*`, `e-chat-*`, `e-cross-*` 타입에서 모두 동일한 기본 connector 규칙이 유지된다.
 
@@ -109,7 +110,7 @@
 | T-009 | UI+API | language consistency | 사용자 노출 텍스트 영어 100% | P0 | Planned |
 | T-010 | UI | connector endpoint ports | 양 끝 포트 렌더링 + category color 반영 | P0 | Planned |
 | T-011 | UI | connector anchor position | 좌/우 포트 기준점 `top 52px` 유지 | P0 | Planned |
-| T-012 | UI | connector direction stability | source/target 의미 유지, 스왑 없음 | P0 | Planned |
+| T-012 | UI | connector direction normalization | Problem->Solution 우선 + left-to-right 정규화 | P0 | Planned |
 | T-013 | UI | connector overlap mitigation | fanout + clearance 경로로 카드/선 겹침 완화 | P1 | Planned |
 
 ## 5. Go / No-Go Criteria
