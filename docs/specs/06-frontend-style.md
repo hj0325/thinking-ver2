@@ -4,7 +4,7 @@
 - [ ] [added: 2026-02-28] [status: decision-needed] Node image 비율/크롭 규칙(`cover` vs `contain`)을 Figma Inspect 기준으로 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] Title/Body 타이포(폰트 패밀리, 크기, 굵기, line-height) 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] 6하원칙 chip 토큰 이름(`--chip-when` vs `--chip-where`) 최종 확정
-- [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1.1] Right Agent Drawer 버튼/필드 스타일을 최신 목업(원형 Tip/Chat 버튼 + 보라 점 + 단순 세로 gradient field) 기준으로 리파인한다.
+- [ ] [added: 2026-02-28] [status: execution-needed] [Phase 1.1-reopen] Right Agent Drawer 시각 리파인을 구조 회귀 없이 재적용한다(원형 Tip/Chat + 보라 점 + 단순 gradient field, content/glass/full-height 유지).
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1] 우측 Agent Drawer(`Glow rail + filled field + content panel`) 열기/닫기 구조를 Tip/Chat 토글과 함께 구현한다.
 - [ ] [added: 2026-02-28] [status: execution-needed] [Phase 2] 기존 `ChatDialog` 로직을 Drawer Chat body로 이관/재사용해 채팅 기능을 유지한다.
 - [ ] [added: 2026-02-28] [status: execution-needed] [Phase 3] 우측 상단 context shelf에 노드 드래그 첨부 UI를 연결하고, 첨부 카드 맥락을 AI 응답 입력 컨텍스트로 전달한다.
@@ -118,6 +118,11 @@
 | `--agent-field-grad-start` | `#AEE7D0` | 우측 drawer field gradient 시작 |
 | `--agent-field-grad-mid` | `#DDF0C3` | 우측 drawer field gradient 중간 |
 | `--agent-field-grad-end` | `#D7E8EE` | 우측 drawer field gradient 끝 |
+| `--agent-drawer-inset-top` | `0px` | Drawer 상단 여백(기본 0) |
+| `--agent-drawer-inset-bottom` | `0px` | Drawer 하단 여백(기본 0) |
+| `--agent-content-glass-bg` | `rgba(255,255,255,0.32)` | content panel 글라스 배경 |
+| `--agent-content-glass-border` | `rgba(255,255,255,0.65)` | content panel 글라스 보더 |
+| `--agent-content-glass-blur` | `12px` | content panel blur 강도 |
 
 ### 6.3 Radius / Shadow / Border
 | Token | Value | Usage |
@@ -398,6 +403,19 @@
    - active mode는 과한 색상 변화 대신 미세 shadow/opacity 차이로만 표현한다.
 5. Constraint:
    - 위 visual 리파인은 drawer 경계 규칙(`rail + field + content` 동시 open/close)을 변경하지 않는다.
+   - content panel 구조(헤더/본문/입력 또는 동등 placeholder)는 제거하지 않는다.
+
+#### C.2 Structure Lock Policy (Regression Guard)
+1. Allowed in visual refinement:
+   - rail/field 색상, gradient, 버튼 shape/spacing, 점 인디케이터 스타일
+2. Not allowed in visual refinement:
+   - content panel 삭제
+   - `X`/`Esc` 닫기 동작 제거
+   - legacy fallback 채팅 경로 제거(Phase 2 이전)
+3. Lock target:
+   - `rail + field + content` 동시 open/close 동작은 시각 변경과 무관하게 항상 유지한다.
+4. Review rule:
+   - visual patch PR/commit에는 `preserved:`(content/close/fallback) 항목을 반드시 명시한다.
 
 #### D. Context Shelf (Top-right Cards)
 1. Purpose:
@@ -414,6 +432,7 @@
 - Desktop:
   - 우측 고정 drawer
   - rail은 캔버스와 right field 경계선에 인접
+  - rail/right field는 viewport 높이를 꽉 채운다(`top: 0`, `bottom: 0`)
   - content panel은 right field 내부에서 상/중/하(헤더/메시지/입력)로 구성
 - Mobile:
   - 세부 규칙은 별도 확정(Open question)
@@ -445,12 +464,16 @@
      - Tip/Chat 버튼을 동일한 원형 화이트 버튼으로 정렬
      - Tip 버튼 보라색 상태 점 적용
      - rail/field 배경을 단순 gradient 스타일로 리파인
+     - content panel 글라스모피즘 스타일 유지
+     - rail/field viewport full-height(`top:0`, `bottom:0`) 적용
    - Non-goals:
      - 채팅 API 동작 변경
      - context shelf drag attach 구현
    - Exit criteria:
      - 버튼/배경이 목업 시각 규칙(C.1)과 일치
-     - `T-017`, `T-018` 재검증 통과
+     - content panel이 리파인 후에도 유지된다(`T-021`)
+     - rail/field가 상하 여백 없이 full-height로 렌더링된다(`T-022`)
+     - `T-017`, `T-018`, `T-020` 재검증 통과
 2. Phase 2 - Chat Feature Migration (No Backend Change)
    - Scope:
      - 기존 `ChatDialog`의 메시지/요청/로딩/에러/변환 흐름을 Drawer Chat body로 이관 또는 재사용
@@ -618,3 +641,4 @@
 | UI-015 | Agent Drawer의 닫기 정책에 outside click까지 포함할지? |  |  | Open |
 | UI-016 | Mobile에서 Agent Drawer를 right panel로 유지할지 bottom sheet로 전환할지? |  |  | Open |
 | UI-017 | Context shelf 최대 카드 수/정렬 규칙(최신순, 수동정렬)을 어떻게 확정할지? |  |  | Open |
+| UI-018 | full-height 규칙에서 iOS safe-area inset을 0으로 고정할지, 환경별 보정값을 둘지? |  |  | Open |

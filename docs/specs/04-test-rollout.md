@@ -117,6 +117,8 @@
 - [ ] Tip/Chat 버튼이 동일한 원형 white 스타일(아이콘 없음)로 렌더링된다.
 - [ ] Tip 버튼 우상단의 보라색 점이 지정 크기/색상으로 렌더링된다.
 - [ ] right field가 강한 보더 없이 연한 세로 gradient(mint->yellow-green->pale blue)로 렌더링된다.
+- [ ] visual 리파인 이후에도 content panel(글라스모피즘)이 제거되지 않고 렌더링된다.
+- [ ] rail/right field가 상하 margin 없이 viewport full-height(`top:0`, `bottom:0`)를 유지한다.
 
 ## 4. Test Matrix
 
@@ -142,6 +144,8 @@
 | T-018 | UI | tip/chat mode switch | open 상태에서 Tip/Chat 전환 시 drawer 유지 + body만 전환 | P1 | Planned |
 | T-019 | UI | context shelf behavior | 상단 첨부 카드 상태 표시/삭제 및 렌더 동기화 | P1 | Planned |
 | T-020 | UI | drawer visual alignment | Tip/Chat 원형 버튼 + tip dot + field gradient가 목업과 일치 | P1 | Planned |
+| T-021 | UI | drawer content persistence | visual 리파인 후에도 content panel(글라스모피즘) 유지 | P0 | Planned |
+| T-022 | UI | drawer full-height layout | rail/right field가 상하 여백 없이 viewport를 채움 | P0 | Planned |
 
 ## 5. Go / No-Go Criteria
 - P0 결함 0건
@@ -172,6 +176,9 @@
 1. Phase 1 gate:
    - pass: `T-017`, `T-018`
    - must-keep: 기존 SuggestionPanel 클릭 흐름이 깨지지 않을 것
+1.1 Phase 1.1 gate:
+   - pass: `T-020`, `T-021`, `T-022`
+   - must-keep: content panel/close action/legacy fallback 회귀 0건
 2. Phase 2 gate:
    - pass: `T-005`, `T-006`, `T-016`, `T-018`
    - must-keep: legacy `ChatDialog` fallback 경로 유지

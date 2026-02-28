@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Update] 2026-02-28 - Drawer structure-lock policy and regression gates added
+- Summary:
+  - Right Agent Drawer 시각 리파인에서 구조 회귀를 방지하기 위해 `Structure Lock Policy`를 추가했다(삭제 금지: content panel, close action, legacy fallback).
+  - full-height 레이아웃 규칙(`top:0`, `bottom:0`)과 content glassmorphism 유지 규칙을 `06-frontend-style`에 명시했다.
+  - `04-test-rollout`에 회귀 검증 항목 `T-021`(content persistence), `T-022`(full-height)와 Phase 1.1 gate를 추가했다.
+- Scope: Frontend
+- Files: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: 사용자 지적사항(content 유지, full-height)과 정책/테스트 항목 간 매핑 수동 대조 완료
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Agent drawer visual refinement applied (Phase 1.1)
 - Summary:
   - Right Agent Drawer를 최신 목업 기준으로 리파인했다: 단순 세로 gradient field + 원형 `Tip/Chat` 버튼 + `Tip` 보라색 점.
