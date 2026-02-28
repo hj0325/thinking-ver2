@@ -5,6 +5,7 @@
 - [ ] [added: 2026-02-28] [status: decision-needed] Title/Body 타이포(폰트 패밀리, 크기, 굵기, line-height) 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] 6하원칙 chip 토큰 이름(`--chip-when` vs `--chip-where`) 최종 확정
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1.1-reopen] Right Agent Drawer 시각 리파인을 구조 회귀 없이 재적용한다(원형 Tip/Chat + 보라 점 + 단순 gradient field, content/glass/full-height 유지).
+- [ ] [added: 2026-02-28] [status: execution-needed] [Phase 1.2] Drawer 좌측 경계 블렌딩을 overlay-first(무마스크) 방식으로 재구성한다(`base linear fade + radial alpha + canvas-color edge overlay`).
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1] 우측 Agent Drawer(`Glow rail + filled field + content panel`) 열기/닫기 구조를 Tip/Chat 토글과 함께 구현한다.
 - [ ] [added: 2026-02-28] [status: execution-needed] [Phase 2] 기존 `ChatDialog` 로직을 Drawer Chat body로 이관/재사용해 채팅 기능을 유지한다.
 - [ ] [added: 2026-02-28] [status: execution-needed] [Phase 3] 우측 상단 context shelf에 노드 드래그 첨부 UI를 연결하고, 첨부 카드 맥락을 AI 응답 입력 컨텍스트로 전달한다.
@@ -118,6 +119,9 @@
 | `--agent-field-bg-base` | `#AEE7D0` | 우측 drawer field 기본 채우기 |
 | `--agent-field-radial` | `radial-gradient(100.27% 97.75% at 97.75% 50%, #E0FFF4 0%, #AEF1DA 22.12%, #BBD8E6 80.17%, #FFFFEA 100%)` | 우측 drawer radial gradient |
 | `--agent-field-feather` | `linear-gradient(90deg, rgba(166,255,211,0) 0%, rgba(166,255,211,0.72) 12%, rgba(166,255,211,0.96) 22%, rgba(166,255,211,1) 30%)` | 좌측 경계 feather(잘림 방지) |
+| `--agent-field-base-fade` | `linear-gradient(90deg, rgba(166,255,211,0) 0%, rgba(166,255,211,0.88) 14%, rgba(166,255,211,1) 30%)` | base 채움의 좌측 투명 페이드 |
+| `--agent-field-edge-overlay` | `linear-gradient(90deg, rgba(166,255,211,0.92) 0%, rgba(166,255,211,0.52) 46%, rgba(166,255,211,0) 100%)` | 좌측 경계 마감 오버레이 |
+| `--agent-field-mask-policy` | `none` | 경계 블렌딩은 mask 대신 overlay로 처리 |
 | `--agent-field-radial-blur` | `0px` | 우측 drawer radial blur (회색 눌림 방지 목적) |
 | `--agent-field-radial-border` | `none` | 우측 drawer radial overlay border |
 | `--agent-drawer-inset-top` | `0px` | Drawer 상단 여백(기본 0) |
@@ -392,7 +396,8 @@
 1. Rail and field:
    - rail은 카드형 박스보다 단순한 세로 레이어로 표현한다.
    - right field는 `base fill + radial gradient overlay` 조합으로 표현한다.
-   - 좌측 경계는 별도 `linear feather`를 추가해 잘리는 경계를 부드럽게 풀어준다.
+   - 좌측 경계는 `overlay-first` 정책으로 처리한다: `base linear fade + radial alpha + canvas-color edge overlay`.
+   - `mask-image`는 사용하지 않는다(유지보수/디버깅 단순성 우선).
    - radial 값은 `radial-gradient(100.27% 97.75% at 97.75% 50%, #E0FFF4 0%, #AEF1DA 22.12%, #BBD8E6 80.17%, #FFFFEA 100%)`를 기준으로 한다.
    - 배경이 회색으로 눌려 보이는 현상 방지를 위해 radial blur는 기본 `0px`로 유지한다.
 2. Tip/Chat buttons:
@@ -411,6 +416,20 @@
 5. Constraint:
    - 위 visual 리파인은 drawer 경계 규칙(`rail + field + content` 동시 open/close)을 변경하지 않는다.
    - content panel 구조(헤더/본문/입력 또는 동등 placeholder)는 제거하지 않는다.
+
+#### C.3 Edge Blend Strategy (Overlay-first, No Mask)
+1. Goal:
+   - Drawer 좌측 경계가 solid cut처럼 보이지 않도록 시각적으로 부드럽게 연결한다.
+2. Layer order (back to front):
+   - `base linear fade`: field 기본 채움 자체를 좌측에서 투명->불투명으로 전환
+   - `radial gradient`: 중심 색상 분위기 부여(좌측 영향은 alpha로 제한)
+   - `canvas-color edge overlay`: 좌측 경계선 위를 한 번 더 덮어 경계 마감을 부드럽게 정리
+3. Non-goals:
+   - `mask-image`/`-webkit-mask-image` 도입
+   - content panel/glass 스타일 변경
+4. Guardrails:
+   - rail의 좌측 경계 강조(white strip/고대비 보더)는 최소화해 경계가 다시 도드라지지 않게 유지
+   - field의 full-height/open-close/off-canvas motion 규칙은 그대로 유지
 
 #### C.2 Structure Lock Policy (Regression Guard)
 1. Allowed in visual refinement:
@@ -448,6 +467,8 @@
 #### F. Implementation Targets
 - `components/ThinkingMachine.jsx`:
   - drawer open/mode state 및 keyboard close(`Esc`) 관리
+- `components/RightAgentDrawer.jsx`:
+  - field 배경 합성(`base linear fade + radial + edge overlay`)과 경계 시각 품질 제어
 - `components/SuggestionPanel.jsx`:
   - 필요 시 rail/context shelf와의 상호작용 이벤트 연결
 - `components/ChatDialog.jsx`:
@@ -482,6 +503,17 @@
      - content panel이 리파인 후에도 유지된다(`T-021`)
      - rail/field가 상하 여백 없이 full-height로 렌더링된다(`T-022`)
      - `T-017`, `T-018`, `T-020` 재검증 통과
+1.2 Phase 1.2 - Left Edge Blend Stabilization (Overlay-first)
+   - Scope:
+     - field 좌측 경계를 `overlay-first` 방식으로 재구성(`base linear fade + radial alpha + canvas edge overlay`)
+     - `mask`/`blur` 없이 경계 품질 확보
+   - Non-goals:
+     - content panel glass 토큰/구조 수정
+     - drawer 인터랙션 동작 변경
+   - Exit criteria:
+     - 좌측 경계가 solid cut 없이 자연스럽게 보인다
+     - content panel 시각/구조 회귀 없음
+     - `T-020`, `T-021`, `T-022` + 경계 QA 항목 통과
 2. Phase 2 - Chat Feature Migration (No Backend Change)
    - Scope:
      - 기존 `ChatDialog`의 메시지/요청/로딩/에러/변환 흐름을 Drawer Chat body로 이관 또는 재사용
@@ -650,3 +682,4 @@
 | UI-016 | Mobile에서 Agent Drawer를 right panel로 유지할지 bottom sheet로 전환할지? |  |  | Open |
 | UI-017 | Context shelf 최대 카드 수/정렬 규칙(최신순, 수동정렬)을 어떻게 확정할지? |  |  | Open |
 | UI-018 | full-height 규칙에서 iOS safe-area inset을 0으로 고정할지, 환경별 보정값을 둘지? |  |  | Open |
+| UI-019 | Drawer 좌측 경계 블렌딩 방식을 `mask`로 할지 `overlay-first`로 할지? |  |  | Resolved (`overlay-first`, 2026-02-28) |

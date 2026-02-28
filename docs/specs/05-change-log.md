@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Update] 2026-02-28 - Drawer edge blend spec updated to overlay-first (no mask)
+- Summary:
+  - Drawer 좌측 경계 처리 정책을 `overlay-first`(무마스크)로 명확히 고정했다.
+  - `06-frontend-style`에 `base linear fade + radial alpha + canvas-color edge overlay` 3레이어 규칙과 Phase 1.2 실행 범위를 추가했다.
+  - `04-test-rollout`에 무마스크 검증/경계 부각 완화 항목과 `T-023`(left-edge blend quality)를 추가했다.
+- Scope: Frontend
+- Files: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: 사용자 결정(유지보수/안정성 우선, overlay 방식)과 스펙/QA 항목 매핑 수동 대조 완료
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Drawer left-edge feather gradient applied (no blur)
 - Summary:
   - Drawer 좌측 경계가 잘려 보이는 현상을 줄이기 위해 background에 `linear feather` 레이어를 추가했다.

@@ -118,6 +118,9 @@
 - [ ] Tip 버튼 우상단의 보라색 점이 지정 크기/색상으로 렌더링된다.
 - [ ] right field가 `base fill + radial gradient`(우측 기준 radial, blur 없음)로 렌더링된다.
 - [ ] right field 좌측 경계가 feather linear 처리되어 잘린 선 없이 부드럽게 보인다.
+- [ ] 좌측 경계 처리가 `overlay-first`(`base linear fade + canvas-color edge overlay`) 규칙을 따른다.
+- [ ] 경계 블렌딩 구현에 `mask-image`/`-webkit-mask-image`가 사용되지 않는다.
+- [ ] rail의 경계 강조(strong strip/border)가 완화되어 경계가 다시 선처럼 보이지 않는다.
 - [ ] visual 리파인 이후에도 content panel(글라스모피즘)이 제거되지 않고 렌더링된다.
 - [ ] rail/right field가 상하 margin 없이 viewport full-height(`top:0`, `bottom:0`)를 유지한다.
 
@@ -147,6 +150,7 @@
 | T-020 | UI | drawer visual alignment | Tip/Chat 원형 버튼 + tip dot + field gradient가 목업과 일치 | P1 | Planned |
 | T-021 | UI | drawer content persistence | visual 리파인 후에도 content panel(글라스모피즘) 유지 | P0 | Planned |
 | T-022 | UI | drawer full-height layout | rail/right field가 상하 여백 없이 viewport를 채움 | P0 | Planned |
+| T-023 | UI | drawer left-edge blend quality | overlay-first 경계 블렌딩 + 무마스크 + 경계선 부각 완화 | P1 | Planned |
 
 ## 5. Go / No-Go Criteria
 - P0 결함 0건
