@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Update] 2026-02-28 - Pre-patch spec tightened for edge seam removal (Phase 1.4)
+- Summary:
+  - 실제 패치 전 스펙으로 Drawer 경계 개선 원칙 4가지를 확정했다: `base/radial alpha 0 종료`, `neutral alpha overlay-only`, `rail strip 추가 약화`, `content safe inset 확대`.
+  - `06-frontend-style`에 Phase 1.4 실행 항목, alpha termination policy, target 토큰(`safe inset`, `rail strip`, `overlay role`)을 추가했다.
+  - `04-test-rollout`에 alpha 정책 검증 체크리스트와 `T-025`를 추가했다.
+- Scope: Frontend
+- Files: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: 사용자 합의 항목(4개)과 스펙/QA 항목 매핑 수동 대조 완료
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Drawer edge-safe inset and transparent tail tuning
 - Summary:
   - Drawer 경계 절단감을 줄이기 위해 field 배경 값을 재조정했다(`base fade` 확장, `radial alpha` 완화, `edge overlay` 투명 꼬리 강화).

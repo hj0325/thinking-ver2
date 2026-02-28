@@ -121,9 +121,11 @@
 - [ ] 좌측 경계 처리가 `overlay-first`(`base linear fade + canvas-color edge overlay`) 규칙을 따른다.
 - [ ] 좌측 `edge overlay`가 충분한 폭(`64px`)으로 적용되어 경계가 시각적으로 끊기지 않는다.
 - [ ] `edge overlay` linear gradient 끝점이 완전 투명(`alpha 0`)으로 처리된다.
+- [ ] `base fade` 시작점(alpha)과 `radial` 말단(alpha)이 모두 `0`으로 종료된다.
+- [ ] edge overlay가 색 보정용이 아니라 neutral alpha-fade 용도로만 사용된다.
 - [ ] 경계 블렌딩 구현에 `mask-image`/`-webkit-mask-image`가 사용되지 않는다.
-- [ ] rail의 경계 강조(strong strip/border)가 완화되어 경계가 다시 선처럼 보이지 않는다.
-- [ ] content 영역이 좌우 안전 여백(`left 32px`, `right 24px`)을 유지해 glass blur가 경계까지 닿지 않는다.
+- [ ] rail의 경계 강조(strip)가 저강도(`alpha <= 0.10`, 폭 축소)로 완화되어 경계가 다시 선처럼 보이지 않는다.
+- [ ] content 영역이 좌우 안전 여백(`left 40px`, `right 28px`)을 유지해 glass blur가 경계까지 닿지 않는다.
 - [ ] visual 리파인 이후에도 content panel(글라스모피즘)이 제거되지 않고 렌더링된다.
 - [ ] rail/right field가 상하 margin 없이 viewport full-height(`top:0`, `bottom:0`)를 유지한다.
 
@@ -155,6 +157,7 @@
 | T-022 | UI | drawer full-height layout | rail/right field가 상하 여백 없이 viewport를 채움 | P0 | Planned |
 | T-023 | UI | drawer left-edge blend quality | overlay-first 경계 블렌딩 + 무마스크 + 경계선 부각 완화 | P1 | Planned |
 | T-024 | UI | drawer edge-safe inset | content safe inset과 transparent tail 적용으로 경계 절단감 제거 | P1 | Planned |
+| T-025 | UI | drawer alpha-tail policy | base/radial alpha 0 종료 + neutral alpha overlay-only 정책 준수 | P1 | Planned |
 
 ## 5. Go / No-Go Criteria
 - P0 결함 0건

@@ -7,6 +7,7 @@
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1.1-reopen] Right Agent Drawer 시각 리파인을 구조 회귀 없이 재적용한다(원형 Tip/Chat + 보라 점 + 단순 gradient field, content/glass/full-height 유지).
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1.2] Drawer 좌측 경계 블렌딩을 overlay-first(무마스크) 방식으로 재구성한다(`base linear fade + radial alpha + canvas-color edge overlay`).
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1.3] Drawer 좌측 경계 품질 보정을 위해 `content safe inset`과 `transparent tail`을 강화한다.
+- [ ] [added: 2026-02-28] [status: execution-needed] [Phase 1.4] 경계 미세 절단감 제거를 위해 `alpha-tail 0 종료 + neutral alpha overlay + rail strip 약화 + safe inset 확대`를 적용한다.
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1] 우측 Agent Drawer(`Glow rail + filled field + content panel`) 열기/닫기 구조를 Tip/Chat 토글과 함께 구현한다.
 - [ ] [added: 2026-02-28] [status: execution-needed] [Phase 2] 기존 `ChatDialog` 로직을 Drawer Chat body로 이관/재사용해 채팅 기능을 유지한다.
 - [ ] [added: 2026-02-28] [status: execution-needed] [Phase 3] 우측 상단 context shelf에 노드 드래그 첨부 UI를 연결하고, 첨부 카드 맥락을 AI 응답 입력 컨텍스트로 전달한다.
@@ -119,11 +120,15 @@
 | `--agent-tip-dot-color` | `#C084FC` | Tip 버튼 상태 점 색상 |
 | `--agent-field-bg-base` | `#AEE7D0` | 우측 drawer field 기본 채우기 |
 | `--agent-field-radial` | `radial-gradient(100.27% 97.75% at 97.75% 50%, #E0FFF4 0%, #AEF1DA 22.12%, #BBD8E6 80.17%, #FFFFEA 100%)` | 우측 drawer radial gradient |
-| `--agent-field-base-fade` | `linear-gradient(90deg, rgba(166,255,211,0) 0%, rgba(166,255,211,0.74) 22%, rgba(166,255,211,1) 42%)` | base 채움의 좌측 투명 페이드 |
-| `--agent-field-edge-overlay` | `linear-gradient(90deg, rgba(166,255,211,0.98) 0%, rgba(166,255,211,0.78) 38%, rgba(166,255,211,0.26) 72%, rgba(166,255,211,0) 100%)` | 좌측 경계 마감 오버레이(끝점 완전 투명) |
+| `--agent-field-base-fade` | `linear-gradient(90deg, rgba(166,255,211,0) 0%, rgba(166,255,211,0.70) 24%, rgba(166,255,211,1) 46%)` | base 채움의 좌측 투명 페이드(끝점 alpha 0 보장) |
+| `--agent-field-radial-tail-alpha` | `0` (at 100%) | radial gradient 말단 alpha 종료값 |
+| `--agent-field-edge-overlay` | `linear-gradient(90deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.10) 42%, rgba(255,255,255,0) 100%)` | 좌측 경계 neutral alpha-fade 오버레이 |
+| `--agent-field-edge-overlay-role` | `alpha-fade-only` | 오버레이 용도(색 보정 금지) |
 | `--agent-field-edge-overlay-width` | `64px` | 좌측 경계 마감 오버레이 폭 |
-| `--agent-content-safe-inset-left` | `32px` | 좌측 경계와 glass 콘텐츠 간 안전 여백 |
-| `--agent-content-safe-inset-right` | `24px` | 우측 경계와 glass 콘텐츠 간 안전 여백 |
+| `--agent-content-safe-inset-left` | `40px` (phase 1.4 target) | 좌측 경계와 glass 콘텐츠 간 안전 여백 |
+| `--agent-content-safe-inset-right` | `28px` (phase 1.4 target) | 우측 경계와 glass 콘텐츠 간 안전 여백 |
+| `--agent-rail-strip-opacity-peak` | `0.10` (phase 1.4 target) | rail 경계 강조 strip 최대 alpha |
+| `--agent-rail-strip-width` | `4px` (phase 1.4 target) | rail 경계 강조 strip 폭 |
 | `--agent-field-mask-policy` | `none` | 경계 블렌딩은 mask 대신 overlay로 처리 |
 | `--agent-field-radial-blur` | `0px` | 우측 drawer radial blur (회색 눌림 방지 목적) |
 | `--agent-field-radial-border` | `none` | 우측 drawer radial overlay border |
@@ -403,6 +408,7 @@
    - `mask-image`는 사용하지 않는다(유지보수/디버깅 단순성 우선).
    - radial 값은 `radial-gradient(100.27% 97.75% at 97.75% 50%, #E0FFF4 0%, #AEF1DA 22.12%, #BBD8E6 80.17%, #FFFFEA 100%)`를 기준으로 한다.
    - 배경이 회색으로 눌려 보이는 현상 방지를 위해 radial blur는 기본 `0px`로 유지한다.
+   - 경계 seam 제거를 위해 `base/radial` 말단 alpha는 모두 `0`으로 종료한다.
 2. Tip/Chat buttons:
    - 버튼은 동일한 원형 크기(`--agent-toggle-size`)로 통일한다.
    - 기본 스타일:
@@ -426,14 +432,18 @@
 2. Layer order (back to front):
    - `base linear fade`: field 기본 채움 자체를 좌측에서 투명->불투명으로 전환
    - `radial gradient`: 중심 색상 분위기 부여(좌측 영향은 alpha로 제한)
-   - `canvas-color edge overlay`: 좌측 경계선 위를 한 번 더 덮어 경계 마감을 부드럽게 정리
-   - `content safe inset`: glass 패널/카드가 좌측 경계에 닿지 않도록 `left 32px`, `right 24px` 내부 여백 유지
+   - `neutral alpha edge overlay`: 색 보정이 아닌 투명 페이드 전용 오버레이로 경계 마감을 정리
+   - `content safe inset`: glass 패널/카드가 좌측 경계에 닿지 않도록 `left 40px`, `right 28px` 내부 여백 유지
 3. Non-goals:
    - `mask-image`/`-webkit-mask-image` 도입
    - content panel/glass 스타일 변경
 4. Guardrails:
-   - rail의 좌측 경계 강조(white strip/고대비 보더)는 최소화해 경계가 다시 도드라지지 않게 유지
+   - rail의 좌측 경계 강조(strip)는 `low-alpha + narrow-width`로 약화해 경계가 다시 도드라지지 않게 유지
    - field의 full-height/open-close/off-canvas motion 규칙은 그대로 유지
+5. Alpha termination policy:
+   - `base fade`의 좌측 tail은 `alpha 0`으로 시작해야 한다.
+   - `radial gradient`의 말단(outer edge)은 `alpha 0`으로 끝나야 한다.
+   - `edge overlay`는 중립색 기반이며 마지막 stop이 반드시 `alpha 0`이어야 한다.
 
 #### C.2 Structure Lock Policy (Regression Guard)
 1. Allowed in visual refinement:
@@ -528,6 +538,18 @@
    - Exit criteria:
      - 좌측 경계가 여전히 끊겨 보이지 않는다
      - `T-023`, `T-024` 통과
+1.4 Phase 1.4 - Alpha-tail Zero and Neutral Overlay Enforcement
+   - Scope:
+     - `base/radial` 말단 alpha를 `0`으로 강제 종료
+     - edge overlay를 `neutral alpha-fade only`로 고정(색 보정 목적 사용 금지)
+     - rail 경계 strip를 추가 약화(`opacity peak 0.10`, `width 4px`)
+     - content safe inset을 `left 40px/right 28px`로 확대
+   - Non-goals:
+     - drawer 구조 변경
+     - mask/blur 기반 기법 도입
+   - Exit criteria:
+     - 좌측 경계 미세 절단감이 시각적으로 사라진다
+     - `T-023`, `T-024` + alpha 정책 QA 항목 통과
 2. Phase 2 - Chat Feature Migration (No Backend Change)
    - Scope:
      - 기존 `ChatDialog`의 메시지/요청/로딩/에러/변환 흐름을 Drawer Chat body로 이관 또는 재사용
