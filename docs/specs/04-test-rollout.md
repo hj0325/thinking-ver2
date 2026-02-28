@@ -85,6 +85,7 @@
 - [ ] endpoint 포트는 white ring + 내부 category color 조합으로 렌더링된다.
 - [ ] 포트 기준점이 카드 상단 기준 `52px` 위치에 고정된다.
 - [ ] 다중 연결 시 포트/선이 동일 위치에 완전히 겹치지 않고 fanout 오프셋으로 분산된다.
+- [ ] fanout 슬롯이 상대 노드 Y 위치 순으로 정렬되어 선 교차가 최소화된다.
 - [ ] `Problem`/`Solution` 연결은 항상 `Problem -> Solution` 방향으로 렌더링된다.
 - [ ] 그 외 연결은 노드 좌->우 방향으로 정규화되어 렌더링된다.
 - [ ] 선이 카드 본문을 가로지르지 않고 card boundary 바깥 clearance 경로를 따른다.

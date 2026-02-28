@@ -15,10 +15,13 @@ const INITIAL_NODES = [];
 const INITIAL_EDGES = [];
 const SOURCE_HANDLE_ID = "right-source";
 const TARGET_HANDLE_ID = "left-target";
-const FANOUT_PATTERN = [0, -6, 6, -12, 12];
+const FANOUT_STEP = 26;
+const FANOUT_MAX = 104;
 const EDGE_CLEARANCE_X = 20;
 const EDGE_LINE_WIDTH = 4;
 const EDGE_LINE_COLOR = "#FFFFFF";
+const EDGE_CORNER_RADIUS = 24;
+const EDGE_LANE_GAP = 80;
 
 const CHIP_BG_COLORS = {
     When: "#9DBCFF",
@@ -96,20 +99,75 @@ function buildNodeStyle() {
     };
 }
 
-function getFanoutOffset(index) {
-    if (!Number.isFinite(index) || index < 0) return 0;
-    return FANOUT_PATTERN[index % FANOUT_PATTERN.length];
+function countExistingBySide(currentEdges) {
+    const sourceCounts = new Map();
+    const targetCounts = new Map();
+    currentEdges.forEach((edge) => {
+        sourceCounts.set(edge.source, (sourceCounts.get(edge.source) || 0) + 1);
+        targetCounts.set(edge.target, (targetCounts.get(edge.target) || 0) + 1);
+    });
+    return { sourceCounts, targetCounts };
 }
 
-function seedEdgeSideCounts(counts, currentEdges) {
-    currentEdges.forEach((edge) => {
-        const sourceHandle = edge.sourceHandle || SOURCE_HANDLE_ID;
-        const targetHandle = edge.targetHandle || TARGET_HANDLE_ID;
-        const sourceKey = `${edge.source}:${sourceHandle}`;
-        const targetKey = `${edge.target}:${targetHandle}`;
-        counts.set(sourceKey, (counts.get(sourceKey) || 0) + 1);
-        counts.set(targetKey, (counts.get(targetKey) || 0) + 1);
+function getNodeY(node) {
+    const y = node?.position?.y;
+    return Number.isFinite(y) ? Number(y) : 0;
+}
+
+function computeFanoutOffset(slot, total) {
+    if (!Number.isFinite(slot) || !Number.isFinite(total) || total <= 1) return 0;
+    const center = (total - 1) / 2;
+    const raw = (slot - center) * FANOUT_STEP;
+    return Math.max(-FANOUT_MAX, Math.min(FANOUT_MAX, raw));
+}
+
+function assignSideMeta(normalizedEdges, nodeMap, currentEdges) {
+    const { sourceCounts, targetCounts } = countExistingBySide(currentEdges);
+    const sourceMeta = new Map();
+    const targetMeta = new Map();
+
+    const sourceGroups = new Map();
+    const targetGroups = new Map();
+
+    normalizedEdges.forEach((edge) => {
+        const s = sourceGroups.get(edge.source) || [];
+        s.push(edge);
+        sourceGroups.set(edge.source, s);
+
+        const t = targetGroups.get(edge.target) || [];
+        t.push(edge);
+        targetGroups.set(edge.target, t);
     });
+
+    sourceGroups.forEach((list, nodeId) => {
+        const base = sourceCounts.get(nodeId) || 0;
+        const sorted = [...list].sort((a, b) => {
+            const ay = getNodeY(nodeMap.get(a.target));
+            const by = getNodeY(nodeMap.get(b.target));
+            if (ay === by) return String(a.id).localeCompare(String(b.id));
+            return ay - by;
+        });
+        const total = base + sorted.length;
+        sorted.forEach((edge, idx) => {
+            sourceMeta.set(edge.id, { slot: base + idx, total });
+        });
+    });
+
+    targetGroups.forEach((list, nodeId) => {
+        const base = targetCounts.get(nodeId) || 0;
+        const sorted = [...list].sort((a, b) => {
+            const ay = getNodeY(nodeMap.get(a.source));
+            const by = getNodeY(nodeMap.get(b.source));
+            if (ay === by) return String(a.id).localeCompare(String(b.id));
+            return ay - by;
+        });
+        const total = base + sorted.length;
+        sorted.forEach((edge, idx) => {
+            targetMeta.set(edge.id, { slot: base + idx, total });
+        });
+    });
+
+    return { sourceMeta, targetMeta };
 }
 
 function buildNodeCategoryMap(nodeList) {
@@ -166,22 +224,16 @@ function normalizeEdgeDirection(edge, nodeMap) {
 }
 
 function toConnectorEdges(rawEdges, nodeList, currentEdges = []) {
-    const counts = new Map();
     const categoryMap = buildNodeCategoryMap(nodeList);
     const nodeMap = buildNodeMap(nodeList);
-    seedEdgeSideCounts(counts, currentEdges);
+    const normalizedEdges = rawEdges.map((edge) => normalizeEdgeDirection(edge, nodeMap));
+    const { sourceMeta, targetMeta } = assignSideMeta(normalizedEdges, nodeMap, currentEdges);
 
-    return rawEdges.map((edge) => {
-        const normalizedEdge = normalizeEdgeDirection(edge, nodeMap);
+    return normalizedEdges.map((normalizedEdge) => {
         const sourceHandle = SOURCE_HANDLE_ID;
         const targetHandle = TARGET_HANDLE_ID;
-        const sourceKey = `${normalizedEdge.source}:${sourceHandle}`;
-        const targetKey = `${normalizedEdge.target}:${targetHandle}`;
-
-        const sourceIndex = counts.get(sourceKey) || 0;
-        const targetIndex = counts.get(targetKey) || 0;
-        counts.set(sourceKey, sourceIndex + 1);
-        counts.set(targetKey, targetIndex + 1);
+        const source = sourceMeta.get(normalizedEdge.id) || { slot: 0, total: 1 };
+        const target = targetMeta.get(normalizedEdge.id) || { slot: 0, total: 1 };
 
         return {
             id: normalizedEdge.id,
@@ -195,11 +247,13 @@ function toConnectorEdges(rawEdges, nodeList, currentEdges = []) {
             data: {
                 sourceCategory: categoryMap.get(normalizedEdge.source) || "What",
                 targetCategory: categoryMap.get(normalizedEdge.target) || "What",
-                sourceOffsetY: getFanoutOffset(sourceIndex),
-                targetOffsetY: getFanoutOffset(targetIndex),
+                sourceOffsetY: computeFanoutOffset(source.slot, source.total),
+                targetOffsetY: computeFanoutOffset(target.slot, target.total),
                 clearanceX: EDGE_CLEARANCE_X,
                 lineWidth: EDGE_LINE_WIDTH,
                 lineColor: EDGE_LINE_COLOR,
+                cornerRadius: EDGE_CORNER_RADIUS,
+                laneGap: EDGE_LANE_GAP,
             },
         };
     });

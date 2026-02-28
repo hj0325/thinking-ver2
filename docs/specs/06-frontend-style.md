@@ -118,10 +118,11 @@
 | `--edge-port-inner-size` | `12px` | 포트 내부 컬러 원 |
 | `--edge-port-ring-color` | `#FFFFFF` | 포트 외곽 링 색상 |
 | `--edge-clearance-x` | `20px` | 카드에서 선이 빠져나갈 최소 수평 이격 |
-| `--edge-fanout-step` | `6px` | 다중 엣지 미세 분산 간격 |
-| `--edge-fanout-max` | `12px` | 다중 엣지 미세 분산 최대 절대값 |
+| `--edge-fanout-step` | `26px` | 다중 엣지 미세 분산 간격 (포트 중첩 방지) |
+| `--edge-fanout-max` | `104px` | 다중 엣지 미세 분산 최대 절대값 |
 | `--edge-routing-mode` | `orthogonal-arc` | 직교 경로 + arc 코너 방식 |
 | `--edge-corner-radius` | `24px` (initial) | 직교 코너 arc 반지름 |
+| `--edge-lane-gap` | `80px` | 역순/혼잡 배치 시 상하 우회 lane 간격 |
 
 ## 7. Component Style Template
 | Component | Structure | States | Variant | Notes |
@@ -276,15 +277,17 @@
 #### C. Overlap Risk Mitigation
 1. Multi-edge overlap (same side, same node):
    - `52px` 기준점을 유지하면서 미세 분산(fanout) 적용
-   - offset sequence example: `0, -6, +6, -12, +12`
+   - offset is derived from slot order and total degree per side
+   - offset sequence example: `0, -26, +26, -52, +52`
    - fanout 범위는 `--edge-fanout-max` 이내
+   - slot order는 상대 노드의 Y 위치 기준으로 자동 정렬(위 연결은 위 포트, 아래 연결은 아래 포트)
 2. Card overlap (line crossing card body):
    - 카드 측면 포트에서 즉시 수평 이탈(`--edge-clearance-x`) 후 경로 진행
    - source clear point -> orthogonal lane -> target clear point -> target 포트 순으로 경로 구성
    - 각 꺾임점은 `arc`로 라운딩 처리(`--edge-corner-radius`)
    - 목적: 선이 카드 본문/라운드 코너 영역을 가로지르지 않도록 보장
 3. Reverse placement (right-to-left layouts):
-   - 노드가 역순으로 배치된 경우 상/하 우회 lane을 통해 ㄹ자 경로를 우선 적용
+   - 노드가 역순으로 배치된 경우 상/하 우회 lane(`--edge-lane-gap`)을 통해 ㄹ자 경로를 우선 적용
    - 코너는 동일하게 arc 라운딩 처리
 
 #### D. Logical Flow Policy

@@ -26,6 +26,19 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Orthogonal arc routing and adaptive port ordering applied
+- Summary:
+  - connector path를 Bezier 기반에서 `orthogonal + arc` 방식으로 전환해 직교 경로의 코너를 arc로 라운딩 처리했다.
+  - 카드 역순/혼잡 배치에서 상하 우회 lane(ㄹ자 경로)을 사용하도록 라우팅 규칙을 적용했다.
+  - fanout 오프셋을 확대(`step 26`, `max 104`)해 다중 포트 중첩을 완화했다.
+  - 포트 슬롯을 상대 노드 Y 위치 기준으로 자동 정렬해 다중 연결 시 선 꼬임/교차를 줄였다.
+  - 스펙/테스트 문서를 코드 구현값(arc, lane gap, fanout 수치, 정렬 규칙)으로 동기화했다.
+- Scope: Frontend
+- Files: `components/ThinkingMachine.jsx`, `components/edges/ConnectorEdge.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: 라우팅 함수와 슬롯 정렬 로직 수동 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Update] 2026-02-28 - Connector routing mode finalized as orthogonal + arc
 - Summary:
   - 노드 연결선 경로 방식을 `orthogonal + arc corner`로 확정하고 `06-frontend-style`에 토큰(`--edge-routing-mode`, `--edge-corner-radius`)을 추가했다.
