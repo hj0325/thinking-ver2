@@ -102,6 +102,8 @@
 ### 3.7 Manual QA Checklist (Top Bar)
 - [ ] 상단에 Top bar가 `12px 36px` 패딩으로 고정 렌더링된다.
 - [ ] 좌측 Home 아이콘은 제공된 custom SVG path 모양으로 렌더링된다.
+- [ ] Home 아이콘이 `24x24` 정사각 프레임 내부에서 중앙 정렬된다.
+- [ ] Top bar가 좌/우 동일 폭 슬롯 구조를 사용해 중앙 타이틀 균형이 유지된다.
 - [ ] 중앙 텍스트 `Visual Thinking Machine`이 고정 노출된다.
 - [ ] Home 클릭 시 `/` 경로로 이동한다.
 
@@ -132,6 +134,7 @@
 - [ ] 경계 블렌딩 구현에 `mask-image`/`-webkit-mask-image`가 사용되지 않는다.
 - [ ] rail의 경계 강조(strip)가 저강도(`alpha <= 0.10`, 폭 축소)로 완화되어 경계가 다시 선처럼 보이지 않는다.
 - [ ] content 영역이 좌우 안전 여백(`left 40px`, `right 28px`)을 유지해 glass blur가 경계까지 닿지 않는다.
+- [ ] drawer open 상태에서도 context shelf/glass content가 Top Bar 영역과 겹치지 않는다(`top safe zone` 적용).
 - [ ] visual 리파인 이후에도 content panel(글라스모피즘)이 제거되지 않고 렌더링된다.
 - [ ] rail/right field가 상하 margin 없이 viewport full-height(`top:0`, `bottom:0`)를 유지한다.
 
@@ -164,7 +167,8 @@
 | T-023 | UI | drawer left-edge blend quality | overlay-first 경계 블렌딩 + 무마스크 + 경계선 부각 완화 | P1 | Planned |
 | T-024 | UI | drawer edge-safe inset | content safe inset과 transparent tail 적용으로 경계 절단감 제거 | P1 | Planned |
 | T-025 | UI | drawer alpha-tail policy | base/radial alpha 0 종료 + neutral alpha overlay-only 정책 준수 | P1 | Planned |
-| T-026 | UI | top bar composition | Home 아이콘 + 중앙 타이틀 + 오버레이 레이아웃 유지 | P1 | Planned |
+| T-026 | UI | top bar composition | Home 아이콘(24px frame) + 중앙 타이틀 + 좌우 고정 슬롯 균형 유지 | P1 | Planned |
+| T-027 | UI | drawer top safe-zone | drawer 콘텐츠가 Top Bar 영역과 겹치지 않고 rail full-height 규칙을 유지 | P1 | Planned |
 
 ## 5. Go / No-Go Criteria
 - P0 결함 0건

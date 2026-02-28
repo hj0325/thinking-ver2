@@ -4,6 +4,8 @@
 - [ ] [added: 2026-02-28] [status: decision-needed] Node image 비율/크롭 규칙(`cover` vs `contain`)을 Figma Inspect 기준으로 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] Title/Body 타이포(폰트 패밀리, 크기, 굵기, line-height) 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] 6하원칙 chip 토큰 이름(`--chip-when` vs `--chip-where`) 최종 확정
+- [x] [added: 2026-02-28] [status: completed 2026-02-28] Right Agent Drawer content 영역에 Top Bar safe zone을 적용해 상단 겹침을 제거한다.
+- [x] [added: 2026-02-28] [status: completed 2026-02-28] Top Bar 광학 중심 보정을 위해 아이콘 정사각 프레임 + 좌우 고정 슬롯 레이아웃을 적용한다.
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1.1-reopen] Right Agent Drawer 시각 리파인을 구조 회귀 없이 재적용한다(원형 Tip/Chat + 보라 점 + 단순 gradient field, content/glass/full-height 유지).
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1.2] Drawer 좌측 경계 블렌딩을 overlay-first(무마스크) 방식으로 재구성한다(`base linear fade + radial alpha + canvas-color edge overlay`).
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1.3] Drawer 좌측 경계 품질 보정을 위해 `content safe inset`과 `transparent tail`을 강화한다.
@@ -127,6 +129,7 @@
 | `--agent-field-edge-overlay-width` | `64px` | 좌측 경계 마감 오버레이 폭 |
 | `--agent-content-safe-inset-left` | `40px` (phase 1.4 target) | 좌측 경계와 glass 콘텐츠 간 안전 여백 |
 | `--agent-content-safe-inset-right` | `28px` (phase 1.4 target) | 우측 경계와 glass 콘텐츠 간 안전 여백 |
+| `--agent-content-safe-inset-top` | `56px` (target) | Drawer content 상단 보호 여백(Top Bar overlap 방지) |
 | `--agent-rail-strip-opacity-peak` | `0.10` (phase 1.4 target) | rail 경계 강조 strip 최대 alpha |
 | `--agent-rail-strip-width` | `4px` (phase 1.4 target) | rail 경계 강조 strip 폭 |
 | `--agent-field-mask-policy` | `none` | 경계 블렌딩은 mask 대신 overlay로 처리 |
@@ -190,6 +193,9 @@
 | `--topbar-home-icon` | `custom inline svg` | 좌측 홈 아이콘 소스 |
 | `--topbar-home-icon-size` | `24px` | 홈 아이콘 width/height |
 | `--topbar-home-icon-aspect` | `1 / 1` | 홈 아이콘 비율 |
+| `--topbar-icon-frame-size` | `24px` | 홈 아이콘 정사각 프레임 크기 |
+| `--topbar-side-slot-width` | `92px` (initial) | 좌/우 고정 슬롯 폭(중앙 정렬 균형) |
+| `--topbar-safe-zone-h` | `56px` | Top bar + 여유를 포함한 상단 보호 높이 |
 | `--topbar-text-color` | `#838383` | Home/Title 텍스트 색상 |
 | `--topbar-font-family` | `"Instrument Sans"` | Home/Title 폰트 |
 | `--topbar-font-size` | `16px` | Home/Title 폰트 크기 |
@@ -207,7 +213,7 @@
 | Canvas Stage Background | `single-surface fill + central stage gradient` | fixed-stage (initial) | 4 stage color presets | right-edge glow excluded |
 | Canvas Pan Interaction | `empty-space drag` | idle/panning/dragging-node | modifier/no-modifier | NodeMap interaction spec |
 | Node Connector Edge | `edge + connected-side endpoint ports` | default/highlighted/overlapped | input/chat/cross | logical flow with fixed source/target semantics |
-| Top Bar | `left home action + centered title + right spacer` | default | desktop overlay | top padding `12px 36px` |
+| Top Bar | `left home action + centered title + right fixed slot` | default | desktop overlay | top padding `12px 36px` |
 | Admin Shortcut + Status Overlay | `shortcut hint + admin status badge` | hint-visible/admin-off/admin-on | first-entry / dismissed | prototype status visibility control |
 | Right Agent Drawer (Tip/Chat) | `glow rail + filled field + content panel` | closed/open-tip/open-chat | with-context / no-context | drawer boundary includes rail and right field |
 
@@ -223,6 +229,12 @@
 - `width: 24px`
 - `height: 24px`
 - `aspect-ratio: 1 / 1`
+- 아이콘은 `24x24` 정사각 프레임 안에서 `center` 정렬한다.
+- 아이콘 프레임 기준:
+  - `display: inline-flex`
+  - `align-items: center`
+  - `justify-content: center`
+  - `flex-shrink: 0`
 
 ```svg
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -238,6 +250,13 @@
 - `font-weight: 500`
 - `line-height: 100%` (`16px`)
 - `letter-spacing: -0.352px`
+
+#### D. Optical Centering Strategy
+- Top bar는 `left slot / center title / right slot` 3영역으로 구성한다.
+- 좌우 슬롯은 `--topbar-side-slot-width` 고정 폭을 사용해 시각적 균형을 유지한다.
+- 좌측 슬롯에는 Home 클러스터를 배치하고, 우측 슬롯은 비어 있더라도 동일 폭을 유지한다.
+- 중앙 타이틀은 좌측 콘텐츠 폭 변화와 무관하게 viewport 중심 정렬을 유지해야 한다.
+- 1차 구현은 `fixed slot width`를 사용하고, 동적 측정(`ResizeObserver`) 방식은 범위에서 제외한다.
 
 ### 7.1 Node Card (Mockup V1 Spec)
 #### A. Container
@@ -522,6 +541,8 @@
   - 우측 고정 drawer
   - rail은 캔버스와 right field 경계선에 인접
   - rail/right field는 viewport 높이를 꽉 채운다(`top: 0`, `bottom: 0`)
+  - right field 내부 content stack(context shelf + glass panel)은 `--agent-content-safe-inset-top`만큼 아래에서 시작한다.
+  - 상단 보호영역(`--topbar-safe-zone-h`)은 Top Bar와 Drawer 콘텐츠 겹침 방지 목적이며, rail 버튼 세로 중앙 정렬에는 영향을 주지 않는다.
   - drawer는 `field fixed width + off-canvas translate`로 열고 닫는다(중간 폭 리플로우로 인한 줄바꿈 변경 방지)
   - content panel은 right field 내부에서 상/중/하(헤더/메시지/입력)로 구성
 - Mobile:
@@ -719,6 +740,8 @@
 
 ### 8.1 Top Bar Interaction
 - 좌측 `Home`는 custom inline SVG 아이콘 + `Home` 텍스트 조합으로 구성한다.
+- 홈 아이콘은 `24x24` 정사각 프레임 안에 배치되어야 하며 glyph가 프레임 중앙에 정렬되어야 한다.
+- Top bar는 좌우 동일 폭 고정 슬롯(`--topbar-side-slot-width`)을 사용해 중앙 타이틀 균형을 유지한다.
 - 중앙 타이틀은 `Visual Thinking Machine` 고정 문자열을 사용한다.
 - Top bar는 캔버스 상단 오버레이로 렌더링하고, 홈 링크 외 영역은 pointer-events를 차단한다.
 
@@ -775,3 +798,5 @@
 | UI-017 | Context shelf 최대 카드 수/정렬 규칙(최신순, 수동정렬)을 어떻게 확정할지? |  |  | Open |
 | UI-018 | full-height 규칙에서 iOS safe-area inset을 0으로 고정할지, 환경별 보정값을 둘지? |  |  | Open |
 | UI-019 | Drawer 좌측 경계 블렌딩 방식을 `mask`로 할지 `overlay-first`로 할지? |  |  | Resolved (`overlay-first`, 2026-02-28) |
+| UI-021 | Top Bar 중앙 정렬 균형을 동적 측정으로 할지 고정 슬롯으로 할지? |  |  | Resolved (`fixed side slots`, 2026-02-28) |
+| UI-022 | Drawer 콘텐츠의 Top Bar 충돌 회피 방식은 full-height 축소 vs 내부 safe zone 중 무엇으로 할지? |  |  | Resolved (`internal safe zone`, 2026-02-28) |

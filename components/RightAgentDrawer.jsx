@@ -11,6 +11,7 @@ const CATEGORY_COLORS = {
   Why: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700" },
   How: { bg: "bg-indigo-50", border: "border-indigo-200", text: "text-indigo-700" },
 };
+const DRAWER_TOP_SAFE_ZONE = 56;
 
 function ContextMiniCard({ item, isActive, onSelect }) {
   const colors = CATEGORY_COLORS[item?.category] || CATEGORY_COLORS.What;
@@ -135,7 +136,10 @@ export default function RightAgentDrawer({
             aria-hidden
             style={{ background: drawerFieldEdgeOverlay }}
           />
-          <div className="relative z-10 flex h-full flex-col gap-3 py-4 pl-10 pr-7">
+          <div
+            className="relative z-10 flex h-full flex-col gap-3 pb-4 pl-10 pr-7"
+            style={{ paddingTop: DRAWER_TOP_SAFE_ZONE }}
+          >
             <div className="grid grid-cols-2 gap-2">
               {contextItems.length > 0 ? (
                 contextItems.map((item) => (

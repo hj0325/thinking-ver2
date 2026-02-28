@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Drawer top safe-zone and top bar optical centering applied
+- Summary:
+  - Right Agent Drawer content stack에 상단 safe-zone(`56px`)을 적용해 Top Bar와 context/glass 콘텐츠가 겹치지 않도록 조정했다.
+  - Top Bar를 좌/우 고정 슬롯 기반 레이아웃으로 변경해 중앙 타이틀 시각 균형을 보정했다.
+  - Home 아이콘을 `24x24` 정사각 프레임 안에 center 정렬해 아이콘 광학 중심 편차를 줄였다.
+- Scope: Frontend
+- Files: `components/RightAgentDrawer.jsx`, `components/TopBar.jsx`, `docs/specs/05-change-log.md`
+- Validation: Top Bar 슬롯 폭(92px), 아이콘 프레임(24px), Drawer content top inset(56px) 반영 여부 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Top bar icon and typography aligned to provided SVG/style
 - Summary:
   - `TopBar`의 좌측 `Home` 아이콘을 `lucide-react`에서 사용자 제공 inline SVG path로 교체했다.
