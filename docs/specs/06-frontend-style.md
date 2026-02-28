@@ -115,9 +115,10 @@
 | `--agent-toggle-text` | `#111111` | Tip/Chat 버튼 텍스트 |
 | `--agent-tip-dot-size` | `12px` (target) | Tip 버튼 보라색 상태 점 크기 |
 | `--agent-tip-dot-color` | `#C084FC` | Tip 버튼 상태 점 색상 |
-| `--agent-field-grad-start` | `#AEE7D0` | 우측 drawer field gradient 시작 |
-| `--agent-field-grad-mid` | `#DDF0C3` | 우측 drawer field gradient 중간 |
-| `--agent-field-grad-end` | `#D7E8EE` | 우측 drawer field gradient 끝 |
+| `--agent-field-bg-base` | `#AEE7D0` | 우측 drawer field 기본 채우기 |
+| `--agent-field-radial` | `radial-gradient(100.27% 97.75% at 97.75% 50%, #E0FFF4 0%, #AEF1DA 22.12%, #BBD8E6 80.17%, #FFFFEA 100%)` | 우측 drawer radial gradient |
+| `--agent-field-radial-blur` | `13.371px` | 우측 drawer radial overlay blur |
+| `--agent-field-radial-border` | `26.338px solid rgba(255,255,255,0)` | 우측 drawer radial overlay border |
 | `--agent-drawer-inset-top` | `0px` | Drawer 상단 여백(기본 0) |
 | `--agent-drawer-inset-bottom` | `0px` | Drawer 하단 여백(기본 0) |
 | `--agent-drawer-motion` | `off-canvas-slide` | drawer open/close 모션(`width` tween 금지) |
@@ -389,7 +390,8 @@
 #### C.1 Visual Update (Mockup Alignment 2026-02-28)
 1. Rail and field:
    - rail은 카드형 박스보다 단순한 세로 레이어로 표현한다.
-   - right field는 보더 강조를 최소화하고, 연한 `mint -> yellow-green -> pale blue` gradient를 사용한다.
+   - right field는 `base fill + radial gradient overlay` 조합으로 표현한다.
+   - radial 값은 `radial-gradient(100.27% 97.75% at 97.75% 50%, #E0FFF4 0%, #AEF1DA 22.12%, #BBD8E6 80.17%, #FFFFEA 100%)`를 기준으로 한다.
 2. Tip/Chat buttons:
    - 버튼은 동일한 원형 크기(`--agent-toggle-size`)로 통일한다.
    - 기본 스타일:

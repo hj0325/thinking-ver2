@@ -37,6 +37,8 @@ export default function RightAgentDrawer({
   const hasTipSignal = suggestions.length > 0;
   const isTip = mode === "tip";
   const isChat = mode === "chat";
+  const drawerFieldGradient =
+    "radial-gradient(100.27% 97.75% at 97.75% 50%, #E0FFF4 0%, #AEF1DA 22.12%, #BBD8E6 80.17%, #FFFFEA 100%)";
 
   return (
     <div className="pointer-events-none absolute inset-y-0 right-0 z-[45] overflow-hidden">
@@ -83,12 +85,22 @@ export default function RightAgentDrawer({
             isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
           }`}
           aria-hidden={!isOpen}
-          style={{
-            background:
-              "linear-gradient(90deg, rgba(174,231,208,0.96) 0%, rgba(174,231,208,0.9) 32%, rgba(221,240,195,0.9) 63%, rgba(215,232,238,0.94) 100%)",
-          }}
+          style={{ backgroundColor: "#AEE7D0" }}
         >
-          <div className="flex h-full flex-col gap-3 p-4">
+          <div className="pointer-events-none absolute inset-0" aria-hidden>
+            <div
+              className="absolute inset-0"
+              style={{
+                borderRadius: "30.39px",
+                border: "26.338px solid rgba(255, 255, 255, 0)",
+                background: drawerFieldGradient,
+                filter: "blur(13.371px)",
+                opacity: 0.95,
+              }}
+            />
+          </div>
+
+          <div className="relative z-10 flex h-full flex-col gap-3 p-4">
             <div className="grid grid-cols-2 gap-2">
               {contextItems.length > 0 ? (
                 contextItems.map((item) => <ContextMiniCard key={item.id} item={item} />)

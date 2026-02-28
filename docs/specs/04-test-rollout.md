@@ -116,7 +116,7 @@
 - [ ] context shelf 카드(첨부 노드 카드)는 상단 영역에 유지되고, 삭제/변경 시 상태가 즉시 반영된다.
 - [ ] Tip/Chat 버튼이 동일한 원형 white 스타일(아이콘 없음)로 렌더링된다.
 - [ ] Tip 버튼 우상단의 보라색 점이 지정 크기/색상으로 렌더링된다.
-- [ ] right field가 강한 보더 없이 연한 세로 gradient(mint->yellow-green->pale blue)로 렌더링된다.
+- [ ] right field가 `base fill + radial gradient overlay`(우측 기준 radial, soft blur)로 렌더링된다.
 - [ ] visual 리파인 이후에도 content panel(글라스모피즘)이 제거되지 않고 렌더링된다.
 - [ ] rail/right field가 상하 margin 없이 viewport full-height(`top:0`, `bottom:0`)를 유지한다.
 

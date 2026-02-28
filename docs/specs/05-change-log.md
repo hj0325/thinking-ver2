@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Drawer field radial-gradient background applied
+- Summary:
+  - Right Agent Drawer field 배경을 기존 linear gradient에서 `base fill + radial-gradient overlay` 구조로 변경했다.
+  - 사용자 제공 값(`100.27% 97.75% at 97.75% 50%`, color stops)을 기준으로 radial 배경을 적용했다.
+  - overlay는 단일 blur 레이어로 제한해 스타일 일치와 렌더링 비용 균형을 맞췄다.
+- Scope: Frontend
+- Files: `components/RightAgentDrawer.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: 배경 레이어 구조/색상 스톱 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Drawer transition changed to off-canvas slide
 - Summary:
   - Right Agent Drawer open/close 애니메이션을 `width` 확장 방식에서 오프캔버스 `translate` 슬라이드 방식으로 변경했다.
