@@ -1,6 +1,11 @@
 # 02. Requirements
 
 ## Follow-up To-do
+- [ ] [added: 2026-02-28] [P0] FR-011에 영어 전용 적용 대상 필드를 명시한다 (buttons, placeholders, alerts, assistant replies, suggestion labels).
+- [ ] [added: 2026-02-28] [P0] 한국어 하드코딩 문자열 제거 요구사항을 추가한다 (`components/ChatDialog.jsx`, `components/SuggestionPanel.jsx`, `lib/thinkingAgent.js`).
+- [ ] [added: 2026-02-28] [P0] API 오류 메시지 카탈로그를 영어 기준으로 정의한다 (400/405/500 케이스별).
+- [ ] [added: 2026-02-28] [P1] AI 프롬프트/보정 프롬프트의 출력 언어 정책을 영어로 통일한다 (JS/Python 모두).
+- [ ] [added: 2026-02-28] [P1] Python backend를 유지할 경우 JS 스펙과 동등 요구사항 동기화 규칙을 정의한다.
 
 ## 1. Document Meta
 - Version: `v1.0-draft`
@@ -23,6 +28,7 @@
 | FR-008 | API 실패 시 사용자에게 오류 메시지를 제공한다. | P0 | analyze/chat/chat-to-nodes 실패 시 alert 또는 대화 내 오류 메시지 노출 |
 | FR-009 | API는 POST 메서드만 허용한다. | P0 | 비-POST 요청은 `405 Method Not Allowed` 반환 |
 | FR-010 | OpenAI API 키 누락 시 서버가 명확한 오류를 반환한다. | P0 | `500` + `OpenAI API Key is missing on server.` |
+| FR-011 | 웹사이트 사용자 노출 텍스트는 영어로만 제공한다. | P0 | UI 라벨/버튼/placeholder/오류/AI 대화 응답이 영어로 출력 |
 
 ## 3. API Input/Output Requirements
 
@@ -74,6 +80,7 @@
 | Robustness | 모델 응답 파싱 실패 대응 | 스키마 보정 시도 후 실패 시 명확한 에러 반환 |
 | Security | 비밀정보 보호 | API key는 서버 env에서만 사용 |
 | Observability | 장애 추적 가능성 | 서버 에러 로그와 API 경로별 실패 확인 가능 |
+| UX Consistency | 언어 일관성 | 사용자 노출 텍스트 영어 100% |
 
 ## 6. Constraints
 - 외부 모델 응답 품질/지연에 의존한다.
@@ -85,4 +92,4 @@
 |---|---|---|---|---|
 | RQ-001 | Python backend를 운영 경로로 유지할지 | TBD | TBD | Open |
 | RQ-002 | NFR 목표치를 운영 현실에 맞게 상향/하향할지 | TBD | TBD | Open |
-| RQ-003 | 사용자 오류 메시지 문구를 한국어로 통일할지 | TBD | TBD | Open |
+| RQ-003 | 영어 전용 정책 적용 범위에 내부 운영 로그 문구까지 포함할지 | TBD | TBD | Open |

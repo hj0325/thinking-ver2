@@ -1,6 +1,9 @@
 # 05. Change Log (Future Patches Only)
 
 ## Follow-up To-do
+- [ ] [added: 2026-02-28] [P0] 다음 패치부터 언어 정책 관련 변경은 본 문서에 반드시 기록한다.
+- [ ] [added: 2026-02-28] [P1] 각 패치 엔트리에 영어 전용 정책 영향 여부(Yes/No) 필드를 포함한다.
+- [ ] [added: 2026-02-28] [P1] 패치 엔트리에 검증 근거(테스트 ID, 수동 QA 결과)를 링크한다.
 
 ## 1. Purpose
 - 이 문서는 **앞으로 발생하는 업데이트/패치 내역만 기록**한다.
@@ -44,4 +47,3 @@
 ## 5. Release Mapping
 | Release Version | Date | Included Entries | Notes |
 |---|---|---|---|
-

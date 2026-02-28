@@ -1,6 +1,11 @@
 # 03. Architecture
 
 ## Follow-up To-do
+- [ ] [added: 2026-02-28] [P0] 사용자 노출 문자열을 중앙 관리하는 단일 텍스트 레이어를 도입한다 (UI literal 분산 제거).
+- [ ] [added: 2026-02-28] [P0] `lib/thinkingAgent.js`의 한국어 기본 라벨/fallback 문구를 영어 기본값으로 교체한다.
+- [ ] [added: 2026-02-28] [P1] Python backend 유지 시 `backend/logic.py` 프롬프트/출력 언어를 영어 정책과 동기화한다.
+- [ ] [added: 2026-02-28] [P1] 중복 구현(JS/Python) 정리 전략을 문서화한다 (단일 소스 또는 생성 파이프라인).
+- [ ] [added: 2026-02-28] [P2] 미사용 `onConnect` 핸들러를 제거하거나 실제 연결 기능에 통합한다.
 
 ## 1. Document Meta
 - Version: `v1.0-draft`
@@ -90,6 +95,7 @@ flowchart LR
 1. `onConnect` 콜백 정의는 있으나 NodeMap에서 연결 핸들러 전달/사용이 없다.
 2. FastAPI 구현과 JS 구현이 기능적으로 중복되어 동기화 비용이 크다.
 3. README가 현재 `pages` 기반 구조를 반영하지 못한다.
+4. UI 문구와 프롬프트/오류 문구가 한영 혼합 상태여서 영어 전용 목표와 불일치한다.
 
 ## 9. Future Architecture Direction (Recommended)
 1. 운영 경로를 Next API로 단일화하거나, 반대로 Python을 표준으로 정하고 프런트 경로를 분리해 중복 제거.

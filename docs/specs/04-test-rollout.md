@@ -1,6 +1,11 @@
 # 04. Test and Rollout
 
 ## Follow-up To-do
+- [ ] [added: 2026-02-28] [P0] 영어 전용 회귀 테스트를 추가한다 (UI 스냅샷/DOM 텍스트에 한글 미포함 검증).
+- [ ] [added: 2026-02-28] [P0] `/api/chat` 및 `/api/chat-to-nodes` 응답 텍스트 언어 검증 테스트를 추가한다.
+- [ ] [added: 2026-02-28] [P1] 배포 전 스모크 테스트에 \"입력->분석->제안->채팅->변환\" 영어 출력 체크를 포함한다.
+- [ ] [added: 2026-02-28] [P1] 모델 응답 스키마 보정 경로에서 영어 fallback 유지 여부를 검증한다.
+- [ ] [added: 2026-02-28] [P2] Python backend 테스트를 유지할 경우 동일한 영어 정책 검증 케이스를 추가한다.
 
 ## 1. Document Meta
 - Version: `v1.0-draft`
@@ -45,6 +50,7 @@
 - [ ] highlighted 노드가 시각적으로 강조됨
 - [ ] 채팅 변환 후 `e-chat-*`, `e-cross-*` 엣지 스타일 반영
 - [ ] 비-POST 호출 시 405 반환 확인
+- [ ] 사용자 노출 텍스트(UI/오류/AI 응답)가 영어 전용인지 확인
 
 ## 4. Test Matrix
 
@@ -58,6 +64,7 @@
 | T-006 | UI+API | chat-to-nodes | 그래프 노드/엣지 추가 | P0 | Planned |
 | T-007 | Agent | malformed JSON from model | 보정 시도 또는 명시적 에러 | P1 | Planned |
 | T-008 | Agent | cross-connection empty with history | fallback edge 생성 | P1 | Planned |
+| T-009 | UI+API | language consistency | 사용자 노출 텍스트 영어 100% | P0 | Planned |
 
 ## 5. Go / No-Go Criteria
 - P0 결함 0건
