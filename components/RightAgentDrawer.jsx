@@ -38,11 +38,11 @@ export default function RightAgentDrawer({
   const isTip = mode === "tip";
   const isChat = mode === "chat";
   const drawerFieldBaseFade =
-    "linear-gradient(90deg, rgba(166,255,211,0) 0%, rgba(166,255,211,0.88) 14%, rgba(166,255,211,1) 30%)";
+    "linear-gradient(90deg, rgba(166,255,211,0) 0%, rgba(166,255,211,0.74) 22%, rgba(166,255,211,1) 42%)";
   const drawerFieldRadialAlpha =
-    "radial-gradient(100.27% 97.75% at 97.75% 50%, rgba(224,255,244,0.96) 0%, rgba(174,241,218,0.88) 22.12%, rgba(187,216,230,0.70) 80.17%, rgba(255,255,234,0.78) 100%)";
+    "radial-gradient(100.27% 97.75% at 97.75% 50%, rgba(224,255,244,0.94) 0%, rgba(174,241,218,0.84) 22.12%, rgba(187,216,230,0.62) 80.17%, rgba(255,255,234,0.68) 100%)";
   const drawerFieldEdgeOverlay =
-    "linear-gradient(90deg, rgba(166,255,211,0.92) 0%, rgba(166,255,211,0.52) 46%, rgba(166,255,211,0) 100%)";
+    "linear-gradient(90deg, rgba(166,255,211,0.98) 0%, rgba(166,255,211,0.78) 38%, rgba(166,255,211,0.26) 72%, rgba(166,255,211,0) 100%)";
 
   return (
     <div className="pointer-events-none absolute inset-y-0 right-0 z-[45] overflow-hidden">
@@ -94,11 +94,11 @@ export default function RightAgentDrawer({
           }}
         >
           <div
-            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-11"
+            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-16"
             aria-hidden
             style={{ background: drawerFieldEdgeOverlay }}
           />
-          <div className="relative z-10 flex h-full flex-col gap-3 p-4">
+          <div className="relative z-10 flex h-full flex-col gap-3 py-4 pl-8 pr-6">
             <div className="grid grid-cols-2 gap-2">
               {contextItems.length > 0 ? (
                 contextItems.map((item) => <ContextMiniCard key={item.id} item={item} />)

@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Drawer edge-safe inset and transparent tail tuning
+- Summary:
+  - Drawer 경계 절단감을 줄이기 위해 field 배경 값을 재조정했다(`base fade` 확장, `radial alpha` 완화, `edge overlay` 투명 꼬리 강화).
+  - 좌측 경계 오버레이 폭을 확대(`64px`)하고, content 래퍼를 `left 32px / right 24px` 안전 여백으로 조정해 glass blur가 경계에 직접 닿지 않게 했다.
+  - rail의 경계 강조 strip 강도는 완화 상태를 유지해 경계선 재부각을 방지했다.
+- Scope: Frontend
+- Files: `components/RightAgentDrawer.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: 배경 레이어/투명 tail/안전 여백 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Drawer Phase 1.2 edge blend implemented (overlay-first, no mask)
 - Summary:
   - `RightAgentDrawer` 배경을 `base linear fade + radial alpha + canvas-color edge overlay` 3레이어로 재구성해 좌측 solid cut 현상을 완화했다.
