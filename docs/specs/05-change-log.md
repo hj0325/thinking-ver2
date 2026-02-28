@@ -26,6 +26,19 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Connector edge UI implemented (V1 safe rollout)
+- Summary:
+  - ReactFlow를 custom node/edge 구성으로 전환해 노드 연결선을 `4px` 흰색 곡선으로 렌더링했다.
+  - 양 끝 endpoint 포트(white ring + category color)를 edge 단에서 렌더링하고, 앵커는 노드 측면 `top: 52px` 기준으로 고정했다.
+  - source/target 의미를 유지하기 위해 handle을 `right-source` -> `left-target`으로 고정하고, 노드 이동 시에도 source/target 스왑 없이 렌더링하도록 적용했다.
+  - 다중 연결 겹침 완화를 위해 fanout 오프셋(`0, -6, +6, -12, +12`)을 적용하고, 카드 겹침 완화를 위해 clearance 기반 커브 경로를 적용했다.
+  - `06-frontend-style`의 1차 실행 항목을 완료 처리하고 구현 타깃을 실제 파일 기준으로 동기화했다.
+- Scope: Frontend
+- Files: `components/NodeMap.jsx`, `components/ThinkingMachine.jsx`, `components/nodes/ThinkingNode.jsx`, `components/edges/ConnectorEdge.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/05-change-log.md`
+- Validation: 변경 파일 수동 리뷰 완료; 자동 lint는 `eslint: command not found` 환경 이슈로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Update] 2026-02-28 - Node connector edge spec and QA plan added
 - Summary:
   - `06-frontend-style`에 노드 연결선 스펙(양 끝 포트, `top 52px`, `4px` 흰색 선, source/target 의미 유지)을 추가했다.

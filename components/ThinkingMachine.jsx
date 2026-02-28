@@ -13,6 +13,12 @@ import ChatDialog from "./ChatDialog";
 
 const INITIAL_NODES = [];
 const INITIAL_EDGES = [];
+const SOURCE_HANDLE_ID = "right-source";
+const TARGET_HANDLE_ID = "left-target";
+const FANOUT_PATTERN = [0, -6, 6, -12, 12];
+const EDGE_CLEARANCE_X = 20;
+const EDGE_LINE_WIDTH = 4;
+const EDGE_LINE_COLOR = "#FFFFFF";
 
 const CHIP_BG_COLORS = {
     When: "#9DBCFF",
@@ -90,14 +96,70 @@ function buildNodeStyle() {
     };
 }
 
-function buildEdgeStyle(edgeId) {
-    if (edgeId.startsWith('e-cross-')) {
-        return { style: { stroke: '#8b5cf6', strokeWidth: 2.5 }, animated: false };
-    }
-    if (edgeId.startsWith('e-input-') || edgeId.startsWith('e-chat-')) {
-        return { style: { stroke: '#6366f1', strokeDasharray: '4 3', strokeWidth: 1.5 }, animated: false };
-    }
-    return { style: { stroke: '#94a3b8' }, animated: true };
+function getFanoutOffset(index) {
+    if (!Number.isFinite(index) || index < 0) return 0;
+    return FANOUT_PATTERN[index % FANOUT_PATTERN.length];
+}
+
+function seedEdgeSideCounts(counts, currentEdges) {
+    currentEdges.forEach((edge) => {
+        const sourceHandle = edge.sourceHandle || SOURCE_HANDLE_ID;
+        const targetHandle = edge.targetHandle || TARGET_HANDLE_ID;
+        const sourceKey = `${edge.source}:${sourceHandle}`;
+        const targetKey = `${edge.target}:${targetHandle}`;
+        counts.set(sourceKey, (counts.get(sourceKey) || 0) + 1);
+        counts.set(targetKey, (counts.get(targetKey) || 0) + 1);
+    });
+}
+
+function buildNodeCategoryMap(nodeList) {
+    const map = new Map();
+    nodeList.forEach((node) => {
+        if (!node?.id) return;
+        const category = node?.data?.category;
+        if (typeof category === "string" && category) {
+            map.set(node.id, category);
+        }
+    });
+    return map;
+}
+
+function toConnectorEdges(rawEdges, nodeList, currentEdges = []) {
+    const counts = new Map();
+    const categoryMap = buildNodeCategoryMap(nodeList);
+    seedEdgeSideCounts(counts, currentEdges);
+
+    return rawEdges.map((edge) => {
+        const sourceHandle = SOURCE_HANDLE_ID;
+        const targetHandle = TARGET_HANDLE_ID;
+        const sourceKey = `${edge.source}:${sourceHandle}`;
+        const targetKey = `${edge.target}:${targetHandle}`;
+
+        const sourceIndex = counts.get(sourceKey) || 0;
+        const targetIndex = counts.get(targetKey) || 0;
+        counts.set(sourceKey, sourceIndex + 1);
+        counts.set(targetKey, targetIndex + 1);
+
+        return {
+            id: edge.id,
+            source: edge.source,
+            target: edge.target,
+            label: edge.label,
+            type: "connectorEdge",
+            animated: false,
+            sourceHandle,
+            targetHandle,
+            data: {
+                sourceCategory: categoryMap.get(edge.source) || "What",
+                targetCategory: categoryMap.get(edge.target) || "What",
+                sourceOffsetY: getFanoutOffset(sourceIndex),
+                targetOffsetY: getFanoutOffset(targetIndex),
+                clearanceX: EDGE_CLEARANCE_X,
+                lineWidth: EDGE_LINE_WIDTH,
+                lineColor: EDGE_LINE_COLOR,
+            },
+        };
+    });
 }
 
 function toReactFlowNode(n, highlightedId) {
@@ -111,7 +173,7 @@ function toReactFlowNode(n, highlightedId) {
     };
     const rfNode = {
         id: n.id,
-        type: n.type || 'default',
+        type: "thinkingNode",
         position: n.position,
         className: n.id === highlightedId ? 'node-highlighted' : '',
         data: { ...nodeData },
@@ -162,16 +224,9 @@ export default function ThinkingMachine() {
 
     // 채팅 대화에서 노드+엣지 추가
     const handleAddNodesFromChat = (data) => {
-        const newEdges = data.edges.map((e) => ({
-            id: e.id,
-            source: e.source,
-            target: e.target,
-            label: e.label,
-            type: 'smoothstep',
-            ...buildEdgeStyle(e.id),
-        }));
-
         const newNodes = data.nodes.map((n) => toReactFlowNode(n, null));
+        const mergedNodes = [...nodes, ...newNodes];
+        const newEdges = toConnectorEdges(data.edges, mergedNodes, edges);
 
         setNodes((nds) => [...nds, ...newNodes]);
         setEdges((eds) => [...eds, ...newEdges]);
@@ -225,25 +280,15 @@ export default function ThinkingMachine() {
             }
 
             // 엣지 처리 (e-suggest- 제외)
-            const newReactFlowEdges = data.edges
-                .filter((e) => !e.id.startsWith("e-suggest-"))
-                .map((e) => ({
-                    id: e.id,
-                    source: e.source,
-                    target: e.target,
-                    label: e.label,
-                    type: 'smoothstep',
-                    ...buildEdgeStyle(e.id),
-                }));
+            const updatedExistingNodes = nodes.map((n) => ({
+                ...n,
+                className: highlightedNodeIds.has(n.id) ? 'node-highlighted' : (n.className || ''),
+            }));
+            const mergedNodes = [...updatedExistingNodes, ...enrichedNodes];
+            const rawEdges = data.edges.filter((e) => !e.id.startsWith("e-suggest-"));
+            const newReactFlowEdges = toConnectorEdges(rawEdges, mergedNodes, edges);
 
-            setNodes((nds) => {
-                // 기존 하이라이트된 노드의 className 갱신
-                const updated = nds.map((n) => ({
-                    ...n,
-                    className: highlightedNodeIds.has(n.id) ? 'node-highlighted' : (n.className || ''),
-                }));
-                return [...updated, ...enrichedNodes];
-            });
+            setNodes(mergedNodes);
             setEdges((eds) => [...eds, ...newReactFlowEdges]);
 
         } catch (error) {

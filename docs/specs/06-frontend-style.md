@@ -8,6 +8,7 @@
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] `Instrument Sans` 웹 폰트를 설치하고 기본 UI/Node 텍스트에 적용
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] pan 동작의 modifier key 정책을 `기본 drag pan`으로 확정
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] `Instrument Sans` 적용 범위를 전체 UI로 확정하고, 제목급 텍스트는 `Inter` 예외 정책으로 확정
+- [x] [added: 2026-02-28] [status: completed 2026-02-28] (1차) 노드 연결선 프론트 스타일(4px 흰 선, 양 끝 포트, 52px 앵커, fanout/clearance)을 적용
 - [ ] [added: 2026-02-28] [status: execution-needed] (2차) 원인→결과 자동 정렬/정합 강화 규칙을 도입한다. 필요 이유: 현재는 source/target 의미 보존과 사용자 수동 배치 의도를 우선해야 하므로, 강제 재정렬은 의미 왜곡/UX 충돌 리스크가 있어 별도 단계로 분리
 
 ## 1. Document Meta
@@ -288,9 +289,9 @@
   - edge 메타(category, fanout index) 전달
 - `styles/globals.css`:
   - connector/port 토큰 스타일 정의
-- (planned) `components/nodes/ThinkingNode.jsx`:
+- `components/nodes/ThinkingNode.jsx`:
   - 좌/우 고정 포트 렌더링
-- (planned) `components/edges/ConnectorEdge.jsx`:
+- `components/edges/ConnectorEdge.jsx`:
   - custom path + fanout + clearance routing
 
 ## 8. Motion and Interaction
@@ -332,7 +333,7 @@
 | Web font loading (`Instrument Sans`) | `styles/globals.css` |
 | Heading font exception (`Inter` priority) | `components/ThinkingMachine.jsx`, `components/SuggestionPanel.jsx`, `components/ChatDialog.jsx`, `styles/globals.css` |
 | Canvas pan behavior | `components/NodeMap.jsx` |
-| Connector edge style/routing | `components/NodeMap.jsx`, `components/ThinkingMachine.jsx`, `styles/globals.css`, `components/nodes/ThinkingNode.jsx` (planned), `components/edges/ConnectorEdge.jsx` (planned) |
+| Connector edge style/routing | `components/NodeMap.jsx`, `components/ThinkingMachine.jsx`, `styles/globals.css`, `components/nodes/ThinkingNode.jsx`, `components/edges/ConnectorEdge.jsx` |
 
 ## 12. Open Questions
 | ID | Question | Owner | Due Date | Status |

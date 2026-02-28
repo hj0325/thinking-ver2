@@ -5,21 +5,15 @@ import ReactFlow, {
     Background,
     Controls,
     ConnectionMode,
-    MarkerType,
 } from "reactflow";
 import "reactflow/dist/style.css";
+import ThinkingNode from "./nodes/ThinkingNode";
+import ConnectorEdge from "./edges/ConnectorEdge";
 
 export default function NodeMap({ nodes, edges, onNodesChange, onEdgesChange, highlightedNodeIds }) {
 
-    const defaultEdgeOptions = useMemo(() => ({
-        type: 'smoothstep',
-        animated: true,
-        style: { stroke: '#b1b1b7', strokeWidth: 2 },
-        markerEnd: {
-            type: MarkerType.ArrowClosed,
-            color: '#b1b1b7',
-        },
-    }), []);
+    const nodeTypes = useMemo(() => ({ thinkingNode: ThinkingNode }), []);
+    const edgeTypes = useMemo(() => ({ connectorEdge: ConnectorEdge }), []);
 
     // highlightedNodeIds 기반으로 className을 항상 최신 상태로 유지
     const displayNodes = useMemo(() => {
@@ -49,7 +43,8 @@ export default function NodeMap({ nodes, edges, onNodesChange, onEdgesChange, hi
                 edges={edges}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
-                defaultEdgeOptions={defaultEdgeOptions}
+                nodeTypes={nodeTypes}
+                edgeTypes={edgeTypes}
                 connectionMode={ConnectionMode.Loose}
                 fitView
                 className="z-10 reactflow-canvas-pan"
