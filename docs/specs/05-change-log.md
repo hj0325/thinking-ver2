@@ -26,6 +26,18 @@
 ```
 
 ## 4. Change Entries
+### [Update] 2026-02-28 - Node connector edge spec and QA plan added
+- Summary:
+  - `06-frontend-style`에 노드 연결선 스펙(양 끝 포트, `top 52px`, `4px` 흰색 선, source/target 의미 유지)을 추가했다.
+  - 다중 연결 겹침 대응(fanout 미세 분산)과 카드 본문 겹침 대응(clearance 라우팅) 규칙을 명시했다.
+  - 1차(프론트 안전 적용)와 2차(정합 강화) 범위를 분리하고, 2차는 필요 이유와 함께 Follow-up To-do로 등록했다.
+  - `04-test-rollout`에 connector 전용 수동 QA 및 Test Matrix(T-010~T-013)를 추가했다.
+- Scope: Frontend
+- Files: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: 사용자 확정값(양 끝 포트, 4px, 데이터 의미 유지)과 스펙/QA 항목 일치 여부 대조 확인
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Update] 2026-02-28 - Added detailed QA checklist for canvas pan and font policy
 - Summary:
   - `04-test-rollout`에 Canvas pan 및 폰트 정책 검증을 위한 상세 수동 QA 체크리스트를 추가했다.

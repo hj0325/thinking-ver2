@@ -8,9 +8,10 @@
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] `Instrument Sans` 웹 폰트를 설치하고 기본 UI/Node 텍스트에 적용
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] pan 동작의 modifier key 정책을 `기본 drag pan`으로 확정
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] `Instrument Sans` 적용 범위를 전체 UI로 확정하고, 제목급 텍스트는 `Inter` 예외 정책으로 확정
+- [ ] [added: 2026-02-28] [status: execution-needed] (2차) 원인→결과 자동 정렬/정합 강화 규칙을 도입한다. 필요 이유: 현재는 source/target 의미 보존과 사용자 수동 배치 의도를 우선해야 하므로, 강제 재정렬은 의미 왜곡/UX 충돌 리스크가 있어 별도 단계로 분리
 
 ## 1. Document Meta
-- Version: `v0.4-draft`
+- Version: `v0.5-draft`
 - Status: `Draft`
 - Owner: TBD
 - Reviewers: TBD
@@ -105,6 +106,19 @@
 | `--chip-pad-x` | `8px` | Chip 수평 패딩 |
 | `--chip-gap-inner` | `4px` | Chip 내부 gap |
 
+### 6.6 Connector Tokens
+| Token | Value | Usage |
+|---|---|---|
+| `--edge-line-color` | `#FFFFFF` | 노드 간 연결선 기본 색상 |
+| `--edge-line-width` | `4px` | 노드 간 연결선 두께 (확정) |
+| `--edge-port-offset-top` | `52px` | 카드 상단 기준 포트 Y 기준점 |
+| `--edge-port-outer-size` | `20px` | 포트 외곽 원(white ring 포함) |
+| `--edge-port-inner-size` | `12px` | 포트 내부 컬러 원 |
+| `--edge-port-ring-color` | `#FFFFFF` | 포트 외곽 링 색상 |
+| `--edge-clearance-x` | `20px` | 카드에서 선이 빠져나갈 최소 수평 이격 |
+| `--edge-fanout-step` | `6px` | 다중 엣지 미세 분산 간격 |
+| `--edge-fanout-max` | `12px` | 다중 엣지 미세 분산 최대 절대값 |
+
 ## 7. Component Style Template
 | Component | Structure | States | Variant | Notes |
 |---|---|---|---|---|
@@ -113,6 +127,7 @@
 | Chat Dialog |  | open/loading/error |  |  |
 | Node Card | `summary + body + (optional image) + chips` | default/highlighted | text-only / image | this section is detailed below |
 | Canvas Pan Interaction | `empty-space drag` | idle/panning/dragging-node | modifier/no-modifier | NodeMap interaction spec |
+| Node Connector Edge | `edge + both endpoint ports` | default/highlighted/overlapped | input/chat/cross | logical flow with fixed source/target semantics |
 
 ### 7.1 Node Card (Mockup V1 Spec)
 #### A. Container
@@ -226,6 +241,58 @@
 - QA baseline:
   - 노드/엣지가 많은 상태에서도 프레임 드랍 없이 drag pan 동작
 
+### 7.4 Node Connector Edge (Mockup V2)
+#### A. Scope and Rollout
+- 이번 범위(1차): 프론트엔드 안전 적용
+  - 연결선/포트 시각 스타일
+  - 포트 위치(상단 52px), 선 굵기(4px), 카드 겹침 회피 라우팅
+  - source/target 의미를 유지한 방향 고정
+- 다음 범위(2차): 정합 강화 로직
+  - 원인→결과 자동 정렬 및 재배치 정책은 To-do로만 유지
+
+#### B. Visual Rules (Resolved)
+1. Edge line:
+   - color: `--edge-line-color` (`#FFFFFF`)
+   - width: `--edge-line-width` (`4px`)
+2. Endpoint ports:
+   - 양 끝점 모두 표시 (source/target 모두)
+   - outer: white ring circle
+   - inner: 해당 노드 `category`의 chip color
+3. Port position:
+   - 카드 측면 기준 `top: 52px` 지점
+   - source는 우측 포트, target은 좌측 포트
+4. Data semantics:
+   - source/target 데이터 의미는 변경하지 않는다.
+   - 노드가 이동해 좌우 위치가 바뀌어도 source/target 스왑 금지
+
+#### C. Overlap Risk Mitigation
+1. Multi-edge overlap (same side, same node):
+   - `52px` 기준점을 유지하면서 미세 분산(fanout) 적용
+   - offset sequence example: `0, -6, +6, -12, +12`
+   - fanout 범위는 `--edge-fanout-max` 이내
+2. Card overlap (line crossing card body):
+   - 카드 측면 포트에서 즉시 수평 이탈(`--edge-clearance-x`) 후 경로 진행
+   - source clear point -> mid routing -> target clear point -> target 포트 순으로 경로 구성
+   - 목적: 선이 카드 본문/라운드 코너 영역을 가로지르지 않도록 보장
+
+#### D. Logical Flow Policy
+- 현재 정책: 데이터 의미 유지(source->target) + 시각적 우선순위 적용
+- 원인/결과 자동 재정렬은 2차 범위에서 별도 도입
+
+#### E. Implementation Targets
+- `components/NodeMap.jsx`:
+  - custom `nodeTypes`, `edgeTypes` 연결
+  - edge routing 관련 설정
+- `components/ThinkingMachine.jsx`:
+  - edge 데이터에 `sourceHandle`/`targetHandle` 명시
+  - edge 메타(category, fanout index) 전달
+- `styles/globals.css`:
+  - connector/port 토큰 스타일 정의
+- (planned) `components/nodes/ThinkingNode.jsx`:
+  - 좌/우 고정 포트 렌더링
+- (planned) `components/edges/ConnectorEdge.jsx`:
+  - custom path + fanout + clearance routing
+
 ## 8. Motion and Interaction
 - Page transition:
 - Panel transition:
@@ -236,6 +303,10 @@
   - empty-space drag pan enabled
   - node drag precedence over pan
   - cursor affordance (`grab`/`grabbing`)
+- Edge interaction:
+  - data semantics preserve (`source`/`target` immutable)
+  - endpoint ports shown on both sides
+  - fanout and clearance routing for overlap prevention
 
 ## 9. Responsive Rules
 | Breakpoint | Rule |
@@ -261,6 +332,7 @@
 | Web font loading (`Instrument Sans`) | `styles/globals.css` |
 | Heading font exception (`Inter` priority) | `components/ThinkingMachine.jsx`, `components/SuggestionPanel.jsx`, `components/ChatDialog.jsx`, `styles/globals.css` |
 | Canvas pan behavior | `components/NodeMap.jsx` |
+| Connector edge style/routing | `components/NodeMap.jsx`, `components/ThinkingMachine.jsx`, `styles/globals.css`, `components/nodes/ThinkingNode.jsx` (planned), `components/edges/ConnectorEdge.jsx` (planned) |
 
 ## 12. Open Questions
 | ID | Question | Owner | Due Date | Status |
@@ -272,3 +344,6 @@
 | UI-005 | 전달된 `Where` 스타일의 토큰 이름이 `--Chips-When`인 이유(오타/의도) 확인 필요 |  |  | Open |
 | UI-006 | Canvas pan을 기본 drag로 둘지, `Space+drag`로 제한할지? |  |  | Resolved (기본 drag pan, 2026-02-28) |
 | UI-007 | `Instrument Sans` 적용 범위를 전체 UI로 확장할지 Node/Card 우선으로 둘지? |  |  | Resolved (전체 UI + 제목급 Inter 예외, 2026-02-28) |
+| UI-008 | 노드 연결선 포트 표시 범위를 시작점만/양 끝점 모두 중 무엇으로 할지? |  |  | Resolved (양 끝점 모두, 2026-02-28) |
+| UI-009 | 노드 연결선 두께를 몇 px로 확정할지? |  |  | Resolved (`4px`, 2026-02-28) |
+| UI-010 | 노드 좌우 이동 후 방향 처리를 source/target 스왑할지 여부 |  |  | Resolved (스왑 금지, 데이터 의미 유지, 2026-02-28) |
