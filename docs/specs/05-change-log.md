@@ -26,6 +26,18 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Drawer regression fix applied (content + full-height restored)
+- Summary:
+  - Right Agent Drawer 시각 리파인 이후 발생한 회귀를 수정했다: content panel(글라스모피즘) 삭제 문제를 복구하고, `X` 닫기 액션을 다시 연결했다.
+  - drawer 래퍼를 `inset-y-0` 기반으로 조정해 rail/right field가 viewport full-height를 채우도록 수정했다.
+  - Tip/Chat 원형 버튼 + Tip 보라색 점 + 세로 gradient field 스타일은 유지하면서, `rail + field + content` 동시 동작 구조를 복원했다.
+  - drawer 폭 변경에 맞춰 SuggestionPanel 오프셋을 재조정했다.
+- Scope: Frontend
+- Files: `components/RightAgentDrawer.jsx`, `components/ThinkingMachine.jsx`, `components/SuggestionPanel.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/05-change-log.md`
+- Validation: 회귀 지점(content 유지, full-height, close action) 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Update] 2026-02-28 - Drawer structure-lock policy and regression gates added
 - Summary:
   - Right Agent Drawer 시각 리파인에서 구조 회귀를 방지하기 위해 `Structure Lock Policy`를 추가했다(삭제 금지: content panel, close action, legacy fallback).
