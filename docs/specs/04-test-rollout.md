@@ -99,6 +99,14 @@
 3. 연결된 노드를 좌우로 교차 배치해도 source/target 방향 의미가 유지되는지 확인한다.
 4. 카드 근접 배치 상태에서 선이 카드 내부를 가로지르지 않는지 확인한다.
 
+### 3.7 Manual QA Checklist (Admin Shortcut + Prototype Status)
+- [ ] 최초 진입 시 상단 중앙에 단축키 안내(`Ctrl/Cmd + Shift + A`) UI가 노출된다.
+- [ ] `Dismiss` 클릭 시 단축키 안내 UI가 사라지고 같은 세션 재진입 시 재노출되지 않는다.
+- [ ] `Ctrl/Cmd + Shift + A` 입력 시 관리자 모드가 토글된다.
+- [ ] 관리자 모드 ON 상태에서만 `Autonomous Agent Active` 배지와 프로토타입 상태가 노출된다.
+- [ ] 관리자 모드 OFF 상태에서는 프로토타입 상태 UI가 완전히 숨겨진다.
+- [ ] 관리자 모드 상태가 새로고침 후에도 유지된다(localStorage).
+
 ## 4. Test Matrix
 
 | ID | Layer | Scenario | Expected | Priority | Status |
@@ -117,6 +125,8 @@
 | T-012 | UI | connector direction normalization | Problem->Solution 우선 + left-to-right 정규화 | P0 | Planned |
 | T-013 | UI | connector overlap mitigation | fanout + clearance 경로로 카드/선 겹침 완화 | P1 | Planned |
 | T-014 | UI | connector corner style | orthogonal 경로 코너가 arc 반지름으로 일관 렌더링 | P1 | Planned |
+| T-015 | UI | admin shortcut hint | 최초 진입 단축키 안내 표시 + 세션 dismiss 동작 | P1 | Planned |
+| T-016 | UI | admin mode status overlay | 단축키 토글 + prototype status 관리자 모드 한정 노출 | P1 | Planned |
 
 ## 5. Go / No-Go Criteria
 - P0 결함 0건

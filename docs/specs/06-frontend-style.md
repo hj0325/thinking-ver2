@@ -6,6 +6,7 @@
 - [ ] [added: 2026-02-28] [status: decision-needed] 6하원칙 chip 토큰 이름(`--chip-when` vs `--chip-where`) 최종 확정
 - [ ] [added: 2026-02-28] [status: execution-needed] Canvas 단계 전환 상태(stage state)와 배경 토큰(`data-stage`) 매핑 로직을 연결한다.
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] Canvas 단면 배경(base + 중앙 gradient) 스타일을 초기 stage(`research-diverge`) 기준으로 코드에 적용
+- [x] [added: 2026-02-28] [status: completed 2026-02-28] 관리자 모드 단축키(`Ctrl/Cmd+Shift+A`)와 초기 진입 안내 UI를 추가하고, 프로토타입 상태 배지를 관리자 모드로 제한
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] 빈 캔버스 드래그 pan(배경 이동) 인터랙션을 NodeMap에 반영
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] `Instrument Sans` 웹 폰트를 설치하고 기본 UI/Node 텍스트에 적용
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] pan 동작의 modifier key 정책을 `기본 drag pan`으로 확정
@@ -75,8 +76,8 @@
 | `--canvas-stage-ideation-diverge` | `#FF969F` | 아이디에이션 확산 단계 중심 gradient 색상 |
 | `--canvas-stage-ideation-converge` | `#D5A6FF` | 아이디에이션 수렴 단계 중심 gradient 색상 |
 | `--canvas-gradient-center-x` | `50%` | 중심 gradient X 위치 |
-| `--canvas-gradient-center-y` | `62%` | 중심 gradient Y 위치 |
-| `--canvas-gradient-radius-x` | `72%` | 중심 gradient 가로 반경 |
+| `--canvas-gradient-center-y` | `80%` | 중심 gradient Y 위치 |
+| `--canvas-gradient-radius-x` | `60%` | 중심 gradient 가로 반경 |
 | `--canvas-gradient-radius-y` | `78%` | 중심 gradient 세로 반경 |
 
 ### 6.2 Typography Tokens
@@ -97,6 +98,9 @@
 | `--canvas-pan-enabled` | `true` | 빈 캔버스 drag 이동 활성화 |
 | `--canvas-pan-mode` | `drag-empty-space` (default) | pan 트리거 방식 |
 | `--canvas-pan-modifier` | `none` (resolved) | modifier key 요구 여부 |
+| `--admin-shortcut` | `Ctrl/Cmd + Shift + A` | 관리자 모드 토글 단축키 |
+| `--admin-mode-default` | `off` | 초기 관리자 모드 상태 |
+| `--admin-shortcut-hint` | `on-first-entry` | 초기 진입 시 단축키 안내 노출 정책 |
 
 ### 6.3 Radius / Shadow / Border
 | Token | Value | Usage |
@@ -145,6 +149,7 @@
 | Canvas Stage Background | `single-surface fill + central stage gradient` | fixed-stage (initial) | 4 stage color presets | right-edge glow excluded |
 | Canvas Pan Interaction | `empty-space drag` | idle/panning/dragging-node | modifier/no-modifier | NodeMap interaction spec |
 | Node Connector Edge | `edge + connected-side endpoint ports` | default/highlighted/overlapped | input/chat/cross | logical flow with fixed source/target semantics |
+| Admin Shortcut + Status Overlay | `shortcut hint + admin status badge` | hint-visible/admin-off/admin-on | first-entry / dismissed | prototype status visibility control |
 
 ### 7.1 Node Card (Mockup V1 Spec)
 #### A. Container
@@ -238,8 +243,8 @@
    - color: `--canvas-bg-base` (`#A6FFD3`)
 2. Central gradient:
    - type: radial gradient
-   - position: `50% 62%`
-   - size: `72% x 78%`
+   - position: `50% 80%`
+   - size: `60% x 78%`
    - stage color: 아래 단계 토큰 중 1개 선택
      - research-diverge: `--canvas-stage-research-diverge` (`#4DD6F8`)
      - research-converge: `--canvas-stage-research-converge` (`#FFFF86`)
@@ -292,7 +297,42 @@
 - QA baseline:
   - 노드/엣지가 많은 상태에서도 프레임 드랍 없이 drag pan 동작
 
-### 7.5 Node Connector Edge (Mockup V2)
+### 7.5 Admin Shortcut and Prototype Status Overlay
+#### A. Goal
+- 프로토타입/디버그 상태 정보는 일반 화면에서 숨기고 관리자 모드에서만 노출한다.
+- 사용자가 최초 진입 시 단축키를 인지할 수 있도록 안내 UI를 제공한다.
+
+#### B. Shortcut Policy
+1. Toggle key:
+   - `Ctrl/Cmd + Shift + A`
+2. Default state:
+   - `admin mode = off`
+3. Persistence:
+   - admin mode: `localStorage`
+   - shortcut hint dismissed state: `sessionStorage`
+
+#### C. UI Rules
+1. Initial entry shortcut hint:
+   - 위치: 상단 중앙
+   - 내용: `Press Ctrl/Cmd + Shift + A to toggle Admin Mode.`
+   - 액션: `Dismiss`
+2. Admin status overlay (admin mode on):
+   - 위치: 상단 우측
+   - 표시 항목:
+     - `Admin Mode` badge
+     - `Autonomous Agent Active`
+     - runtime counts (`Nodes`, `Suggestions`)
+3. Admin mode off:
+   - 프로토타입 상태 배지는 렌더링하지 않는다.
+
+#### D. Implementation Targets
+- `components/ThinkingMachine.jsx`:
+  - keyboard listener, admin mode/hint state 관리
+  - overlay UI 렌더 조건 제어
+- `styles/globals.css`:
+  - 필요 시 오버레이 스타일 토큰 확장
+
+### 7.6 Node Connector Edge (Mockup V2)
 #### A. Scope and Rollout
 - 이번 범위(1차): 프론트엔드 안전 적용
   - 연결선/포트 시각 스타일
@@ -366,6 +406,8 @@
   - node drag precedence over pan
   - cursor affordance (`grab`/`grabbing`)
   - single-surface stage gradient background (base + central radial)
+  - shortcut hint appears on first entry (`Ctrl/Cmd + Shift + A`)
+  - prototype status overlay is visible only in admin mode
 - Edge interaction:
   - direction normalized (`Problem -> Solution`, else left-to-right`)
   - endpoint ports shown only on connected sides (per node)
@@ -397,6 +439,7 @@
 | Heading font exception (`Inter` priority) | `components/ThinkingMachine.jsx`, `components/SuggestionPanel.jsx`, `components/ChatDialog.jsx`, `styles/globals.css` |
 | Canvas single-surface stage background | `components/NodeMap.jsx`, `styles/globals.css` |
 | Canvas pan behavior | `components/NodeMap.jsx` |
+| Admin shortcut / prototype status overlay | `components/ThinkingMachine.jsx` |
 | Connector edge style/routing | `components/NodeMap.jsx`, `components/ThinkingMachine.jsx`, `styles/globals.css`, `components/nodes/ThinkingNode.jsx`, `components/edges/ConnectorEdge.jsx` |
 
 ## 12. Open Questions
@@ -415,3 +458,4 @@
 | UI-011 | 직교 경로 코너 처리 방식을 `arc`/`quadratic` 중 무엇으로 할지 |  |  | Resolved (`arc`, 2026-02-28) |
 | UI-012 | Canvas stage 전환 트리거를 어떤 상태값/이벤트로 연결할지? |  |  | Open |
 | UI-013 | Canvas 우측 edge glow를 포함할지? |  |  | Resolved (미포함, 2026-02-28) |
+| UI-014 | 관리자 단축키를 어떤 키 조합으로 고정할지? |  |  | Resolved (`Ctrl/Cmd + Shift + A`, 2026-02-28) |

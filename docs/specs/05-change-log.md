@@ -26,6 +26,18 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Admin shortcut mode and first-entry hint UI applied
+- Summary:
+  - Canvas gradient 토큰 값을 `center-y: 80%`, `radius-x: 60%`로 조정해 배경 중심감을 수정했다.
+  - 좌상단 `Visual Thinking Machine` 텍스트를 제거하고, 프로토타입 상태 배지를 기본 화면에서 숨겼다.
+  - `Ctrl/Cmd + Shift + A` 단축키로 관리자 모드를 토글하고, 최초 진입 시 단축키 안내 UI를 상단 중앙에 노출하도록 구현했다.
+  - 관리자 모드는 `localStorage`, 단축키 안내 dismiss 상태는 `sessionStorage`로 유지되도록 적용했다.
+- Scope: Frontend
+- Files: `components/ThinkingMachine.jsx`, `styles/globals.css`, `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: 단축키 이벤트/상태 저장/조건부 렌더링 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Single-surface canvas background applied in frontend
 - Summary:
   - `NodeMap`의 기존 Problem/Solution 2분할 배경 레이어를 제거하고 단면(single-surface) 배경으로 전환했다.

@@ -13,8 +13,8 @@
   --canvas-stage-ideation-diverge: #ff969f;
   --canvas-stage-ideation-converge: #d5a6ff;
   --canvas-gradient-center-x: 50%;
-  --canvas-gradient-center-y: 62%;
-  --canvas-gradient-radius-x: 72%;
+  --canvas-gradient-center-y: 80%;
+  --canvas-gradient-radius-x: 60%;
   --canvas-gradient-radius-y: 78%;
   --canvas-stage-rgb: 77, 214, 248;
 }

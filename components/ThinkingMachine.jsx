@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     useNodesState,
     useEdgesState,
@@ -22,6 +22,9 @@ const EDGE_LINE_WIDTH = 4;
 const EDGE_LINE_COLOR = "#FFFFFF";
 const EDGE_CORNER_RADIUS = 24;
 const EDGE_LANE_GAP = 80;
+const ADMIN_MODE_STORAGE_KEY = "vtm-admin-mode-enabled";
+const ADMIN_HINT_DISMISSED_KEY = "vtm-admin-shortcut-hint-dismissed";
+const ADMIN_SHORTCUT_LABEL = "Ctrl/Cmd + Shift + A";
 
 const CHIP_BG_COLORS = {
     When: "#9DBCFF",
@@ -284,6 +287,8 @@ export default function ThinkingMachine() {
     const [nodes, setNodes, onNodesChange] = useNodesState(INITIAL_NODES);
     const [edges, setEdges, onEdgesChange] = useEdgesState(INITIAL_EDGES);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isAdminMode, setIsAdminMode] = useState(false);
+    const [showAdminShortcutHint, setShowAdminShortcutHint] = useState(false);
 
     // AI 제안 패널
     const [suggestions, setSuggestions] = useState([]);
@@ -291,6 +296,49 @@ export default function ThinkingMachine() {
 
     // Chat dialog
     const [activeSuggestion, setActiveSuggestion] = useState(null);
+
+    useEffect(() => {
+        try {
+            const persistedAdminMode = window.localStorage.getItem(ADMIN_MODE_STORAGE_KEY);
+            if (persistedAdminMode === "1") setIsAdminMode(true);
+
+            const dismissedHint = window.sessionStorage.getItem(ADMIN_HINT_DISMISSED_KEY) === "1";
+            setShowAdminShortcutHint(!dismissedHint);
+        } catch {
+            setShowAdminShortcutHint(true);
+        }
+    }, []);
+
+    useEffect(() => {
+        try {
+            window.localStorage.setItem(ADMIN_MODE_STORAGE_KEY, isAdminMode ? "1" : "0");
+        } catch {
+            // ignore storage write errors
+        }
+    }, [isAdminMode]);
+
+    const dismissAdminShortcutHint = () => {
+        setShowAdminShortcutHint(false);
+        try {
+            window.sessionStorage.setItem(ADMIN_HINT_DISMISSED_KEY, "1");
+        } catch {
+            // ignore storage write errors
+        }
+    };
+
+    useEffect(() => {
+        const handleKeydown = (event) => {
+            const isAdminToggle = (event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "a";
+            if (!isAdminToggle) return;
+
+            event.preventDefault();
+            setIsAdminMode((prev) => !prev);
+            dismissAdminShortcutHint();
+        };
+
+        window.addEventListener("keydown", handleKeydown);
+        return () => window.removeEventListener("keydown", handleKeydown);
+    }, []);
 
     const handleDismissSuggestion = (suggestionId) => {
         setSuggestions((prev) => {
@@ -402,15 +450,39 @@ export default function ThinkingMachine() {
 
     return (
         <div className="w-full h-screen relative flex flex-col overflow-hidden bg-slate-50">
-            <header className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center bg-transparent pointer-events-none">
-                <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 pointer-events-auto">
-                    Visual Thinking Machine
-                </h1>
-                <div className="flex gap-2 pointer-events-auto">
-                    <div className="px-3 py-1 rounded-full bg-white/50 border border-indigo-100 text-xs text-indigo-800 backdrop-blur-sm shadow-sm flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
-                        Autonomous Agent Active
+            {showAdminShortcutHint && (
+                <div className="pointer-events-auto absolute left-1/2 top-4 z-[80] -translate-x-1/2">
+                    <div className="flex items-center gap-3 rounded-2xl border border-white/70 bg-white/78 px-4 py-2 text-xs text-slate-700 shadow-lg backdrop-blur-md">
+                        <span>
+                            Press <span className="font-semibold">{ADMIN_SHORTCUT_LABEL}</span> to toggle Admin Mode.
+                        </span>
+                        <button
+                            type="button"
+                            className="rounded-full border border-slate-300/80 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-white"
+                            onClick={dismissAdminShortcutHint}
+                        >
+                            Dismiss
+                        </button>
                     </div>
+                </div>
+            )}
+
+            <header className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-end items-center bg-transparent pointer-events-none">
+                <div className="flex gap-2 pointer-events-auto">
+                    {isAdminMode && (
+                        <div className="flex items-center gap-2 rounded-2xl border border-white/70 bg-white/76 px-3 py-2 text-xs text-slate-700 shadow-lg backdrop-blur-md">
+                            <span className="rounded-full bg-slate-800/90 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-white">
+                                Admin Mode
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 font-semibold text-indigo-800">
+                                <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                                Autonomous Agent Active
+                            </span>
+                            <span className="text-slate-400">|</span>
+                            <span>Nodes {nodes.length}</span>
+                            <span>Suggestions {suggestions.length}</span>
+                        </div>
+                    )}
                 </div>
             </header>
 
