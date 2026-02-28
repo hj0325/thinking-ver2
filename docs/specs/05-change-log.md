@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Drawer radial background clarity tuning (gray wash removed)
+- Summary:
+  - 콘텐츠 글라스 패널 스타일은 유지하고, drawer 배경 레이어만 조정해 눌려 보이는(회색 탁도) 현상을 줄였다.
+  - radial 배경을 별도 blur overlay 방식에서 `direct radial + base fill` 합성으로 변경해 색상 선명도를 복원했다.
+  - 결과적으로 Tip/Chat 주변 배경은 밝고 선명해지고, 콘텐츠 패널의 기존 glass 모양/구조는 변경하지 않았다.
+- Scope: Frontend
+- Files: `components/RightAgentDrawer.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/05-change-log.md`
+- Validation: content glass 클래스 유지 + 배경 레이어 구조 변경 여부 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`
+
 ### [Patch] 2026-02-28 - Drawer field radial-gradient background applied
 - Summary:
   - Right Agent Drawer field 배경을 기존 linear gradient에서 `base fill + radial-gradient overlay` 구조로 변경했다.

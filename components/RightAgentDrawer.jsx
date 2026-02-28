@@ -85,21 +85,10 @@ export default function RightAgentDrawer({
             isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
           }`}
           aria-hidden={!isOpen}
-          style={{ backgroundColor: "#AEE7D0" }}
+          style={{
+            background: `${drawerFieldGradient}, #AEE7D0`,
+          }}
         >
-          <div className="pointer-events-none absolute inset-0" aria-hidden>
-            <div
-              className="absolute inset-0"
-              style={{
-                borderRadius: "30.39px",
-                border: "26.338px solid rgba(255, 255, 255, 0)",
-                background: drawerFieldGradient,
-                filter: "blur(13.371px)",
-                opacity: 0.95,
-              }}
-            />
-          </div>
-
           <div className="relative z-10 flex h-full flex-col gap-3 p-4">
             <div className="grid grid-cols-2 gap-2">
               {contextItems.length > 0 ? (
