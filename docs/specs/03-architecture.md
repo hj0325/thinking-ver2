@@ -42,6 +42,8 @@ flowchart LR
 | `components/ChatDialog.jsx` | 제안별 대화/변환 | `/api/chat`, `/api/chat-to-nodes` 호출 |
 | `components/InputPanel.jsx` | 입력 폼 | Enter 제출, 로딩 상태 반영 |
 
+Frontend visual/style details are managed in `./06-frontend-style.md`.
+
 ## 5. API Layer Architecture
 
 | Endpoint | Method | Handler Responsibility |

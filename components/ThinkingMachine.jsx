@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import {
     useNodesState,
     useEdgesState,
-    addEdge,
 } from "reactflow";
 import axios from "axios";
 import NodeMap from "./NodeMap";
@@ -15,17 +14,42 @@ import ChatDialog from "./ChatDialog";
 const INITIAL_NODES = [];
 const INITIAL_EDGES = [];
 
+const CHIP_BG_COLORS = {
+    When: "#9DBCFF",
+    Where: "#E6E8B4",
+    How: "#8FE5EA",
+    What: "#97E9C0",
+    Why: "#D2EEA1",
+    Who: "#A999F1",
+    Problem: "#EFAEA8",
+    Solution: "#E8A0E6",
+};
+
+function Chip({ label }) {
+    const backgroundColor = CHIP_BG_COLORS[label] || "#E5E7EB";
+    return (
+        <span
+            className="inline-flex items-center justify-center gap-2.5 rounded-[99px] px-2 py-1.5 text-[12px] font-semibold leading-none text-[#111111]"
+            style={{ backgroundColor }}
+        >
+            {label}
+        </span>
+    );
+}
+
 // 노드 데이터에서 JSX label 빌드 (재사용)
 function buildNodeLabel(nodeData) {
     return (
-        <div className="flex flex-col h-full text-left">
-            <div className="px-3 py-2 border-b border-black/5 bg-black/5 text-[10px] font-bold uppercase tracking-wider opacity-70 flex justify-between items-center">
-                <span>{nodeData.category}</span>
-                <span className={`w-2 h-2 rounded-full ${nodeData.phase === 'Problem' ? 'bg-red-400' : 'bg-blue-400'}`}></span>
+        <div className="flex h-full w-full flex-col items-start gap-3 px-3 pb-3 pt-4 text-left">
+            <div className="line-clamp-2 text-sm font-bold leading-[1.3] text-[#333333]">
+                {nodeData.title}
             </div>
-            <div className="p-3">
-                <div className="font-bold text-sm mb-1 text-gray-800 leading-tight">{nodeData.title}</div>
-                <div className="text-xs text-gray-600 leading-relaxed line-clamp-4">{nodeData.label}</div>
+            <div className="line-clamp-3 text-[12px] leading-[1.45] text-[#666666]">
+                {nodeData.label}
+            </div>
+            <div className="flex items-center gap-2">
+                <Chip label={nodeData.category} />
+                <Chip label={nodeData.phase} />
             </div>
         </div>
     );
@@ -33,15 +57,15 @@ function buildNodeLabel(nodeData) {
 
 function buildNodeStyle(phase) {
     return {
-        background: phase === 'Problem' ? 'rgba(255, 241, 242, 0.9)' : 'rgba(240, 249, 255, 0.9)',
-        border: phase === 'Problem' ? '1px solid #fda4af' : '1px solid #bae6fd',
-        borderRadius: '12px',
+        background: phase === "Problem" ? "rgba(243, 244, 246, 0.96)" : "rgba(248, 250, 252, 0.96)",
+        border: "1px solid rgba(17, 24, 39, 0.08)",
+        borderRadius: "24px",
         padding: '0',
-        width: 200,
+        width: 232,
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+        boxShadow: "0 8px 20px -10px rgb(0 0 0 / 0.25)",
         backdropFilter: 'blur(8px)',
     };
 }
@@ -87,11 +111,6 @@ export default function ThinkingMachine() {
 
     // Chat dialog
     const [activeSuggestion, setActiveSuggestion] = useState(null);
-
-    const onConnect = useCallback(
-        (params) => setEdges((eds) => addEdge(params, eds)),
-        [setEdges]
-    );
 
     const handleDismissSuggestion = (suggestionId) => {
         setSuggestions((prev) => {

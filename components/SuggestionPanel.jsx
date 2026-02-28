@@ -30,7 +30,7 @@ export default function SuggestionPanel({ suggestions, onDismiss, onSuggestionCl
                     <Sparkles className="w-3.5 h-3.5 text-yellow-500" />
                     <span className="text-xs font-semibold text-yellow-700">AI Suggestions</span>
                 </div>
-                <span className="text-xs text-gray-400">{suggestions.length}개</span>
+                <span className="text-xs text-gray-400">{suggestions.length} items</span>
             </div>
 
             {/* Suggestion cards */}
@@ -86,7 +86,7 @@ export default function SuggestionPanel({ suggestions, onDismiss, onSuggestionCl
                             {/* Click hint */}
                             <div className="px-3 pb-2.5 flex items-center gap-1 text-[10px] text-gray-400">
                                 <MessageCircle className="w-3 h-3" />
-                                <span>클릭해서 AI와 더 얘기하기</span>
+                                <span>Click to continue with AI</span>
                             </div>
                         </motion.div>
                     );
@@ -95,4 +95,3 @@ export default function SuggestionPanel({ suggestions, onDismiss, onSuggestionCl
         </motion.div>
     );
 }
-

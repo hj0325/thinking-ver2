@@ -29,7 +29,7 @@ export default function ChatDialog({ suggestion, onClose, onAddNodes, existingNo
         if (!suggestion) return;
         setMessages([]);
         setInput("");
-        sendMessage("이 제안에 대해 먼저 설명해줘.", true);
+        sendMessage("Please explain this suggestion first.", true);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [suggestion?.id]);
 
@@ -38,7 +38,6 @@ export default function ChatDialog({ suggestion, onClose, onAddNodes, existingNo
     }, [messages]);
 
     const sendMessage = async (text, isInitial = false) => {
-        const userMsg = isInitial ? null : { role: "user", content: text };
         const historyForApi = isInitial ? [] : messages;
 
         if (!isInitial) {
@@ -66,7 +65,7 @@ export default function ChatDialog({ suggestion, onClose, onAddNodes, existingNo
                     content:
                         err?.response?.data?.error ||
                         err?.response?.data?.detail ||
-                        "죄송합니다, 오류가 발생했습니다. 다시 시도해주세요.",
+                        "Sorry, something went wrong. Please try again.",
                 },
             ]);
         } finally {
@@ -109,7 +108,7 @@ export default function ChatDialog({ suggestion, onClose, onAddNodes, existingNo
                 err?.response?.data?.error ||
                 err?.response?.data?.detail ||
                 err?.message;
-            alert(serverMsg ? `노드 변환 실패: ${serverMsg}` : "노드 변환에 실패했습니다. 잠시 후 다시 시도해주세요.");
+            alert(serverMsg ? `Failed to convert conversation to nodes: ${serverMsg}` : "Failed to convert conversation to nodes. Please try again shortly.");
         } finally {
             setIsConverting(false);
         }
@@ -159,7 +158,7 @@ export default function ChatDialog({ suggestion, onClose, onAddNodes, existingNo
                     style={{ scrollbarWidth: "none", minHeight: 0 }}
                 >
                     {messages.length === 0 && !isLoading && (
-                        <div className="text-xs text-gray-400 text-center mt-4">AI가 이 제안을 설명하는 중...</div>
+                        <div className="text-xs text-gray-400 text-center mt-4">AI is explaining this suggestion...</div>
                     )}
                     {messages.map((msg, i) => (
                         <div
@@ -201,7 +200,7 @@ export default function ChatDialog({ suggestion, onClose, onAddNodes, existingNo
                             ref={inputRef}
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder="아이디어를 이어서 얘기해보세요..."
+                            placeholder="Continue the idea..."
                             disabled={isLoading}
                             className="flex-1 text-xs px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:border-indigo-300 focus:bg-white transition-colors placeholder-gray-400 disabled:opacity-50"
                         />
@@ -226,12 +225,12 @@ export default function ChatDialog({ suggestion, onClose, onAddNodes, existingNo
                             {isConverting ? (
                                 <>
                                     <Loader2 className="w-3 h-3 animate-spin" />
-                                    노드 생성 중...
+                                    Creating nodes...
                                 </>
                             ) : (
                                 <>
                                     <GitBranch className="w-3 h-3" />
-                                    대화를 노드로 만들기
+                                    Convert conversation to nodes
                                 </>
                             )}
                         </button>
