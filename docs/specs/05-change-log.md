@@ -26,6 +26,28 @@
 ```
 
 ## 4. Change Entries
+### [Update] 2026-02-28 - Connector routing mode finalized as orthogonal + arc
+- Summary:
+  - 노드 연결선 경로 방식을 `orthogonal + arc corner`로 확정하고 `06-frontend-style`에 토큰(`--edge-routing-mode`, `--edge-corner-radius`)을 추가했다.
+  - 카드 역순 배치 시 ㄹ자 우회 경로 및 arc 코너 처리 원칙을 overlap mitigation 규칙에 명시했다.
+  - `04-test-rollout`에 arc 렌더링 검증 항목과 Test Matrix(`T-014`)를 추가했다.
+- Scope: Frontend
+- Files: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: 사용자 결정(`arc` 사용)과 connector spec/QA 항목 간 용어 및 규칙 일치 여부 대조 확인
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
+### [Patch] 2026-02-28 - Endpoint ports moved to node layer (above card)
+- Summary:
+  - endpoint 포트 원을 edge 레이어에서 제거하고 node 레이어로 이동해 카드 위에 표시되도록 수정했다.
+  - 노드 스타일을 `overflow: visible`로 변경해 포트가 카드 측면에 반절 겹쳐 보이도록 조정했다.
+  - edge는 선(path)만 렌더링하도록 단순화해 포트 중복 렌더링 문제를 제거했다.
+- Scope: Frontend
+- Files: `components/nodes/ThinkingNode.jsx`, `components/edges/ConnectorEdge.jsx`, `components/ThinkingMachine.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/05-change-log.md`
+- Validation: 포트 렌더 책임(node)과 선 렌더 책임(edge) 분리 여부 수동 리뷰 확인
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`
+
 ### [Patch] 2026-02-28 - Connector edge fixes for overlap and direction issues
 - Summary:
   - endpoint 포트 앵커를 카드 측면 중앙선(상단 기준 52px)으로 보정해 포트가 카드에 반쯤 겹치도록 수정했다.

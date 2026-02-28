@@ -9,6 +9,7 @@
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] pan 동작의 modifier key 정책을 `기본 drag pan`으로 확정
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] `Instrument Sans` 적용 범위를 전체 UI로 확정하고, 제목급 텍스트는 `Inter` 예외 정책으로 확정
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] (1차) 노드 연결선 프론트 스타일(4px 흰 선, 양 끝 포트, 52px 앵커, fanout/clearance)을 적용
+- [x] [added: 2026-02-28] [status: completed 2026-02-28] 노드 연결선 코너 처리 방식을 `orthogonal + arc`로 확정
 - [ ] [added: 2026-02-28] [status: execution-needed] (2차) 원인→결과 자동 정렬/정합 강화 규칙을 도입한다. 필요 이유: 현재는 source/target 의미 보존과 사용자 수동 배치 의도를 우선해야 하므로, 강제 재정렬은 의미 왜곡/UX 충돌 리스크가 있어 별도 단계로 분리
 
 ## 1. Document Meta
@@ -119,6 +120,8 @@
 | `--edge-clearance-x` | `20px` | 카드에서 선이 빠져나갈 최소 수평 이격 |
 | `--edge-fanout-step` | `6px` | 다중 엣지 미세 분산 간격 |
 | `--edge-fanout-max` | `12px` | 다중 엣지 미세 분산 최대 절대값 |
+| `--edge-routing-mode` | `orthogonal-arc` | 직교 경로 + arc 코너 방식 |
+| `--edge-corner-radius` | `24px` (initial) | 직교 코너 arc 반지름 |
 
 ## 7. Component Style Template
 | Component | Structure | States | Variant | Notes |
@@ -255,10 +258,12 @@
 1. Edge line:
    - color: `--edge-line-color` (`#FFFFFF`)
    - width: `--edge-line-width` (`4px`)
+   - routing: `orthogonal + arc corner` (수평/수직 세그먼트 + 둥근 코너)
 2. Endpoint ports:
    - 양 끝점 모두 표시 (source/target 모두)
    - outer: white ring circle
    - inner: 해당 노드 `category`의 chip color
+   - z-layer: node layer에서 렌더링하여 카드 위로 노출
 3. Port position:
    - 카드 측면 기준 `top: 52px` 지점
    - source는 우측 포트, target은 좌측 포트
@@ -275,8 +280,12 @@
    - fanout 범위는 `--edge-fanout-max` 이내
 2. Card overlap (line crossing card body):
    - 카드 측면 포트에서 즉시 수평 이탈(`--edge-clearance-x`) 후 경로 진행
-   - source clear point -> mid routing -> target clear point -> target 포트 순으로 경로 구성
+   - source clear point -> orthogonal lane -> target clear point -> target 포트 순으로 경로 구성
+   - 각 꺾임점은 `arc`로 라운딩 처리(`--edge-corner-radius`)
    - 목적: 선이 카드 본문/라운드 코너 영역을 가로지르지 않도록 보장
+3. Reverse placement (right-to-left layouts):
+   - 노드가 역순으로 배치된 경우 상/하 우회 lane을 통해 ㄹ자 경로를 우선 적용
+   - 코너는 동일하게 arc 라운딩 처리
 
 #### D. Logical Flow Policy
 - 현재 정책: `Problem -> Solution` 우선 + 좌->우 시각 흐름 정규화
@@ -294,7 +303,7 @@
 - `components/nodes/ThinkingNode.jsx`:
   - 좌/우 고정 포트 렌더링
 - `components/edges/ConnectorEdge.jsx`:
-  - custom path + fanout + clearance routing
+  - custom orthogonal path + arc corner + fanout + clearance routing
 
 ## 8. Motion and Interaction
 - Page transition:
@@ -310,6 +319,7 @@
   - direction normalized (`Problem -> Solution`, else left-to-right`)
   - endpoint ports shown on both sides
   - fanout and clearance routing for overlap prevention
+  - orthogonal + arc corner path for readability and overlap avoidance
 
 ## 9. Responsive Rules
 | Breakpoint | Rule |
@@ -350,3 +360,4 @@
 | UI-008 | 노드 연결선 포트 표시 범위를 시작점만/양 끝점 모두 중 무엇으로 할지? |  |  | Resolved (양 끝점 모두, 2026-02-28) |
 | UI-009 | 노드 연결선 두께를 몇 px로 확정할지? |  |  | Resolved (`4px`, 2026-02-28) |
 | UI-010 | 노드 좌우 이동 후 방향 처리를 source/target 스왑할지 여부 |  |  | Resolved (Problem->Solution 우선 정규화 + 좌->우 정렬, 2026-02-28) |
+| UI-011 | 직교 경로 코너 처리 방식을 `arc`/`quadratic` 중 무엇으로 할지 |  |  | Resolved (`arc`, 2026-02-28) |

@@ -80,6 +80,7 @@
 
 ### 3.6 Manual QA Checklist (Node Connector Edge)
 - [ ] 연결선이 `4px` 흰색 선으로 렌더링된다.
+- [ ] 연결선 경로가 `orthogonal + arc corner` 형태로 렌더링된다.
 - [ ] 연결선 시작점/종료점 모두에 endpoint 포트가 렌더링된다.
 - [ ] endpoint 포트는 white ring + 내부 category color 조합으로 렌더링된다.
 - [ ] 포트 기준점이 카드 상단 기준 `52px` 위치에 고정된다.
@@ -87,6 +88,7 @@
 - [ ] `Problem`/`Solution` 연결은 항상 `Problem -> Solution` 방향으로 렌더링된다.
 - [ ] 그 외 연결은 노드 좌->우 방향으로 정규화되어 렌더링된다.
 - [ ] 선이 카드 본문을 가로지르지 않고 card boundary 바깥 clearance 경로를 따른다.
+- [ ] 역순 배치(right-to-left)에서도 ㄹ자 우회 경로 + arc 코너로 카드와 겹치지 않는다.
 - [ ] `e-input-*`, `e-chat-*`, `e-cross-*` 타입에서 모두 동일한 기본 connector 규칙이 유지된다.
 
 #### 3.6.1 Suggested Execution Steps
@@ -112,6 +114,7 @@
 | T-011 | UI | connector anchor position | 좌/우 포트 기준점 `top 52px` 유지 | P0 | Planned |
 | T-012 | UI | connector direction normalization | Problem->Solution 우선 + left-to-right 정규화 | P0 | Planned |
 | T-013 | UI | connector overlap mitigation | fanout + clearance 경로로 카드/선 겹침 완화 | P1 | Planned |
+| T-014 | UI | connector corner style | orthogonal 경로 코너가 arc 반지름으로 일관 렌더링 | P1 | Planned |
 
 ## 5. Go / No-Go Criteria
 - P0 결함 0건

@@ -91,7 +91,7 @@ function buildNodeStyle() {
         width: 232,
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden',
+        overflow: 'visible',
         boxShadow: "0 8px 24px -12px rgb(0 0 0 / 0.22)",
     };
 }
