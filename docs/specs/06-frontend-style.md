@@ -4,6 +4,8 @@
 - [ ] [added: 2026-02-28] [status: decision-needed] Node image 비율/크롭 규칙(`cover` vs `contain`)을 Figma Inspect 기준으로 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] Title/Body 타이포(폰트 패밀리, 크기, 굵기, line-height) 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] 6하원칙 chip 토큰 이름(`--chip-when` vs `--chip-where`) 최종 확정
+- [x] [added: 2026-02-28] [status: completed 2026-02-28] Drawer 좌측 강조를 위해 lemon strip 레이어를 추가한다.
+- [x] [added: 2026-02-28] [status: completed 2026-02-28] Drawer 좌측 white overlay alpha를 약화해 레몬 강조가 눌리지 않게 미세 조정한다.
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] Right Agent Drawer content 영역에 Top Bar safe zone을 적용해 상단 겹침을 제거한다.
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] Top Bar 광학 중심 보정을 위해 아이콘 정사각 프레임 + 좌우 고정 슬롯 레이아웃을 적용한다.
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1.1-reopen] Right Agent Drawer 시각 리파인을 구조 회귀 없이 재적용한다(원형 Tip/Chat + 보라 점 + 단순 gradient field, content/glass/full-height 유지).
@@ -124,7 +126,9 @@
 | `--agent-field-radial` | `radial-gradient(100.27% 97.75% at 97.75% 50%, #E0FFF4 0%, #AEF1DA 22.12%, #BBD8E6 80.17%, #FFFFEA 100%)` | 우측 drawer radial gradient |
 | `--agent-field-base-fade` | `linear-gradient(90deg, rgba(166,255,211,0) 0%, rgba(166,255,211,0.70) 24%, rgba(166,255,211,1) 46%)` | base 채움의 좌측 투명 페이드(끝점 alpha 0 보장) |
 | `--agent-field-radial-tail-alpha` | `0` (at 100%) | radial gradient 말단 alpha 종료값 |
-| `--agent-field-edge-overlay` | `linear-gradient(90deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.10) 42%, rgba(255,255,255,0) 100%)` | 좌측 경계 neutral alpha-fade 오버레이 |
+| `--agent-field-lemon-strip` | `linear-gradient(90deg, rgba(241,255,138,0.92) 0%, rgba(241,255,138,0.58) 36%, rgba(241,255,138,0) 100%)` | 좌측 레몬 강조 스트립 레이어 |
+| `--agent-field-lemon-strip-width` | `88px` | 좌측 레몬 스트립 폭 |
+| `--agent-field-edge-overlay` | `linear-gradient(90deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 42%, rgba(255,255,255,0) 100%)` | 좌측 경계 neutral alpha-fade 오버레이(약화) |
 | `--agent-field-edge-overlay-role` | `alpha-fade-only` | 오버레이 용도(색 보정 금지) |
 | `--agent-field-edge-overlay-width` | `64px` | 좌측 경계 마감 오버레이 폭 |
 | `--agent-content-safe-inset-left` | `40px` (phase 1.4 target) | 좌측 경계와 glass 콘텐츠 간 안전 여백 |
@@ -470,9 +474,10 @@
 
 #### C.1 Visual Update (Mockup Alignment 2026-02-28)
 1. Rail and field:
-   - rail은 카드형 박스보다 단순한 세로 레이어로 표현한다.
-   - right field는 `base fill + radial gradient overlay` 조합으로 표현한다.
-   - 좌측 경계는 `overlay-first` 정책으로 처리한다: `base linear fade + radial alpha + canvas-color edge overlay`.
+  - rail은 카드형 박스보다 단순한 세로 레이어로 표현한다.
+  - right field는 `base fill + radial gradient overlay` 조합으로 표현한다.
+  - 좌측 레몬 강조가 부족할 경우 `lemon strip` 레이어를 추가해 강한 밝기 띠를 만든다.
+  - 좌측 경계는 `overlay-first` 정책으로 처리한다: `base linear fade + radial alpha + canvas-color edge overlay`.
    - `mask-image`는 사용하지 않는다(유지보수/디버깅 단순성 우선).
    - radial 값은 `radial-gradient(100.27% 97.75% at 97.75% 50%, #E0FFF4 0%, #AEF1DA 22.12%, #BBD8E6 80.17%, #FFFFEA 100%)`를 기준으로 한다.
    - 배경이 회색으로 눌려 보이는 현상 방지를 위해 radial blur는 기본 `0px`로 유지한다.
@@ -500,6 +505,7 @@
 2. Layer order (back to front):
    - `base linear fade`: field 기본 채움 자체를 좌측에서 투명->불투명으로 전환
    - `radial gradient`: 중심 색상 분위기 부여(좌측 영향은 alpha로 제한)
+   - `lemon strip`: 좌측 강조용 고채도 레이어 (`--agent-field-lemon-strip`)
    - `neutral alpha edge overlay`: 색 보정이 아닌 투명 페이드 전용 오버레이로 경계 마감을 정리
    - `content safe inset`: glass 패널/카드가 좌측 경계에 닿지 않도록 `left 40px`, `right 28px` 내부 여백 유지
 3. Non-goals:
@@ -512,6 +518,7 @@
    - `base fade`의 좌측 tail은 `alpha 0`으로 시작해야 한다.
    - `radial gradient`의 말단(outer edge)은 `alpha 0`으로 끝나야 한다.
    - `edge overlay`는 중립색 기반이며 마지막 stop이 반드시 `alpha 0`이어야 한다.
+   - 레몬 강조 적용 단계에서는 `edge overlay` alpha를 약화해(`0.10 -> 0.04` 구간) 색상 눌림을 최소화한다.
 
 #### C.2 Structure Lock Policy (Regression Guard)
 1. Allowed in visual refinement:

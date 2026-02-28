@@ -128,7 +128,9 @@
 - [ ] right field 좌측 경계가 feather linear 처리되어 잘린 선 없이 부드럽게 보인다.
 - [ ] 좌측 경계 처리가 `overlay-first`(`base linear fade + canvas-color edge overlay`) 규칙을 따른다.
 - [ ] 좌측 `edge overlay`가 충분한 폭(`64px`)으로 적용되어 경계가 시각적으로 끊기지 않는다.
+- [ ] 좌측 `lemon strip` 레이어가 적용되어 레몬색 강조가 명확히 보인다.
 - [ ] `edge overlay` linear gradient 끝점이 완전 투명(`alpha 0`)으로 처리된다.
+- [ ] `edge overlay` alpha 약화값(`0.10/0.04` 레벨)이 적용되어 레몬 strip 채도가 눌리지 않는다.
 - [ ] `base fade` 시작점(alpha)과 `radial` 말단(alpha)이 모두 `0`으로 종료된다.
 - [ ] edge overlay가 색 보정용이 아니라 neutral alpha-fade 용도로만 사용된다.
 - [ ] 경계 블렌딩 구현에 `mask-image`/`-webkit-mask-image`가 사용되지 않는다.
@@ -169,6 +171,7 @@
 | T-025 | UI | drawer alpha-tail policy | base/radial alpha 0 종료 + neutral alpha overlay-only 정책 준수 | P1 | Planned |
 | T-026 | UI | top bar composition | Home 아이콘(24px frame) + 중앙 타이틀 + 좌우 고정 슬롯 균형 유지 | P1 | Planned |
 | T-027 | UI | drawer top safe-zone | drawer 콘텐츠가 Top Bar 영역과 겹치지 않고 rail full-height 규칙을 유지 | P1 | Planned |
+| T-028 | UI | drawer lemon emphasis | 좌측 lemon strip + 약화된 edge overlay 조합으로 좌측 밝은 레몬 강조 유지 | P1 | Planned |
 
 ## 5. Go / No-Go Criteria
 - P0 결함 0건

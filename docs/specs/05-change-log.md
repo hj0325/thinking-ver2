@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Drawer left lemon-strip emphasis and overlay attenuation applied
+- Summary:
+  - Drawer 좌측 강조를 위해 별도 `lemon strip` 레이어를 추가해 밝은 레몬색 띠를 강화했다.
+  - 좌측 `edge overlay` alpha를 약화해(white wash 감소) 레몬 strip 채도가 눌려 보이는 현상을 줄였다.
+  - 스펙/테스트 문서에 신규 토큰(`--agent-field-lemon-strip`, width)과 QA 항목(`T-028`)을 동기화했다.
+- Scope: Frontend
+- Files: `components/RightAgentDrawer.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: lemon strip 레이어 추가(폭 `88px`) 및 edge overlay alpha 약화(`0.10/0.04`) 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Drawer top safe-zone and top bar optical centering applied
 - Summary:
   - Right Agent Drawer content stack에 상단 safe-zone(`56px`)을 적용해 Top Bar와 context/glass 콘텐츠가 겹치지 않도록 조정했다.
