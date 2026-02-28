@@ -130,7 +130,8 @@
 - [ ] 좌측 `edge overlay`가 충분한 폭(`64px`)으로 적용되어 경계가 시각적으로 끊기지 않는다.
 - [ ] 좌측 `lemon strip` 레이어가 적용되어 레몬색 강조가 명확히 보인다.
 - [ ] `edge overlay` linear gradient 끝점이 완전 투명(`alpha 0`)으로 처리된다.
-- [ ] `edge overlay` alpha 약화값(`0.10/0.04` 레벨)이 적용되어 레몬 strip 채도가 눌리지 않는다.
+- [ ] `edge overlay` 완충 alpha(`0.18/0.08` 레벨)가 적용되어 윤곽 feather가 유지된다.
+- [ ] `lemon strip`가 투명 시작형(`0 -> peak -> 0`)으로 렌더링되어 좌측 경계가 선명한 실선처럼 보이지 않는다.
 - [ ] `base fade` 시작점(alpha)과 `radial` 말단(alpha)이 모두 `0`으로 종료된다.
 - [ ] edge overlay가 색 보정용이 아니라 neutral alpha-fade 용도로만 사용된다.
 - [ ] 경계 블렌딩 구현에 `mask-image`/`-webkit-mask-image`가 사용되지 않는다.

@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Feather-first rebalance for drawer left lemon emphasis
+- Summary:
+  - 좌측 윤곽이 선명해 보이던 문제를 해결하기 위해 lemon strip를 `투명 시작형(0 -> peak -> 0)`으로 재조정했다.
+  - edge overlay를 과도 약화값에서 완충값으로 복원(`0.18 -> 0.08 -> 0`)해 drawer 좌측 feather 윤곽을 회복했다.
+  - lemon strip 폭을 `104px`로 넓혀 경계 전이를 더 길게 확보하고 hard edge 체감을 줄였다.
+- Scope: Frontend
+- Files: `components/RightAgentDrawer.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: strip/overlay gradient stop과 폭(`104px`) 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Drawer left lemon-strip emphasis and overlay attenuation applied
 - Summary:
   - Drawer 좌측 강조를 위해 별도 `lemon strip` 레이어를 추가해 밝은 레몬색 띠를 강화했다.

@@ -69,9 +69,9 @@ export default function RightAgentDrawer({
   const drawerFieldRadialAlpha =
     "radial-gradient(100.27% 97.75% at 97.75% 50%, rgba(224,255,244,0.94) 0%, rgba(174,241,218,0.84) 22.12%, rgba(187,216,230,0.42) 80.17%, rgba(255,255,234,0) 100%)";
   const drawerFieldLemonStrip =
-    "linear-gradient(90deg, rgba(241,255,138,0.92) 0%, rgba(241,255,138,0.58) 36%, rgba(241,255,138,0) 100%)";
+    "linear-gradient(90deg, rgba(241,255,138,0) 0%, rgba(241,255,138,0.70) 22%, rgba(241,255,138,0.34) 54%, rgba(241,255,138,0) 100%)";
   const drawerFieldEdgeOverlay =
-    "linear-gradient(90deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 42%, rgba(255,255,255,0) 100%)";
+    "linear-gradient(90deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.08) 46%, rgba(255,255,255,0) 100%)";
   const chatBottomRef = useRef(null);
 
   useEffect(() => {
@@ -134,7 +134,7 @@ export default function RightAgentDrawer({
           }}
         >
           <div
-            className="pointer-events-none absolute inset-y-0 left-0 z-[0] w-[88px]"
+            className="pointer-events-none absolute inset-y-0 left-0 z-[0] w-[104px]"
             aria-hidden
             style={{ background: drawerFieldLemonStrip }}
           />

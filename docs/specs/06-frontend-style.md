@@ -126,9 +126,9 @@
 | `--agent-field-radial` | `radial-gradient(100.27% 97.75% at 97.75% 50%, #E0FFF4 0%, #AEF1DA 22.12%, #BBD8E6 80.17%, #FFFFEA 100%)` | 우측 drawer radial gradient |
 | `--agent-field-base-fade` | `linear-gradient(90deg, rgba(166,255,211,0) 0%, rgba(166,255,211,0.70) 24%, rgba(166,255,211,1) 46%)` | base 채움의 좌측 투명 페이드(끝점 alpha 0 보장) |
 | `--agent-field-radial-tail-alpha` | `0` (at 100%) | radial gradient 말단 alpha 종료값 |
-| `--agent-field-lemon-strip` | `linear-gradient(90deg, rgba(241,255,138,0.92) 0%, rgba(241,255,138,0.58) 36%, rgba(241,255,138,0) 100%)` | 좌측 레몬 강조 스트립 레이어 |
-| `--agent-field-lemon-strip-width` | `88px` | 좌측 레몬 스트립 폭 |
-| `--agent-field-edge-overlay` | `linear-gradient(90deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 42%, rgba(255,255,255,0) 100%)` | 좌측 경계 neutral alpha-fade 오버레이(약화) |
+| `--agent-field-lemon-strip` | `linear-gradient(90deg, rgba(241,255,138,0) 0%, rgba(241,255,138,0.70) 22%, rgba(241,255,138,0.34) 54%, rgba(241,255,138,0) 100%)` | 좌측 레몬 강조 스트립 레이어(투명 시작 feather) |
+| `--agent-field-lemon-strip-width` | `104px` | 좌측 레몬 스트립 폭 |
+| `--agent-field-edge-overlay` | `linear-gradient(90deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.08) 46%, rgba(255,255,255,0) 100%)` | 좌측 경계 neutral alpha-fade 오버레이(윤곽 feather 복원) |
 | `--agent-field-edge-overlay-role` | `alpha-fade-only` | 오버레이 용도(색 보정 금지) |
 | `--agent-field-edge-overlay-width` | `64px` | 좌측 경계 마감 오버레이 폭 |
 | `--agent-content-safe-inset-left` | `40px` (phase 1.4 target) | 좌측 경계와 glass 콘텐츠 간 안전 여백 |
@@ -518,7 +518,7 @@
    - `base fade`의 좌측 tail은 `alpha 0`으로 시작해야 한다.
    - `radial gradient`의 말단(outer edge)은 `alpha 0`으로 끝나야 한다.
    - `edge overlay`는 중립색 기반이며 마지막 stop이 반드시 `alpha 0`이어야 한다.
-   - 레몬 강조 적용 단계에서는 `edge overlay` alpha를 약화해(`0.10 -> 0.04` 구간) 색상 눌림을 최소화한다.
+   - 레몬 강조 적용 단계에서는 strip를 투명 시작형으로 두고(`0 -> peak -> 0`), `edge overlay`는 완충용 alpha(`0.18 -> 0.08 -> 0`)로 윤곽 feather를 유지한다.
 
 #### C.2 Structure Lock Policy (Regression Guard)
 1. Allowed in visual refinement:
