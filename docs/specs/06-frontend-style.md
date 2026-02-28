@@ -182,9 +182,20 @@
 |---|---|---|
 | `--topbar-pad-y` | `12px` | Top bar 상하 패딩 |
 | `--topbar-pad-x` | `36px` | Top bar 좌우 패딩 |
+| `--topbar-home-cluster-padding` | `2px` | 아이콘+Home 클러스터 패딩 |
+| `--topbar-home-cluster-gap` | `2px` | 아이콘과 Home 텍스트 간격 |
+| `--topbar-home-cluster-align` | `center` | 아이콘+Home 세로 정렬 |
 | `--topbar-title` | `Visual Thinking Machine` | 상단 중앙 타이틀 텍스트 |
 | `--topbar-home-label` | `Home` | 좌측 홈 라벨 |
-| `--topbar-home-icon` | `lucide-react/Home` | 좌측 홈 아이콘 소스 |
+| `--topbar-home-icon` | `custom inline svg` | 좌측 홈 아이콘 소스 |
+| `--topbar-home-icon-size` | `24px` | 홈 아이콘 width/height |
+| `--topbar-home-icon-aspect` | `1 / 1` | 홈 아이콘 비율 |
+| `--topbar-text-color` | `#838383` | Home/Title 텍스트 색상 |
+| `--topbar-font-family` | `"Instrument Sans"` | Home/Title 폰트 |
+| `--topbar-font-size` | `16px` | Home/Title 폰트 크기 |
+| `--topbar-font-weight` | `500` | Home/Title 폰트 굵기 |
+| `--topbar-line-height` | `100%` (`16px`) | Home/Title 줄높이 |
+| `--topbar-letter-spacing` | `-0.352px` | Home/Title 자간 |
 
 ## 7. Component Style Template
 | Component | Structure | States | Variant | Notes |
@@ -199,6 +210,34 @@
 | Top Bar | `left home action + centered title + right spacer` | default | desktop overlay | top padding `12px 36px` |
 | Admin Shortcut + Status Overlay | `shortcut hint + admin status badge` | hint-visible/admin-off/admin-on | first-entry / dismissed | prototype status visibility control |
 | Right Agent Drawer (Tip/Chat) | `glow rail + filled field + content panel` | closed/open-tip/open-chat | with-context / no-context | drawer boundary includes rail and right field |
+
+### 7.8 Top Bar (Mockup V1 Spec)
+#### A. Home Cluster Layout
+- `display: flex`
+- `padding: 2px`
+- `align-items: center`
+- `gap: 2px`
+
+#### B. Home Icon Shape/Size
+- 아이콘은 아래 path를 사용하는 custom inline SVG로 고정한다.
+- `width: 24px`
+- `height: 24px`
+- `aspect-ratio: 1 / 1`
+
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <path d="M5 19.0002V10.3082C5 10.0522 5.05733 9.8099 5.172 9.58123C5.28667 9.35257 5.44467 9.16423 5.646 9.01623L11.031 4.93823C11.313 4.7229 11.635 4.61523 11.997 4.61523C12.359 4.61523 12.683 4.7229 12.969 4.93823L18.354 9.01523C18.556 9.16323 18.714 9.3519 18.828 9.58123C18.9427 9.8099 19 10.0522 19 10.3082V19.0002C19 19.2682 18.9003 19.5019 18.701 19.7012C18.5017 19.9006 18.268 20.0002 18 20.0002H14.616C14.3867 20.0002 14.1947 19.9229 14.04 19.7682C13.8853 19.6129 13.808 19.4209 13.808 19.1922V14.4232C13.808 14.1946 13.7307 14.0029 13.576 13.8482C13.4207 13.6929 13.2287 13.6152 13 13.6152H11C10.7713 13.6152 10.5797 13.6929 10.425 13.8482C10.2697 14.0029 10.192 14.1946 10.192 14.4232V19.1932C10.192 19.4219 10.1147 19.6136 9.96 19.7682C9.80533 19.9229 9.61367 20.0002 9.385 20.0002H6C5.732 20.0002 5.49833 19.9006 5.299 19.7012C5.09967 19.5019 5 19.2682 5 19.0002Z" fill="#838383"/>
+</svg>
+```
+
+#### C. Typography (Home + Visual Thinking Machine)
+- `color: #838383`
+- `font-family: "Instrument Sans"`
+- `font-size: 16px`
+- `font-style: normal`
+- `font-weight: 500`
+- `line-height: 100%` (`16px`)
+- `letter-spacing: -0.352px`
 
 ### 7.1 Node Card (Mockup V1 Spec)
 #### A. Container
@@ -679,7 +718,7 @@
   - orthogonal + arc corner path for readability and overlap avoidance
 
 ### 8.1 Top Bar Interaction
-- 좌측 `Home`는 `lucide-react`의 `Home` 아이콘 + `Home` 텍스트 조합으로 구성한다.
+- 좌측 `Home`는 custom inline SVG 아이콘 + `Home` 텍스트 조합으로 구성한다.
 - 중앙 타이틀은 `Visual Thinking Machine` 고정 문자열을 사용한다.
 - Top bar는 캔버스 상단 오버레이로 렌더링하고, 홈 링크 외 영역은 pointer-events를 차단한다.
 
@@ -725,7 +764,7 @@
 | UI-007 | `Instrument Sans` 적용 범위를 전체 UI로 확장할지 Node/Card 우선으로 둘지? |  |  | Resolved (전체 UI + 제목급 Inter 예외, 2026-02-28) |
 | UI-008 | 노드 연결선 포트 표시 범위를 시작점만/양 끝점 모두 중 무엇으로 할지? |  |  | Resolved (edge 양 끝점 기준 + 노드에서는 연결된 side만 표시, 2026-02-28) |
 | UI-009 | 노드 연결선 두께를 몇 px로 확정할지? |  |  | Resolved (`2px`, 2026-02-28) |
-| UI-020 | Top bar의 홈 아이콘 소스를 무엇으로 고정할지? |  |  | Resolved (`lucide-react/Home`, 2026-02-28) |
+| UI-020 | Top bar의 홈 아이콘 소스를 무엇으로 고정할지? |  |  | Resolved (`custom inline svg (provided path)`, 2026-02-28) |
 | UI-010 | 노드 좌우 이동 후 방향 처리를 source/target 스왑할지 여부 |  |  | Resolved (Problem->Solution 우선 정규화 + 좌->우 정렬, 2026-02-28) |
 | UI-011 | 직교 경로 코너 처리 방식을 `arc`/`quadratic` 중 무엇으로 할지 |  |  | Resolved (`arc`, 2026-02-28) |
 | UI-012 | Canvas stage 전환 트리거를 어떤 상태값/이벤트로 연결할지? |  |  | Open |

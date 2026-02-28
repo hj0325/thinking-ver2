@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Top bar icon and typography aligned to provided SVG/style
+- Summary:
+  - `TopBar`의 좌측 `Home` 아이콘을 `lucide-react`에서 사용자 제공 inline SVG path로 교체했다.
+  - `Home` 클러스터 레이아웃을 `display:flex`, `padding:2px`, `align-items:center`, `gap:2px`로 조정했다.
+  - `Home`/`Visual Thinking Machine` 텍스트를 `Instrument Sans`, `16px`, `500`, `line-height 100%`, `letter-spacing -0.352px`, `#838383`로 통일했다.
+- Scope: Frontend
+- Files: `components/TopBar.jsx`, `docs/specs/05-change-log.md`
+- Validation: TopBar JSX/class/style 값이 스펙 토큰(`06-frontend-style`)과 일치하는지 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`
+
 ### [Patch] 2026-02-28 - TopBar added with lucide Home and connector width updated to 2px
 - Summary:
   - `TopBar` 컴포넌트를 신설하고 `lucide-react`의 `Home` 아이콘 + `Home` 라벨 + 중앙 `Visual Thinking Machine` 텍스트 구조를 적용했다.

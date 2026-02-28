@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Home } from "lucide-react";
 
 export default function TopBar() {
   return (
@@ -10,15 +9,43 @@ export default function TopBar() {
         <div className="justify-self-start">
           <Link
             href="/"
-            className="pointer-events-auto inline-flex items-center gap-2 text-[15px] font-medium text-slate-700 transition hover:text-slate-900"
+            className="pointer-events-auto inline-flex items-center gap-[2px] p-[2px] transition-opacity hover:opacity-85"
             aria-label="Go to Home"
           >
-            <Home size={15} strokeWidth={2.4} aria-hidden />
-            <span>Home</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden
+            >
+              <path
+                d="M5 19.0002V10.3082C5 10.0522 5.05733 9.8099 5.172 9.58123C5.28667 9.35257 5.44467 9.16423 5.646 9.01623L11.031 4.93823C11.313 4.7229 11.635 4.61523 11.997 4.61523C12.359 4.61523 12.683 4.7229 12.969 4.93823L18.354 9.01523C18.556 9.16323 18.714 9.3519 18.828 9.58123C18.9427 9.8099 19 10.0522 19 10.3082V19.0002C19 19.2682 18.9003 19.5019 18.701 19.7012C18.5017 19.9006 18.268 20.0002 18 20.0002H14.616C14.3867 20.0002 14.1947 19.9229 14.04 19.7682C13.8853 19.6129 13.808 19.4209 13.808 19.1922V14.4232C13.808 14.1946 13.7307 14.0029 13.576 13.8482C13.4207 13.6929 13.2287 13.6152 13 13.6152H11C10.7713 13.6152 10.5797 13.6929 10.425 13.8482C10.2697 14.0029 10.192 14.1946 10.192 14.4232V19.1932C10.192 19.4219 10.1147 19.6136 9.96 19.7682C9.80533 19.9229 9.61367 20.0002 9.385 20.0002H6C5.732 20.0002 5.49833 19.9006 5.299 19.7012C5.09967 19.5019 5 19.2682 5 19.0002Z"
+                fill="#838383"
+              />
+            </svg>
+            <span
+              className="text-[16px] font-medium text-[#838383]"
+              style={{
+                fontFamily: '"Instrument Sans", sans-serif',
+                lineHeight: "100%",
+                letterSpacing: "-0.352px",
+              }}
+            >
+              Home
+            </span>
           </Link>
         </div>
 
-        <div className="justify-self-center font-heading text-[15px] font-medium text-slate-700">
+        <div
+          className="justify-self-center text-[16px] font-medium text-[#838383]"
+          style={{
+            fontFamily: '"Instrument Sans", sans-serif',
+            lineHeight: "100%",
+            letterSpacing: "-0.352px",
+          }}
+        >
           Visual Thinking Machine
         </div>
 

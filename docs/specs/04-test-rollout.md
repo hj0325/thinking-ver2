@@ -101,7 +101,7 @@
 
 ### 3.7 Manual QA Checklist (Top Bar)
 - [ ] 상단에 Top bar가 `12px 36px` 패딩으로 고정 렌더링된다.
-- [ ] 좌측 Home 아이콘은 `lucide-react`의 `Home`으로 렌더링된다.
+- [ ] 좌측 Home 아이콘은 제공된 custom SVG path 모양으로 렌더링된다.
 - [ ] 중앙 텍스트 `Visual Thinking Machine`이 고정 노출된다.
 - [ ] Home 클릭 시 `/` 경로로 이동한다.
 
