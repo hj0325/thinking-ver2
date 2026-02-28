@@ -18,7 +18,7 @@
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] `Instrument Sans` 웹 폰트를 설치하고 기본 UI/Node 텍스트에 적용
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] pan 동작의 modifier key 정책을 `기본 drag pan`으로 확정
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] `Instrument Sans` 적용 범위를 전체 UI로 확정하고, 제목급 텍스트는 `Inter` 예외 정책으로 확정
-- [x] [added: 2026-02-28] [status: completed 2026-02-28] (1차) 노드 연결선 프론트 스타일(4px 흰 선, 연결 side 포트, 52px 앵커, fanout/clearance)을 적용
+- [x] [added: 2026-02-28] [status: completed 2026-02-28] (1차) 노드 연결선 프론트 스타일(2px 흰 선, 연결 side 포트, 52px 앵커, fanout/clearance)을 적용
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] 노드 연결선 코너 처리 방식을 `orthogonal + arc`로 확정
 - [ ] [added: 2026-02-28] [status: execution-needed] (2차) 원인→결과 자동 정렬/정합 강화 규칙을 도입한다. 필요 이유: 현재는 source/target 의미 보존과 사용자 수동 배치 의도를 우선해야 하므로, 강제 재정렬은 의미 왜곡/UX 충돌 리스크가 있어 별도 단계로 분리
 
@@ -35,7 +35,7 @@
 
 ## 2. Purpose
 목업 기반 프론트엔드 구조와 스타일 규칙을 명시한다.  
-현재 문서는 **Node Card + Canvas Background + Right Agent Drawer** 디자인 규칙을 중심으로 확정/가확정 값을 정리한다.
+현재 문서는 **Node Card + Canvas Background + Top Bar + Right Agent Drawer** 디자인 규칙을 중심으로 확정/가확정 값을 정리한다.
 
 ## 3. Visual Direction
 - Keywords: `clean`, `compact`, `semantic chips`, `idea summary`
@@ -165,7 +165,7 @@
 | Token | Value | Usage |
 |---|---|---|
 | `--edge-line-color` | `#FFFFFF` | 노드 간 연결선 기본 색상 |
-| `--edge-line-width` | `4px` | 노드 간 연결선 두께 (확정) |
+| `--edge-line-width` | `2px` | 노드 간 연결선 두께 (확정) |
 | `--edge-port-offset-top` | `52px` | 카드 상단 기준 포트 Y 기준점 |
 | `--edge-port-outer-size` | `20px` | 포트 외곽 원(white ring 포함) |
 | `--edge-port-inner-size` | `12px` | 포트 내부 컬러 원 |
@@ -177,6 +177,15 @@
 | `--edge-corner-radius` | `24px` (initial) | 직교 코너 arc 반지름 |
 | `--edge-lane-gap` | `80px` | 역순/혼잡 배치 시 상하 우회 lane 간격 |
 
+### 6.7 Top Bar Tokens
+| Token | Value | Usage |
+|---|---|---|
+| `--topbar-pad-y` | `12px` | Top bar 상하 패딩 |
+| `--topbar-pad-x` | `36px` | Top bar 좌우 패딩 |
+| `--topbar-title` | `Visual Thinking Machine` | 상단 중앙 타이틀 텍스트 |
+| `--topbar-home-label` | `Home` | 좌측 홈 라벨 |
+| `--topbar-home-icon` | `lucide-react/Home` | 좌측 홈 아이콘 소스 |
+
 ## 7. Component Style Template
 | Component | Structure | States | Variant | Notes |
 |---|---|---|---|---|
@@ -187,6 +196,7 @@
 | Canvas Stage Background | `single-surface fill + central stage gradient` | fixed-stage (initial) | 4 stage color presets | right-edge glow excluded |
 | Canvas Pan Interaction | `empty-space drag` | idle/panning/dragging-node | modifier/no-modifier | NodeMap interaction spec |
 | Node Connector Edge | `edge + connected-side endpoint ports` | default/highlighted/overlapped | input/chat/cross | logical flow with fixed source/target semantics |
+| Top Bar | `left home action + centered title + right spacer` | default | desktop overlay | top padding `12px 36px` |
 | Admin Shortcut + Status Overlay | `shortcut hint + admin status badge` | hint-visible/admin-off/admin-on | first-entry / dismissed | prototype status visibility control |
 | Right Agent Drawer (Tip/Chat) | `glow rail + filled field + content panel` | closed/open-tip/open-chat | with-context / no-context | drawer boundary includes rail and right field |
 
@@ -589,7 +599,7 @@
 #### A. Scope and Rollout
 - 이번 범위(1차): 프론트엔드 안전 적용
   - 연결선/포트 시각 스타일
-  - 포트 위치(상단 52px), 선 굵기(4px), 카드 겹침 회피 라우팅
+  - 포트 위치(상단 52px), 선 굵기(2px), 카드 겹침 회피 라우팅
   - source/target 의미를 유지한 방향 고정
 - 다음 범위(2차): 정합 강화 로직
   - 원인→결과 자동 정렬 및 재배치 정책은 To-do로만 유지
@@ -597,7 +607,7 @@
 #### B. Visual Rules (Resolved)
 1. Edge line:
    - color: `--edge-line-color` (`#FFFFFF`)
-   - width: `--edge-line-width` (`4px`)
+   - width: `--edge-line-width` (`2px`)
    - routing: `orthogonal + arc corner` (수평/수직 세그먼트 + 둥근 코너)
 2. Endpoint ports:
    - 각 edge의 양 끝점은 표시하되, 노드 기준으로는 연결이 존재하는 side에만 포트를 표시
@@ -668,6 +678,11 @@
   - fanout and clearance routing for overlap prevention
   - orthogonal + arc corner path for readability and overlap avoidance
 
+### 8.1 Top Bar Interaction
+- 좌측 `Home`는 `lucide-react`의 `Home` 아이콘 + `Home` 텍스트 조합으로 구성한다.
+- 중앙 타이틀은 `Visual Thinking Machine` 고정 문자열을 사용한다.
+- Top bar는 캔버스 상단 오버레이로 렌더링하고, 홈 링크 외 영역은 pointer-events를 차단한다.
+
 ## 9. Responsive Rules
 | Breakpoint | Rule |
 |---|---|
@@ -693,6 +708,7 @@
 | Heading font exception (`Inter` priority) | `components/ThinkingMachine.jsx`, `components/SuggestionPanel.jsx`, `components/ChatDialog.jsx`, `styles/globals.css` |
 | Canvas single-surface stage background | `components/NodeMap.jsx`, `styles/globals.css` |
 | Canvas pan behavior | `components/NodeMap.jsx` |
+| Top bar UI | `components/TopBar.jsx`, `components/ThinkingMachine.jsx` |
 | Admin shortcut / prototype status overlay | `components/ThinkingMachine.jsx` |
 | Right agent drawer / context shelf | `components/ThinkingMachine.jsx`, `components/SuggestionPanel.jsx`, `components/ChatDialog.jsx`, `styles/globals.css` |
 | Connector edge style/routing | `components/NodeMap.jsx`, `components/ThinkingMachine.jsx`, `styles/globals.css`, `components/nodes/ThinkingNode.jsx`, `components/edges/ConnectorEdge.jsx` |
@@ -708,7 +724,8 @@
 | UI-006 | Canvas pan을 기본 drag로 둘지, `Space+drag`로 제한할지? |  |  | Resolved (기본 drag pan, 2026-02-28) |
 | UI-007 | `Instrument Sans` 적용 범위를 전체 UI로 확장할지 Node/Card 우선으로 둘지? |  |  | Resolved (전체 UI + 제목급 Inter 예외, 2026-02-28) |
 | UI-008 | 노드 연결선 포트 표시 범위를 시작점만/양 끝점 모두 중 무엇으로 할지? |  |  | Resolved (edge 양 끝점 기준 + 노드에서는 연결된 side만 표시, 2026-02-28) |
-| UI-009 | 노드 연결선 두께를 몇 px로 확정할지? |  |  | Resolved (`4px`, 2026-02-28) |
+| UI-009 | 노드 연결선 두께를 몇 px로 확정할지? |  |  | Resolved (`2px`, 2026-02-28) |
+| UI-020 | Top bar의 홈 아이콘 소스를 무엇으로 고정할지? |  |  | Resolved (`lucide-react/Home`, 2026-02-28) |
 | UI-010 | 노드 좌우 이동 후 방향 처리를 source/target 스왑할지 여부 |  |  | Resolved (Problem->Solution 우선 정규화 + 좌->우 정렬, 2026-02-28) |
 | UI-011 | 직교 경로 코너 처리 방식을 `arc`/`quadratic` 중 무엇으로 할지 |  |  | Resolved (`arc`, 2026-02-28) |
 | UI-012 | Canvas stage 전환 트리거를 어떤 상태값/이벤트로 연결할지? |  |  | Open |

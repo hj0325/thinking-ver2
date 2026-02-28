@@ -11,6 +11,7 @@ import InputPanel from "./InputPanel";
 import SuggestionPanel from "./SuggestionPanel";
 import ChatDialog from "./ChatDialog";
 import RightAgentDrawer from "./RightAgentDrawer";
+import TopBar from "./TopBar";
 
 const INITIAL_NODES = [];
 const INITIAL_EDGES = [];
@@ -19,7 +20,7 @@ const TARGET_HANDLE_ID = "left-target";
 const FANOUT_STEP = 26;
 const FANOUT_MAX = 104;
 const EDGE_CLEARANCE_X = 20;
-const EDGE_LINE_WIDTH = 4;
+const EDGE_LINE_WIDTH = 2;
 const EDGE_LINE_COLOR = "#FFFFFF";
 const EDGE_CORNER_RADIUS = 24;
 const EDGE_LANE_GAP = 80;
@@ -656,8 +657,10 @@ export default function ThinkingMachine() {
 
     return (
         <div className="w-full h-screen relative flex flex-col overflow-hidden bg-slate-50">
+            <TopBar />
+
             {showAdminShortcutHint && (
-                <div className="pointer-events-auto absolute left-1/2 top-4 z-[80] -translate-x-1/2">
+                <div className="pointer-events-auto absolute left-1/2 top-14 z-[80] -translate-x-1/2">
                     <div className="flex items-center gap-3 rounded-2xl border border-white/70 bg-white/78 px-4 py-2 text-xs text-slate-700 shadow-lg backdrop-blur-md">
                         <span>
                             Press <span className="font-semibold">{ADMIN_SHORTCUT_LABEL}</span> to toggle Admin Mode.

@@ -79,7 +79,7 @@
 5. 모바일 에뮬레이션에서 single-finger pan, pinch zoom을 확인한다.
 
 ### 3.6 Manual QA Checklist (Node Connector Edge)
-- [ ] 연결선이 `4px` 흰색 선으로 렌더링된다.
+- [ ] 연결선이 `2px` 흰색 선으로 렌더링된다.
 - [ ] 연결선 경로가 `orthogonal + arc corner` 형태로 렌더링된다.
 - [ ] 연결선 시작점/종료점 모두에 endpoint 포트가 렌더링된다.
 - [ ] endpoint 포트는 white ring + 내부 category color 조합으로 렌더링된다.
@@ -94,12 +94,18 @@
 - [ ] `e-input-*`, `e-chat-*`, `e-cross-*` 타입에서 모두 동일한 기본 connector 규칙이 유지된다.
 
 #### 3.6.1 Suggested Execution Steps
-1. 최소 3개의 노드를 만들고 순차 연결(`e-input`) 시 양 끝 포트/4px 선을 확인한다.
+1. 최소 3개의 노드를 만들고 순차 연결(`e-input`) 시 양 끝 포트/2px 선을 확인한다.
 2. 같은 노드에서 2개 이상 연결이 나가도록 만들어 fanout 분산을 확인한다.
 3. 연결된 노드를 좌우로 교차 배치해도 source/target 방향 의미가 유지되는지 확인한다.
 4. 카드 근접 배치 상태에서 선이 카드 내부를 가로지르지 않는지 확인한다.
 
-### 3.7 Manual QA Checklist (Admin Shortcut + Prototype Status)
+### 3.7 Manual QA Checklist (Top Bar)
+- [ ] 상단에 Top bar가 `12px 36px` 패딩으로 고정 렌더링된다.
+- [ ] 좌측 Home 아이콘은 `lucide-react`의 `Home`으로 렌더링된다.
+- [ ] 중앙 텍스트 `Visual Thinking Machine`이 고정 노출된다.
+- [ ] Home 클릭 시 `/` 경로로 이동한다.
+
+### 3.8 Manual QA Checklist (Admin Shortcut + Prototype Status)
 - [ ] 최초 진입 시 상단 중앙에 단축키 안내(`Ctrl/Cmd + Shift + A`) UI가 노출된다.
 - [ ] `Dismiss` 클릭 시 단축키 안내 UI가 사라지고 같은 세션 재진입 시 재노출되지 않는다.
 - [ ] `Ctrl/Cmd + Shift + A` 입력 시 관리자 모드가 토글된다.
@@ -107,7 +113,7 @@
 - [ ] 관리자 모드 OFF 상태에서는 프로토타입 상태 UI가 완전히 숨겨진다.
 - [ ] 관리자 모드 상태가 새로고침 후에도 유지된다(localStorage).
 
-### 3.8 Manual QA Checklist (Right Agent Drawer Tip/Chat)
+### 3.9 Manual QA Checklist (Right Agent Drawer Tip/Chat)
 - [ ] `Tip`/`Chat` rail 버튼과 우측 filled field+content가 하나의 drawer 단위로 동시에 열리고 닫힌다.
 - [ ] 같은 모드 버튼을 다시 누르면 drawer가 닫힌다.
 - [ ] open 상태에서 `Tip`과 `Chat` 간 전환 시 drawer는 닫히지 않고 mode만 바뀐다.
@@ -158,6 +164,7 @@
 | T-023 | UI | drawer left-edge blend quality | overlay-first 경계 블렌딩 + 무마스크 + 경계선 부각 완화 | P1 | Planned |
 | T-024 | UI | drawer edge-safe inset | content safe inset과 transparent tail 적용으로 경계 절단감 제거 | P1 | Planned |
 | T-025 | UI | drawer alpha-tail policy | base/radial alpha 0 종료 + neutral alpha overlay-only 정책 준수 | P1 | Planned |
+| T-026 | UI | top bar composition | Home 아이콘 + 중앙 타이틀 + 오버레이 레이아웃 유지 | P1 | Planned |
 
 ## 5. Go / No-Go Criteria
 - P0 결함 0건

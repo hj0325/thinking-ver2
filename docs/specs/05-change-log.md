@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - TopBar added with lucide Home and connector width updated to 2px
+- Summary:
+  - `TopBar` 컴포넌트를 신설하고 `lucide-react`의 `Home` 아이콘 + `Home` 라벨 + 중앙 `Visual Thinking Machine` 텍스트 구조를 적용했다.
+  - `ThinkingMachine`에 TopBar를 연결하고 관리자 단축키 안내 배치가 겹치지 않도록 안내 위치를 하향 조정했다.
+  - 노드 연결선 기본 두께를 `4px`에서 `2px`로 변경해 connector 시각 밀도를 낮췄다.
+- Scope: Frontend
+- Files: `components/TopBar.jsx`, `components/ThinkingMachine.jsx`, `components/edges/ConnectorEdge.jsx`, `docs/specs/03-architecture.md`, `docs/specs/04-test-rollout.md`, `docs/specs/06-frontend-style.md`, `docs/specs/05-change-log.md`
+- Validation: 컴포넌트 연결/상수값/스펙 동기화 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/03-architecture.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Legacy AI Suggestions panel hidden in primary flow
 - Summary:
   - 사용자가 요청한 기존 `AI Suggestions` 패널 UI를 기본 화면에서 제거했다.

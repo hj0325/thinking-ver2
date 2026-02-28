@@ -3,7 +3,7 @@
 import { BaseEdge } from "reactflow";
 
 const DEFAULT_LINE_COLOR = "#FFFFFF";
-const DEFAULT_LINE_WIDTH = 4;
+const DEFAULT_LINE_WIDTH = 2;
 const DEFAULT_CLEARANCE = 20;
 const OUTER_RADIUS = 10;
 const MIN_CLEARANCE = 8;
