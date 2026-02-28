@@ -12,7 +12,13 @@ const CATEGORY_COLORS = {
     How: { bg: "bg-indigo-50", border: "border-indigo-200", text: "text-indigo-700", dot: "bg-indigo-400" },
 };
 
-export default function SuggestionPanel({ suggestions, onDismiss, onSuggestionClick, activeSuggestionId }) {
+export default function SuggestionPanel({
+    suggestions,
+    onDismiss,
+    onSuggestionClick,
+    activeSuggestionId,
+    drawerOpen = false,
+}) {
     if (suggestions.length === 0) return null;
 
     return (
@@ -21,7 +27,9 @@ export default function SuggestionPanel({ suggestions, onDismiss, onSuggestionCl
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 340, opacity: 0 }}
             transition={{ type: "spring", damping: 22, stiffness: 200 }}
-            className="absolute top-20 right-4 bottom-28 w-80 z-40 flex flex-col gap-3 overflow-y-auto pr-1"
+            className={`absolute top-20 bottom-28 z-40 flex w-80 flex-col gap-3 overflow-y-auto pr-1 transition-all duration-300 ${
+                drawerOpen ? "right-[404px]" : "right-4"
+            }`}
             style={{ scrollbarWidth: "none" }}
         >
             {/* Header */}

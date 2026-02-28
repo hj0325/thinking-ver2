@@ -26,6 +26,18 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Phase 1 right agent drawer shell implemented
+- Summary:
+  - 우측 `Tip/Chat` rail과 `filled field + content panel`을 하나의 drawer로 동작하도록 `RightAgentDrawer`를 추가했다.
+  - Tip/Chat 버튼 동작을 `same-button close`, `cross-mode switch` 규칙으로 구현하고, `Esc`/`X` 닫기 동작을 연결했다.
+  - Phase 2 이전 legacy 채팅 경로를 유지하기 위해 기존 `SuggestionPanel -> ChatDialog` 흐름은 보존하고, drawer 오픈 시 겹침을 줄이도록 fallback 채팅을 자동 닫도록 조정했다.
+  - drawer 오픈 시 SuggestionPanel 위치를 좌측으로 이동해 우측 drawer와 겹치지 않도록 보정했다.
+- Scope: Frontend
+- Files: `components/RightAgentDrawer.jsx`, `components/ThinkingMachine.jsx`, `components/SuggestionPanel.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/05-change-log.md`
+- Validation: drawer 상태 전환/토글/닫기 로직 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/03-architecture.md`, `docs/specs/04-test-rollout.md`
+
 ### [Update] 2026-02-28 - Three-phase execution spec for agent drawer migration
 - Summary:
   - Right Agent Drawer 구현을 3단계(Phase 1 shell, Phase 2 chat migration, Phase 3 context attachment)로 분리하고 각 단계의 범위/비범위/완료 기준을 문서화했다.

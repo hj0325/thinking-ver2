@@ -10,6 +10,7 @@ import NodeMap from "./NodeMap";
 import InputPanel from "./InputPanel";
 import SuggestionPanel from "./SuggestionPanel";
 import ChatDialog from "./ChatDialog";
+import RightAgentDrawer from "./RightAgentDrawer";
 
 const INITIAL_NODES = [];
 const INITIAL_EDGES = [];
@@ -289,6 +290,8 @@ export default function ThinkingMachine() {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isAdminMode, setIsAdminMode] = useState(false);
     const [showAdminShortcutHint, setShowAdminShortcutHint] = useState(false);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [drawerMode, setDrawerMode] = useState("chat");
 
     // AI 제안 패널
     const [suggestions, setSuggestions] = useState([]);
@@ -340,6 +343,19 @@ export default function ThinkingMachine() {
         return () => window.removeEventListener("keydown", handleKeydown);
     }, []);
 
+    useEffect(() => {
+        if (!isDrawerOpen) return undefined;
+
+        const handleEscClose = (event) => {
+            if (event.key === "Escape") {
+                setIsDrawerOpen(false);
+            }
+        };
+
+        window.addEventListener("keydown", handleEscClose);
+        return () => window.removeEventListener("keydown", handleEscClose);
+    }, [isDrawerOpen]);
+
     const handleDismissSuggestion = (suggestionId) => {
         setSuggestions((prev) => {
             const dismissed = prev.find((s) => s.id === suggestionId);
@@ -359,12 +375,24 @@ export default function ThinkingMachine() {
     };
 
     const handleSuggestionClick = (suggestion) => {
+        // Legacy chat fallback should remain available during drawer phase 1.
+        setIsDrawerOpen(false);
         // 같은 카드 다시 클릭 시 토글
         if (activeSuggestion?.id === suggestion.id) {
             setActiveSuggestion(null);
         } else {
             setActiveSuggestion(suggestion);
         }
+    };
+
+    const handleDrawerModeToggle = (nextMode) => {
+        if (isDrawerOpen && drawerMode === nextMode) {
+            setIsDrawerOpen(false);
+            return;
+        }
+        setActiveSuggestion(null);
+        setDrawerMode(nextMode);
+        setIsDrawerOpen(true);
     };
 
     // 채팅 대화에서 노드+엣지 추가
@@ -501,6 +529,15 @@ export default function ThinkingMachine() {
                     onDismiss={handleDismissSuggestion}
                     onSuggestionClick={handleSuggestionClick}
                     activeSuggestionId={activeSuggestion?.id}
+                    drawerOpen={isDrawerOpen}
+                />
+
+                <RightAgentDrawer
+                    isOpen={isDrawerOpen}
+                    mode={drawerMode}
+                    suggestions={suggestions}
+                    onToggleMode={handleDrawerModeToggle}
+                    onClose={() => setIsDrawerOpen(false)}
                 />
 
                 {/* AI 채팅 대화창 */}
