@@ -85,13 +85,18 @@ export default function RightAgentDrawer({
   };
 
   return (
-    <div className="pointer-events-none absolute inset-y-0 right-0 z-[45] overflow-hidden">
+    <div className="pointer-events-none absolute inset-y-0 right-0 z-[45] overflow-visible">
       <div
         className={`relative flex h-full w-[508px] transform-gpu transition-transform duration-300 ease-out ${
           isOpen ? "translate-x-0" : "translate-x-[430px]"
         }`}
       >
-        <div className="pointer-events-auto relative w-[78px]">
+        <div
+          className="pointer-events-none absolute inset-y-0 left-0 z-[0] w-[172px]"
+          aria-hidden
+          style={{ background: drawerFieldLemonStrip }}
+        />
+        <div className="pointer-events-auto relative z-20 w-[78px]">
           <div className="absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-white/10 to-transparent" />
           <div className="absolute right-3 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-[10px]">
             <button
@@ -125,7 +130,7 @@ export default function RightAgentDrawer({
         </div>
 
         <div
-          className={`relative h-full w-[430px] overflow-hidden transition-opacity duration-200 ${
+          className={`relative h-full w-[430px] overflow-hidden rounded-l-[30px] transition-opacity duration-200 ${
             isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
           }`}
           aria-hidden={!isOpen}
@@ -133,11 +138,6 @@ export default function RightAgentDrawer({
             background: `${drawerFieldRadialAlpha}, ${drawerFieldBaseFade}`,
           }}
         >
-          <div
-            className="pointer-events-none absolute inset-y-0 left-0 z-[0] w-[104px]"
-            aria-hidden
-            style={{ background: drawerFieldLemonStrip }}
-          />
           <div
             className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-16"
             aria-hidden

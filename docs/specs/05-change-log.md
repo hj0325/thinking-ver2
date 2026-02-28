@@ -26,6 +26,28 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Rail clipping guard and lemon-band button alignment
+- Summary:
+  - drawer shell의 `overflow`를 `visible`로 전환하고 field body만 `overflow-hidden`을 유지해 `closed -> Chat open` 경로에서 Tip/Chat 버튼 본체가 잘려 보이는 현상을 완화했다.
+  - lemon strip 레이어를 field 내부 한정에서 drawer shell(rail+field seam 포함)로 확장해 Tip/Chat 버튼이 레몬 강조 대역 위에 위치하도록 정렬했다.
+  - 테스트/스펙 문서에 open-path 클리핑 가드(`T-030`)와 rail-레몬 정렬 항목(`T-031`)을 추가했다.
+- Scope: Frontend
+- Files: `components/RightAgentDrawer.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: shell overflow 정책, lemon strip 레이어 위치, QA 항목 추가를 수동 코드 리뷰로 확인; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
+### [Patch] 2026-02-28 - Drawer left top/bottom corner radius set to 30px
+- Summary:
+  - right drawer field에 좌측 상/하단 `30px` 라운드를 적용해 좌측 경계 외곽 형태를 둥글게 정리했다.
+  - 기존 feather-first(레몬 strip + edge overlay) 레이어 구성은 유지한 상태에서 corner clipping만 추가했다.
+  - 스펙/테스트 문서에 corner radius 토큰과 QA 항목(`T-029`)을 동기화했다.
+- Scope: Frontend
+- Files: `components/RightAgentDrawer.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: field 컨테이너 `rounded-l-[30px]` 적용 및 문서 토큰/테스트 항목 매핑 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Feather-first rebalance for drawer left lemon emphasis
 - Summary:
   - 좌측 윤곽이 선명해 보이던 문제를 해결하기 위해 lemon strip를 `투명 시작형(0 -> peak -> 0)`으로 재조정했다.

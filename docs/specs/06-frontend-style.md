@@ -115,7 +115,7 @@
 | `--agent-drawer-default-mode` | `chat` | Drawer 초기 모드 |
 | `--agent-drawer-open-state` | `closed` | Drawer 초기 열림 상태 |
 | `--agent-context-max-items` | `2` (initial) | 상단 context shelf 카드 최대 개수(초기값) |
-| `--agent-rail-width` | `54px` (target) | Tip/Chat 세로 버튼 레일 폭 |
+| `--agent-rail-width` | `78px` | Tip/Chat 세로 버튼 레일 폭(구현값) |
 | `--agent-toggle-size` | `52px` (target) | Tip/Chat 원형 버튼 크기 |
 | `--agent-toggle-gap` | `10px` (target) | Tip/Chat 버튼 간 간격 |
 | `--agent-toggle-bg` | `#FFFFFF` | Tip/Chat 버튼 배경 |
@@ -127,7 +127,8 @@
 | `--agent-field-base-fade` | `linear-gradient(90deg, rgba(166,255,211,0) 0%, rgba(166,255,211,0.70) 24%, rgba(166,255,211,1) 46%)` | base 채움의 좌측 투명 페이드(끝점 alpha 0 보장) |
 | `--agent-field-radial-tail-alpha` | `0` (at 100%) | radial gradient 말단 alpha 종료값 |
 | `--agent-field-lemon-strip` | `linear-gradient(90deg, rgba(241,255,138,0) 0%, rgba(241,255,138,0.70) 22%, rgba(241,255,138,0.34) 54%, rgba(241,255,138,0) 100%)` | 좌측 레몬 강조 스트립 레이어(투명 시작 feather) |
-| `--agent-field-lemon-strip-width` | `104px` | 좌측 레몬 스트립 폭 |
+| `--agent-field-lemon-strip-width` | `172px` | drawer shell 좌측 레몬 스트립 폭(rail+field seam 포함) |
+| `--agent-shell-overflow` | `visible` | rail 버튼 클리핑 방지를 위한 shell overflow 정책 |
 | `--agent-field-edge-overlay` | `linear-gradient(90deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.08) 46%, rgba(255,255,255,0) 100%)` | 좌측 경계 neutral alpha-fade 오버레이(윤곽 feather 복원) |
 | `--agent-field-edge-overlay-role` | `alpha-fade-only` | 오버레이 용도(색 보정 금지) |
 | `--agent-field-edge-overlay-width` | `64px` | 좌측 경계 마감 오버레이 폭 |
@@ -143,6 +144,7 @@
 | `--agent-drawer-inset-bottom` | `0px` | Drawer 하단 여백(기본 0) |
 | `--agent-drawer-motion` | `off-canvas-slide` | drawer open/close 모션(`width` tween 금지) |
 | `--agent-field-width` | `430px` | 우측 drawer field 고정 폭 |
+| `--agent-field-left-corner-radius` | `30px` | drawer field 좌측 상/하단 코너 라운드 |
 | `--agent-content-glass-bg` | `rgba(255,255,255,0.32)` | content panel 글라스 배경 |
 | `--agent-content-glass-border` | `rgba(255,255,255,0.65)` | content panel 글라스 보더 |
 | `--agent-content-glass-blur` | `12px` | content panel blur 강도 |
@@ -476,6 +478,7 @@
 1. Rail and field:
   - rail은 카드형 박스보다 단순한 세로 레이어로 표현한다.
   - right field는 `base fill + radial gradient overlay` 조합으로 표현한다.
+  - right field의 좌측 상/하단 코너는 `30px` 라운드(`--agent-field-left-corner-radius`)를 적용한다.
   - 좌측 레몬 강조가 부족할 경우 `lemon strip` 레이어를 추가해 강한 밝기 띠를 만든다.
   - 좌측 경계는 `overlay-first` 정책으로 처리한다: `base linear fade + radial alpha + canvas-color edge overlay`.
    - `mask-image`는 사용하지 않는다(유지보수/디버깅 단순성 우선).
@@ -547,7 +550,9 @@
 - Desktop:
   - 우측 고정 drawer
   - rail은 캔버스와 right field 경계선에 인접
+  - rail 버튼은 좌측 lemon strip 밴드 위에 배치되어 field 채움과 시각적으로 분리되지 않아야 한다.
   - rail/right field는 viewport 높이를 꽉 채운다(`top: 0`, `bottom: 0`)
+  - drawer shell은 `overflow: visible`, field body만 `overflow: hidden`을 사용한다(닫힘→열림 경로 버튼 클리핑 방지).
   - right field 내부 content stack(context shelf + glass panel)은 `--agent-content-safe-inset-top`만큼 아래에서 시작한다.
   - 상단 보호영역(`--topbar-safe-zone-h`)은 Top Bar와 Drawer 콘텐츠 겹침 방지 목적이며, rail 버튼 세로 중앙 정렬에는 영향을 주지 않는다.
   - drawer는 `field fixed width + off-canvas translate`로 열고 닫는다(중간 폭 리플로우로 인한 줄바꿈 변경 방지)

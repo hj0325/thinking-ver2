@@ -125,10 +125,12 @@
 - [ ] Tip/Chat 버튼이 동일한 원형 white 스타일(아이콘 없음)로 렌더링된다.
 - [ ] Tip 버튼 우상단의 보라색 점이 지정 크기/색상으로 렌더링된다.
 - [ ] right field가 `base fill + radial gradient`(우측 기준 radial, blur 없음)로 렌더링된다.
+- [ ] right field 좌측 상/하단 코너가 `30px` 라운드로 렌더링된다.
 - [ ] right field 좌측 경계가 feather linear 처리되어 잘린 선 없이 부드럽게 보인다.
 - [ ] 좌측 경계 처리가 `overlay-first`(`base linear fade + canvas-color edge overlay`) 규칙을 따른다.
 - [ ] 좌측 `edge overlay`가 충분한 폭(`64px`)으로 적용되어 경계가 시각적으로 끊기지 않는다.
 - [ ] 좌측 `lemon strip` 레이어가 적용되어 레몬색 강조가 명확히 보인다.
+- [ ] Tip/Chat 버튼 중심이 lemon strip 대역 안에 위치해 버튼과 drawer 색 채움이 분리되어 보이지 않는다.
 - [ ] `edge overlay` linear gradient 끝점이 완전 투명(`alpha 0`)으로 처리된다.
 - [ ] `edge overlay` 완충 alpha(`0.18/0.08` 레벨)가 적용되어 윤곽 feather가 유지된다.
 - [ ] `lemon strip`가 투명 시작형(`0 -> peak -> 0`)으로 렌더링되어 좌측 경계가 선명한 실선처럼 보이지 않는다.
@@ -140,6 +142,7 @@
 - [ ] drawer open 상태에서도 context shelf/glass content가 Top Bar 영역과 겹치지 않는다(`top safe zone` 적용).
 - [ ] visual 리파인 이후에도 content panel(글라스모피즘)이 제거되지 않고 렌더링된다.
 - [ ] rail/right field가 상하 margin 없이 viewport full-height(`top:0`, `bottom:0`)를 유지한다.
+- [ ] drawer가 닫힌 상태에서 `Chat` 버튼으로 열 때 Tip/Chat 원형 버튼 본체의 좌측이 클리핑되지 않는다.
 
 ## 4. Test Matrix
 
@@ -173,6 +176,9 @@
 | T-026 | UI | top bar composition | Home 아이콘(24px frame) + 중앙 타이틀 + 좌우 고정 슬롯 균형 유지 | P1 | Planned |
 | T-027 | UI | drawer top safe-zone | drawer 콘텐츠가 Top Bar 영역과 겹치지 않고 rail full-height 규칙을 유지 | P1 | Planned |
 | T-028 | UI | drawer lemon emphasis | 좌측 lemon strip + 약화된 edge overlay 조합으로 좌측 밝은 레몬 강조 유지 | P1 | Planned |
+| T-029 | UI | drawer left corner radius | right field 좌측 상/하단 코너가 30px 라운드로 유지되며 feather와 충돌하지 않음 | P1 | Planned |
+| T-030 | UI | drawer open-path clipping guard | closed→Chat open 경로에서도 Tip/Chat 버튼 본체 원형이 손실되지 않음 | P0 | Planned |
+| T-031 | UI | rail and lemon-strip alignment | Tip/Chat 버튼 중심선이 lemon strip 대역과 정렬되어 field 채움과 이질감이 없음 | P1 | Planned |
 
 ## 5. Go / No-Go Criteria
 - P0 결함 0건
