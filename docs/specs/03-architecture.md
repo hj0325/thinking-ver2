@@ -1,10 +1,6 @@
 # 03. Architecture
 
 ## Follow-up To-do
-- [ ] [added: 2026-02-28] JS agent와 Python agent 단일화 여부 결정
-- [ ] [added: 2026-02-28] API 오류 로깅 포맷 표준화
-- [ ] [added: 2026-02-28] 노드/엣지 ID 규칙 문서와 코드 동기화 자동 체크 도입
-- [ ] [added: 2026-02-28] 모델 버전 업데이트 정책 수립
 
 ## 1. Document Meta
 - Version: `v1.0-draft`

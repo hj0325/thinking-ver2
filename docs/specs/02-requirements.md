@@ -1,10 +1,6 @@
 # 02. Requirements
 
 ## Follow-up To-do
-- [ ] [added: 2026-02-28] FR 우선순위(Product/Engineering) 최종 승인
-- [ ] [added: 2026-02-28] NFR 목표치(p95/실패율) 운영팀 합의
-- [ ] [added: 2026-02-28] 에러 메시지 정책(기술 메시지 vs 사용자 메시지) 확정
-- [ ] [added: 2026-02-28] Python backend 운영 범위(개발 전용/운영 포함) 확정
 
 ## 1. Document Meta
 - Version: `v1.0-draft`

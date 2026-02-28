@@ -1,10 +1,6 @@
 # 04. Test and Rollout
 
 ## Follow-up To-do
-- [ ] [added: 2026-02-28] 자동화 테스트 실행 명령(`npm test`/`pytest`) 표준화
-- [ ] [added: 2026-02-28] 스테이징 환경 스모크 테스트 체크리스트 확정
-- [ ] [added: 2026-02-28] 롤백 책임자/승인 체계 정의
-- [ ] [added: 2026-02-28] 장애 알림 임계치(에러율/지연) 확정
 
 ## 1. Document Meta
 - Version: `v1.0-draft`
