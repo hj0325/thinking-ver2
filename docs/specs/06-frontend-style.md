@@ -4,6 +4,7 @@
 - [ ] [added: 2026-02-28] [status: decision-needed] Node image 비율/크롭 규칙(`cover` vs `contain`)을 Figma Inspect 기준으로 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] Title/Body 타이포(폰트 패밀리, 크기, 굵기, line-height) 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] 6하원칙 chip 토큰 이름(`--chip-when` vs `--chip-where`) 최종 확정
+- [ ] [added: 2026-02-28] [status: execution-needed] [Phase 1.1] Right Agent Drawer 버튼/필드 스타일을 최신 목업(원형 Tip/Chat 버튼 + 보라 점 + 단순 세로 gradient field) 기준으로 리파인한다.
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1] 우측 Agent Drawer(`Glow rail + filled field + content panel`) 열기/닫기 구조를 Tip/Chat 토글과 함께 구현한다.
 - [ ] [added: 2026-02-28] [status: execution-needed] [Phase 2] 기존 `ChatDialog` 로직을 Drawer Chat body로 이관/재사용해 채팅 기능을 유지한다.
 - [ ] [added: 2026-02-28] [status: execution-needed] [Phase 3] 우측 상단 context shelf에 노드 드래그 첨부 UI를 연결하고, 첨부 카드 맥락을 AI 응답 입력 컨텍스트로 전달한다.
@@ -107,6 +108,16 @@
 | `--agent-drawer-default-mode` | `chat` | Drawer 초기 모드 |
 | `--agent-drawer-open-state` | `closed` | Drawer 초기 열림 상태 |
 | `--agent-context-max-items` | `2` (initial) | 상단 context shelf 카드 최대 개수(초기값) |
+| `--agent-rail-width` | `54px` (target) | Tip/Chat 세로 버튼 레일 폭 |
+| `--agent-toggle-size` | `52px` (target) | Tip/Chat 원형 버튼 크기 |
+| `--agent-toggle-gap` | `10px` (target) | Tip/Chat 버튼 간 간격 |
+| `--agent-toggle-bg` | `#FFFFFF` | Tip/Chat 버튼 배경 |
+| `--agent-toggle-text` | `#111111` | Tip/Chat 버튼 텍스트 |
+| `--agent-tip-dot-size` | `12px` (target) | Tip 버튼 보라색 상태 점 크기 |
+| `--agent-tip-dot-color` | `#C084FC` | Tip 버튼 상태 점 색상 |
+| `--agent-field-grad-start` | `#AEE7D0` | 우측 drawer field gradient 시작 |
+| `--agent-field-grad-mid` | `#DDF0C3` | 우측 drawer field gradient 중간 |
+| `--agent-field-grad-end` | `#D7E8EE` | 우측 drawer field gradient 끝 |
 
 ### 6.3 Radius / Shadow / Border
 | Token | Value | Usage |
@@ -368,6 +379,26 @@
    - panel `X` 버튼으로 `closed`
    - `Esc`로 `closed`
 
+#### C.1 Visual Update (Mockup Alignment 2026-02-28)
+1. Rail and field:
+   - rail은 카드형 박스보다 단순한 세로 레이어로 표현한다.
+   - right field는 보더 강조를 최소화하고, 연한 `mint -> yellow-green -> pale blue` gradient를 사용한다.
+2. Tip/Chat buttons:
+   - 버튼은 동일한 원형 크기(`--agent-toggle-size`)로 통일한다.
+   - 기본 스타일:
+     - background: `--agent-toggle-bg`
+     - text: `--agent-toggle-text`
+     - soft shadow only (강한 border/ring 없음)
+   - 버튼 라벨은 `Tip`, `Chat` 텍스트만 사용(아이콘 없음).
+3. Tip status dot:
+   - `Tip` 버튼 우상단에 작은 보라색 점을 배치한다.
+   - 초기 정책: 고정 노출(Phase 2에서 상태 연동 여부 재검토).
+4. Selection emphasis:
+   - mockup 기준으로 Tip/Chat 간 시각적 차이는 최소화한다.
+   - active mode는 과한 색상 변화 대신 미세 shadow/opacity 차이로만 표현한다.
+5. Constraint:
+   - 위 visual 리파인은 drawer 경계 규칙(`rail + field + content` 동시 open/close)을 변경하지 않는다.
+
 #### D. Context Shelf (Top-right Cards)
 1. Purpose:
    - 우측 상단 작은 카드 영역은 AI 응답 참고용 context shelf다.
@@ -409,6 +440,17 @@
    - Exit criteria:
      - `T-017`, `T-018` 통과
      - 기존 SuggestionPanel/노드 캔버스 동작 회귀 없음
+1.1 Phase 1.1 - Visual Refinement to Mockup
+   - Scope:
+     - Tip/Chat 버튼을 동일한 원형 화이트 버튼으로 정렬
+     - Tip 버튼 보라색 상태 점 적용
+     - rail/field 배경을 단순 gradient 스타일로 리파인
+   - Non-goals:
+     - 채팅 API 동작 변경
+     - context shelf drag attach 구현
+   - Exit criteria:
+     - 버튼/배경이 목업 시각 규칙(C.1)과 일치
+     - `T-017`, `T-018` 재검증 통과
 2. Phase 2 - Chat Feature Migration (No Backend Change)
    - Scope:
      - 기존 `ChatDialog`의 메시지/요청/로딩/에러/변환 흐름을 Drawer Chat body로 이관 또는 재사용

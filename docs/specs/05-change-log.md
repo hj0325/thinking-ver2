@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Update] 2026-02-28 - Agent drawer visual spec refined to latest mockup
+- Summary:
+  - Right Agent Drawer의 시각 규칙을 최신 목업 기준으로 구체화했다(원형 Tip/Chat 버튼, Tip 보라색 점, 단순 세로 gradient field).
+  - `06-frontend-style`에 drawer visual 토큰(`--agent-toggle-size`, `--agent-tip-dot-*`, `--agent-field-grad-*`)과 Phase 1.1 리파인 범위를 추가했다.
+  - `04-test-rollout`에 시각 정합 검증 항목과 Test Matrix(`T-020`)를 추가했다.
+- Scope: Frontend
+- Files: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: 첨부 목업 요구사항(버튼/점/배경 필드)과 스펙/QA 항목 일치 여부 수동 대조 완료
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Phase 1 right agent drawer shell implemented
 - Summary:
   - 우측 `Tip/Chat` rail과 `filled field + content panel`을 하나의 drawer로 동작하도록 `RightAgentDrawer`를 추가했다.

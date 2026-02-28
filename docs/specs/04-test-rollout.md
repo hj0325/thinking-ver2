@@ -114,6 +114,9 @@
 - [ ] `X` 버튼 및 `Esc` 입력으로 drawer가 닫힌다.
 - [ ] drawer가 닫힌 상태에서 우측 filled field와 content panel은 표시되지 않는다.
 - [ ] context shelf 카드(첨부 노드 카드)는 상단 영역에 유지되고, 삭제/변경 시 상태가 즉시 반영된다.
+- [ ] Tip/Chat 버튼이 동일한 원형 white 스타일(아이콘 없음)로 렌더링된다.
+- [ ] Tip 버튼 우상단의 보라색 점이 지정 크기/색상으로 렌더링된다.
+- [ ] right field가 강한 보더 없이 연한 세로 gradient(mint->yellow-green->pale blue)로 렌더링된다.
 
 ## 4. Test Matrix
 
@@ -138,6 +141,7 @@
 | T-017 | UI | right agent drawer boundary | rail + filled field + content가 하나의 열림/닫힘 단위로 동작 | P0 | Planned |
 | T-018 | UI | tip/chat mode switch | open 상태에서 Tip/Chat 전환 시 drawer 유지 + body만 전환 | P1 | Planned |
 | T-019 | UI | context shelf behavior | 상단 첨부 카드 상태 표시/삭제 및 렌더 동기화 | P1 | Planned |
+| T-020 | UI | drawer visual alignment | Tip/Chat 원형 버튼 + tip dot + field gradient가 목업과 일치 | P1 | Planned |
 
 ## 5. Go / No-Go Criteria
 - P0 결함 0건
