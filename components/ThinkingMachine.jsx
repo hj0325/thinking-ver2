@@ -25,6 +25,17 @@ const CHIP_BG_COLORS = {
     Solution: "#E8A0E6",
 };
 
+function extractNodeImageUrl(rawData) {
+    const candidates = [
+        rawData?.image_url,
+        rawData?.imageUrl,
+        rawData?.image,
+        rawData?.image_src,
+        rawData?.imageSrc,
+    ];
+    return candidates.find((v) => typeof v === "string" && v.trim().length > 0) || null;
+}
+
 function Chip({ label }) {
     const backgroundColor = CHIP_BG_COLORS[label] || "#E5E7EB";
     return (
@@ -40,14 +51,24 @@ function Chip({ label }) {
 // 노드 데이터에서 JSX label 빌드 (재사용)
 function buildNodeLabel(nodeData) {
     return (
-        <div className="flex h-full w-full flex-col items-start gap-3 px-3 pb-3 pt-4 text-left">
-            <div className="line-clamp-2 text-sm font-bold leading-[1.3] text-[#333333]">
+        <div className="flex h-full w-full flex-col items-start gap-3 px-[11px] pb-3 pt-4 text-left">
+            <div className="line-clamp-2 text-[15px] font-bold leading-[1.2] text-[#4A4A4A]">
                 {nodeData.title}
             </div>
-            <div className="line-clamp-3 text-[12px] leading-[1.45] text-[#666666]">
+            <div className="line-clamp-3 text-[12px] leading-[1.4] text-[#666666]">
                 {nodeData.label}
             </div>
-            <div className="flex items-center gap-2">
+            {nodeData.imageUrl && (
+                <div className="h-[136px] w-full overflow-hidden rounded-[30px] bg-[#F3F4F6]">
+                    <img
+                        src={nodeData.imageUrl}
+                        alt={`${nodeData.title || "Node"} visual`}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                    />
+                </div>
+            )}
+            <div className="flex flex-wrap items-center gap-2">
                 <Chip label={nodeData.category} />
                 <Chip label={nodeData.phase} />
             </div>
@@ -55,18 +76,17 @@ function buildNodeLabel(nodeData) {
     );
 }
 
-function buildNodeStyle(phase) {
+function buildNodeStyle() {
     return {
-        background: phase === "Problem" ? "rgba(243, 244, 246, 0.96)" : "rgba(248, 250, 252, 0.96)",
-        border: "1px solid rgba(17, 24, 39, 0.08)",
-        borderRadius: "24px",
+        background: "#FFFFFF",
+        border: "none",
+        borderRadius: "30px",
         padding: '0',
         width: 232,
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        boxShadow: "0 8px 20px -10px rgb(0 0 0 / 0.25)",
-        backdropFilter: 'blur(8px)',
+        boxShadow: "0 8px 24px -12px rgb(0 0 0 / 0.22)",
     };
 }
 
@@ -86,6 +106,7 @@ function toReactFlowNode(n, highlightedId) {
         label: n.data.content,
         phase: n.data.phase,
         category: n.data.category,
+        imageUrl: extractNodeImageUrl(n.data),
         is_ai_suggestion: false,
     };
     const rfNode = {
@@ -94,7 +115,7 @@ function toReactFlowNode(n, highlightedId) {
         position: n.position,
         className: n.id === highlightedId ? 'node-highlighted' : '',
         data: { ...nodeData },
-        style: buildNodeStyle(n.data.phase),
+        style: buildNodeStyle(),
     };
     rfNode.data.label = buildNodeLabel(nodeData);
     return rfNode;

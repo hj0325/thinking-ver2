@@ -1,11 +1,11 @@
 # 04. Test and Rollout
 
 ## Follow-up To-do
-- [ ] [added: 2026-02-28] [P0] 영어 전용 회귀 테스트를 추가한다 (UI 스냅샷/DOM 텍스트에 한글 미포함 검증).
-- [ ] [added: 2026-02-28] [P0] `/api/chat` 및 `/api/chat-to-nodes` 응답 텍스트 언어 검증 테스트를 추가한다.
-- [ ] [added: 2026-02-28] [P1] 배포 전 스모크 테스트에 \"입력->분석->제안->채팅->변환\" 영어 출력 체크를 포함한다.
-- [ ] [added: 2026-02-28] [P1] 모델 응답 스키마 보정 경로에서 영어 fallback 유지 여부를 검증한다.
-- [ ] [added: 2026-02-28] [P2] Python backend 테스트를 유지할 경우 동일한 영어 정책 검증 케이스를 추가한다.
+- [ ] [added: 2026-02-28] [P0] [status: execution-needed] 영어 전용 회귀 테스트를 추가한다 (UI 스냅샷/DOM 텍스트에 한글 미포함 검증).
+- [ ] [added: 2026-02-28] [P0] [status: execution-needed] `/api/chat` 및 `/api/chat-to-nodes` 응답 텍스트 언어 검증 테스트를 추가한다.
+- [ ] [added: 2026-02-28] [P1] [status: execution-needed] 배포 전 스모크 테스트에 \"입력->분석->제안->채팅->변환\" 영어 출력 체크를 포함한다.
+- [ ] [added: 2026-02-28] [P1] [status: execution-needed] 모델 응답 스키마 보정 경로에서 영어 fallback 유지 여부를 검증한다.
+- [ ] [added: 2026-02-28] [P2] [status: execution-needed] Python backend 테스트를 유지할 경우 동일한 영어 정책 검증 케이스를 추가한다.
 
 ## 1. Document Meta
 - Version: `v1.0-draft`
@@ -18,6 +18,13 @@
 1. 핵심 사용자 플로우(입력 분석 -> 제안 -> 채팅 -> 노드 변환)가 릴리즈마다 회귀 없이 동작해야 한다.
 2. 모델 출력 변동(형식 불일치) 상황에서도 시스템이 명시적 실패 또는 보정 동작을 수행해야 한다.
 3. 장애 시 롤백 기준과 절차가 문서화되어 즉시 실행 가능해야 한다.
+
+## 2.1 Decision Baseline (2026-02-28)
+1. 완료 기준 환경: Production.
+2. 완료 판정 검증 방식: Manual QA.
+3. 릴리즈 목표일: 고정일 없음(rolling).
+4. 미달 정책: 기능 동결 없이 단계적 적용.
+5. Python backend도 영어 정책 검증 범위에 포함.
 
 ## 3. Test Strategy
 
@@ -68,9 +75,9 @@
 
 ## 5. Go / No-Go Criteria
 - P0 결함 0건
-- `T-001`~`T-006` 전부 통과
+- `T-001`~`T-006` 자동화 또는 동등 수동 검증 통과
 - API key 누락/모델 형식오류 시 사용자 가시 오류 확인
-- 롤백 절차 점검 완료
+- 3.4 Manual QA checklist 완료
 
 ## 6. Release Plan
 

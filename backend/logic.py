@@ -135,6 +135,7 @@ Use existing nodes and connect semantically related new user_nodes.
 - connection_label: short relation phrase
 - If existing nodes are present, include at least one cross connection when meaningfully related.
 - Maximum 3 cross connections.
+- Respond in English only for all user-visible text fields (label, content, suggestion_label, suggestion_content, connection_label).
 
 ## Existing nodes
 {history_context}
@@ -353,6 +354,7 @@ Each node must include:
 - content (one sentence)
 - category (Who/What/When/Where/Why/How)
 - phase (Problem/Solution)
+- Respond in English only for all user-visible text fields (label, content, connection_label).
 
 [Original Suggestion Card]
 {suggestion_category}/{suggestion_phase}: {suggestion_title} - {suggestion_content}

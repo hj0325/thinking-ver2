@@ -1,11 +1,11 @@
 # 02. Requirements
 
 ## Follow-up To-do
-- [ ] [added: 2026-02-28] [P0] FR-011에 영어 전용 적용 대상 필드를 명시한다 (buttons, placeholders, alerts, assistant replies, suggestion labels).
-- [ ] [added: 2026-02-28] [P0] 한국어 하드코딩 문자열 제거 요구사항을 추가한다 (`components/ChatDialog.jsx`, `components/SuggestionPanel.jsx`, `lib/thinkingAgent.js`).
-- [ ] [added: 2026-02-28] [P0] API 오류 메시지 카탈로그를 영어 기준으로 정의한다 (400/405/500 케이스별).
-- [ ] [added: 2026-02-28] [P1] AI 프롬프트/보정 프롬프트의 출력 언어 정책을 영어로 통일한다 (JS/Python 모두).
-- [ ] [added: 2026-02-28] [P1] Python backend를 유지할 경우 JS 스펙과 동등 요구사항 동기화 규칙을 정의한다.
+- [x] [added: 2026-02-28] [P0] [status: completed 2026-02-28] FR-011에 영어 전용 적용 대상 필드를 명시한다 (buttons, placeholders, alerts, assistant replies, suggestion labels).
+- [x] [added: 2026-02-28] [P0] [status: completed 2026-02-28] 한국어 하드코딩 문자열 제거 요구사항을 추가한다 (`components/ChatDialog.jsx`, `components/SuggestionPanel.jsx`, `lib/thinkingAgent.js`).
+- [x] [added: 2026-02-28] [P0] [status: completed 2026-02-28] API 오류 메시지 카탈로그를 영어 기준으로 정의한다 (400/405/500 케이스별).
+- [x] [added: 2026-02-28] [P1] [status: completed 2026-02-28] AI 프롬프트/보정 프롬프트의 출력 언어 정책을 영어로 통일한다 (JS/Python 모두).
+- [ ] [added: 2026-02-28] [P1] [status: execution-needed] Python backend를 유지할 경우 JS 스펙과 동등 요구사항 동기화 규칙을 정의한다.
 
 ## 1. Document Meta
 - Version: `v1.0-draft`
@@ -28,7 +28,21 @@
 | FR-008 | API 실패 시 사용자에게 오류 메시지를 제공한다. | P0 | analyze/chat/chat-to-nodes 실패 시 alert 또는 대화 내 오류 메시지 노출 |
 | FR-009 | API는 POST 메서드만 허용한다. | P0 | 비-POST 요청은 `405 Method Not Allowed` 반환 |
 | FR-010 | OpenAI API 키 누락 시 서버가 명확한 오류를 반환한다. | P0 | `500` + `OpenAI API Key is missing on server.` |
-| FR-011 | 웹사이트 사용자 노출 텍스트는 영어로만 제공한다. | P0 | UI 라벨/버튼/placeholder/오류/AI 대화 응답이 영어로 출력 |
+| FR-011 | 웹사이트 사용자 노출 텍스트는 영어로만 제공한다. | P0 | UI 라벨/버튼/placeholder/오류/API 오류 메시지/AI 대화 응답/fallback 문구가 영어로 출력 |
+| FR-012 | 한국어 하드코딩 UI 문자열을 운영 경로에서 제거한다. | P0 | 운영 경로(`components/*`, `pages/api/*`, `lib/thinkingAgent.js`, `backend/*`)에서 사용자 노출 고정 한글 문구가 제거됨(단, 사용자 입력 원문은 예외) |
+
+### 2.1 FR-011 Scope Decision (2026-02-28)
+1. 포함 범위:
+   - buttons, placeholders, alerts
+   - assistant replies
+   - suggestion labels/copy
+   - API error payload message strings
+   - model fallback 문구
+2. 제외 범위:
+   - 사용자 입력 원문(한국어 입력 포함)은 원문 유지 허용
+   - 코드 주석, 내부 개발 로그, 테스트 코드
+3. 런타임 범위:
+   - Next API + JS agent + Optional Python backend 모두 포함
 
 ## 3. API Input/Output Requirements
 
@@ -59,6 +73,15 @@
 - Output:
   - `nodes: array`
   - `edges: array`
+
+### 3.4 API Error Message Catalog (English)
+| Case | Status | Canonical Message |
+|---|---|---|
+| Invalid method | `405` | `Method Not Allowed` |
+| Missing API key | `500` | `OpenAI API Key is missing on server.` |
+| Missing required text | `400` | `Missing required field: text` |
+| Invalid AI response schema | `500` | `Invalid AI response format: <details>` |
+| Unknown server error | `500` | `Internal Server Error` (or existing error string passthrough in English) |
 
 ## 4. Data and Domain Rules
 1. 카테고리 enum은 `Who/What/When/Where/Why/How`로 제한한다.
