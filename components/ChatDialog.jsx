@@ -139,7 +139,7 @@ export default function ChatDialog({ suggestion, onClose, onAddNodes, existingNo
                             <div className={`text-[10px] font-bold uppercase tracking-wider ${colors.text}`}>
                                 {suggestion.category} · {suggestion.phase}
                             </div>
-                            <div className="text-xs font-semibold text-gray-800 truncate max-w-[190px]">
+                            <div className="font-heading text-xs font-semibold text-gray-800 truncate max-w-[190px]">
                                 {suggestion.title}
                             </div>
                         </div>

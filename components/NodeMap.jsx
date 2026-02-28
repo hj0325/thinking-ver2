@@ -52,8 +52,10 @@ export default function NodeMap({ nodes, edges, onNodesChange, onEdgesChange, hi
                 defaultEdgeOptions={defaultEdgeOptions}
                 connectionMode={ConnectionMode.Loose}
                 fitView
-                className="z-10"
+                className="z-10 reactflow-canvas-pan"
                 minZoom={0.2}
+                panOnDrag={true}
+                selectionOnDrag={false}
             >
                 <Background gap={20} color="#f1f5f9" />
                 <Controls className="bg-white/80 backdrop-blur-sm border-white/50 shadow-xl" />
@@ -61,4 +63,3 @@ export default function NodeMap({ nodes, edges, onNodesChange, onEdgesChange, hi
         </div>
     );
 }
-

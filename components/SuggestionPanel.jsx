@@ -76,7 +76,7 @@ export default function SuggestionPanel({ suggestions, onDismiss, onSuggestionCl
 
                             {/* Content */}
                             <div className="p-3">
-                                <div className="font-bold text-sm text-gray-800 leading-tight mb-1.5 flex items-start gap-1">
+                                <div className="font-heading font-bold text-sm text-gray-800 leading-tight mb-1.5 flex items-start gap-1">
                                     <Sparkles className="w-3 h-3 text-yellow-500 mt-0.5 shrink-0" />
                                     {s.title}
                                 </div>

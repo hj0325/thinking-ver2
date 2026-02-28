@@ -52,10 +52,10 @@ function Chip({ label }) {
 function buildNodeLabel(nodeData) {
     return (
         <div className="flex h-full w-full flex-col items-start gap-3 px-4 pb-3 pt-4 text-left">
-            <div className="line-clamp-2 text-[15px] font-bold leading-[1.2] text-[#4A4A4A]">
+            <div className="font-heading line-clamp-2 text-[15px] font-bold leading-[1.2] text-[#4A4A4A]">
                 {nodeData.title}
             </div>
-            <div className="line-clamp-3 text-[12px] leading-[1.4] text-[#666666]">
+            <div className="font-node-body line-clamp-3 text-[12px] leading-[1.4] text-[#666666]">
                 {nodeData.label}
             </div>
             {nodeData.imageUrl && (

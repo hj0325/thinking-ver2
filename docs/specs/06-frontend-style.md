@@ -4,8 +4,8 @@
 - [ ] [added: 2026-02-28] [status: decision-needed] Node image 비율/크롭 규칙(`cover` vs `contain`)을 Figma Inspect 기준으로 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] Title/Body 타이포(폰트 패밀리, 크기, 굵기, line-height) 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] 6하원칙 chip 토큰 이름(`--chip-when` vs `--chip-where`) 최종 확정
-- [ ] [added: 2026-02-28] [status: execution-needed] 빈 캔버스 드래그 pan(배경 이동) 인터랙션을 NodeMap에 반영
-- [ ] [added: 2026-02-28] [status: execution-needed] `Instrument Sans` 웹 폰트를 설치하고 기본 UI/Node 텍스트에 적용
+- [x] [added: 2026-02-28] [status: completed 2026-02-28] 빈 캔버스 드래그 pan(배경 이동) 인터랙션을 NodeMap에 반영
+- [x] [added: 2026-02-28] [status: completed 2026-02-28] `Instrument Sans` 웹 폰트를 설치하고 기본 UI/Node 텍스트에 적용
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] pan 동작의 modifier key 정책을 `기본 drag pan`으로 확정
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] `Instrument Sans` 적용 범위를 전체 UI로 확정하고, 제목급 텍스트는 `Inter` 예외 정책으로 확정
 
@@ -258,7 +258,8 @@
 | Global style | `styles/globals.css` |
 | Visual graph layer | `components/NodeMap.jsx` |
 | Interaction panels | `components/InputPanel.jsx`, `components/SuggestionPanel.jsx`, `components/ChatDialog.jsx` |
-| Web font loading (`Instrument Sans`) | `pages/_app.jsx`, `styles/globals.css` |
+| Web font loading (`Instrument Sans`) | `styles/globals.css` |
+| Heading font exception (`Inter` priority) | `components/ThinkingMachine.jsx`, `components/SuggestionPanel.jsx`, `components/ChatDialog.jsx`, `styles/globals.css` |
 | Canvas pan behavior | `components/NodeMap.jsx` |
 
 ## 12. Open Questions

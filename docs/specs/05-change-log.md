@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Canvas drag pan and global font policy applied
+- Summary:
+  - `NodeMap`에 빈 영역 기본 drag pan을 명시적으로 활성화하고(`panOnDrag`), 노드 drag 우선 동작을 유지하도록 설정했다.
+  - 글로벌 UI 기본 폰트를 `Instrument Sans`로 전환하고, 제목급 텍스트(`h1~h6`, `.font-heading`)는 `Inter` 우선 정책으로 적용했다.
+  - Node Card title/body 및 제안/채팅 타이틀에 폰트 정책을 반영하고, 프론트엔드 스펙 To-do 상태를 코드 반영 기준으로 완료 처리했다.
+- Scope: Frontend
+- Files: `components/NodeMap.jsx`, `components/ThinkingMachine.jsx`, `components/SuggestionPanel.jsx`, `components/ChatDialog.jsx`, `styles/globals.css`, `docs/specs/06-frontend-style.md`, `docs/specs/05-change-log.md`
+- Validation: 수정 파일 라인 리뷰 완료; 정적 점검은 로컬 `eslint` 실행 결과에 따름
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`
+
 ### [Update] 2026-02-28 - UI-006/UI-007 decisions finalized in frontend spec
 - Summary:
   - `UI-006`을 `기본 drag pan`으로 확정하고, Canvas pan modifier를 `none`으로 고정했다.
