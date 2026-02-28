@@ -29,28 +29,34 @@ function getPortColor(category) {
 
 export default function ThinkingNode({ data }) {
   const portColor = getPortColor(data?.category);
+  const hasLeftPort = Boolean(data?.hasLeftPort);
+  const hasRightPort = Boolean(data?.hasRightPort);
 
   return (
     <div className="relative h-full w-full">
       {data?.label}
-      <span
-        className="pointer-events-none absolute left-[-10px] top-[42px] z-[40] h-5 w-5 rounded-full bg-white"
-        aria-hidden
-      >
+      {hasLeftPort && (
         <span
-          className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{ backgroundColor: portColor }}
-        />
-      </span>
-      <span
-        className="pointer-events-none absolute right-[-10px] top-[42px] z-[40] h-5 w-5 rounded-full bg-white"
-        aria-hidden
-      >
+          className="pointer-events-none absolute left-[-10px] top-[42px] z-[40] h-5 w-5 rounded-full bg-white"
+          aria-hidden
+        >
+          <span
+            className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{ backgroundColor: portColor }}
+          />
+        </span>
+      )}
+      {hasRightPort && (
         <span
-          className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{ backgroundColor: portColor }}
-        />
-      </span>
+          className="pointer-events-none absolute right-[-10px] top-[42px] z-[40] h-5 w-5 rounded-full bg-white"
+          aria-hidden
+        >
+          <span
+            className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{ backgroundColor: portColor }}
+          />
+        </span>
+      )}
       <Handle
         id="right-source"
         type="source"

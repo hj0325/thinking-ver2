@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Connected-side ports and path scoring optimization
+- Summary:
+  - 노드 포트 표시를 양쪽 고정에서 연결된 side만 표시하도록 변경했다(미연결 side 포트 제거).
+  - connector 라우팅을 후보 경로 점수화 방식으로 개선해 불필요한 ㄷ자 우회 경로를 줄이고 더 짧은 경로를 우선 선택하도록 적용했다.
+  - arc 라운딩 규칙은 유지하면서, 역방향 배치 시에만 lane 우회를 사용하도록 경로 선택 우선순위를 정리했다.
+- Scope: Frontend
+- Files: `components/NodeMap.jsx`, `components/nodes/ThinkingNode.jsx`, `components/edges/ConnectorEdge.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: 경로 계산/포트 표시 조건 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Orthogonal arc routing and adaptive port ordering applied
 - Summary:
   - connector path를 Bezier 기반에서 `orthogonal + arc` 방식으로 전환해 직교 경로의 코너를 arc로 라운딩 처리했다.

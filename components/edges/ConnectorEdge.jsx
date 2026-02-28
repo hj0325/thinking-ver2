@@ -46,6 +46,74 @@ function compressPoints(points) {
   return out;
 }
 
+function manhattanLength(points) {
+  let total = 0;
+  for (let i = 1; i < points.length; i += 1) {
+    total += Math.abs(points[i].x - points[i - 1].x) + Math.abs(points[i].y - points[i - 1].y);
+  }
+  return total;
+}
+
+function countBends(points) {
+  return Math.max(0, points.length - 2);
+}
+
+function scorePath(points, { isForward, startX, endX, sourceY, targetY }) {
+  const pts = compressPoints(points);
+  if (pts.length < 2) return Number.POSITIVE_INFINITY;
+
+  const length = manhattanLength(pts);
+  const bends = countBends(pts);
+  let horizontalBacktrackPenalty = 0;
+  let sideAttachPenalty = 0;
+  let directionFlipPenalty = 0;
+  let previousHorizontalSign = 0;
+
+  for (let i = 1; i < pts.length; i += 1) {
+    const prev = pts[i - 1];
+    const curr = pts[i];
+    const dx = curr.x - prev.x;
+    const dy = curr.y - prev.y;
+    if (dy !== 0 || dx === 0) continue;
+
+    const sign = Math.sign(dx);
+    if (isForward && sign < 0) {
+      horizontalBacktrackPenalty += Math.abs(dx) * 10 + 500;
+    }
+    if (previousHorizontalSign !== 0 && sign !== previousHorizontalSign) {
+      directionFlipPenalty += 120;
+    }
+    previousHorizontalSign = sign;
+  }
+
+  const firstDx = pts[1].x - pts[0].x;
+  if (firstDx < 0) {
+    sideAttachPenalty += Math.abs(firstDx) * 12 + 800;
+  }
+
+  const lastDx = pts[pts.length - 1].x - pts[pts.length - 2].x;
+  if (lastDx < 0) {
+    sideAttachPenalty += Math.abs(lastDx) * 12 + 800;
+  }
+
+  const yValues = pts.map((p) => p.y);
+  const ySpan = Math.max(...yValues) - Math.min(...yValues);
+  const baselineYSpan = Math.abs(targetY - sourceY);
+  const detourPenalty = Math.max(0, ySpan - baselineYSpan) * 2;
+
+  const endGapPenalty = Math.abs(pts[0].x - startX) + Math.abs(pts[pts.length - 1].x - endX);
+
+  return (
+    length +
+    bends * 72 +
+    detourPenalty +
+    horizontalBacktrackPenalty +
+    sideAttachPenalty +
+    directionFlipPenalty +
+    endGapPenalty
+  );
+}
+
 function buildRoundedOrthogonalPath(points, cornerRadius) {
   const pts = compressPoints(points);
   if (!pts.length) return "";
@@ -96,31 +164,77 @@ function buildOrthogonalPoints(sourceX, sourceY, targetX, targetY, clearance, la
   const effectiveClearance = Math.max(MIN_CLEARANCE, clearance);
   const startStubX = pathStartX + effectiveClearance;
   const endStubX = pathEndX - effectiveClearance;
-  const forwardEnough = pathEndX >= pathStartX && endStubX - startStubX >= effectiveClearance;
+  const isForward = pathEndX >= pathStartX;
+  const laneTopY = Math.min(sourceY, targetY) - laneGap;
+  const laneBottomY = Math.max(sourceY, targetY) + laneGap;
+  const candidates = [];
 
-  if (forwardEnough) {
-    return [
-      { x: pathStartX, y: sourceY },
+  const startPoint = { x: pathStartX, y: sourceY };
+  const endPoint = { x: pathEndX, y: targetY };
+
+  if (isForward) {
+    const midX = (pathStartX + pathEndX) / 2;
+    candidates.push([
+      startPoint,
+      { x: midX, y: sourceY },
+      { x: midX, y: targetY },
+      endPoint,
+    ]);
+  }
+
+  if (isForward && endStubX >= startStubX) {
+    candidates.push([
+      startPoint,
       { x: startStubX, y: sourceY },
       { x: startStubX, y: targetY },
       { x: endStubX, y: targetY },
-      { x: pathEndX, y: targetY },
-    ];
+      endPoint,
+    ]);
   }
 
-  const laneY =
-    targetY >= sourceY
-      ? Math.min(sourceY, targetY) - laneGap
-      : Math.max(sourceY, targetY) + laneGap;
-
-  return [
-    { x: pathStartX, y: sourceY },
+  candidates.push([
+    startPoint,
     { x: startStubX, y: sourceY },
-    { x: startStubX, y: laneY },
-    { x: endStubX, y: laneY },
+    { x: startStubX, y: laneTopY },
+    { x: endStubX, y: laneTopY },
     { x: endStubX, y: targetY },
-    { x: pathEndX, y: targetY },
-  ];
+    endPoint,
+  ]);
+
+  candidates.push([
+    startPoint,
+    { x: startStubX, y: sourceY },
+    { x: startStubX, y: laneBottomY },
+    { x: endStubX, y: laneBottomY },
+    { x: endStubX, y: targetY },
+    endPoint,
+  ]);
+
+  let best = candidates[0];
+  let bestScore = scorePath(best, {
+    isForward,
+    startX: pathStartX,
+    endX: pathEndX,
+    sourceY,
+    targetY,
+  });
+
+  for (let i = 1; i < candidates.length; i += 1) {
+    const candidate = candidates[i];
+    const score = scorePath(candidate, {
+      isForward,
+      startX: pathStartX,
+      endX: pathEndX,
+      sourceY,
+      targetY,
+    });
+    if (score < bestScore) {
+      best = candidate;
+      bestScore = score;
+    }
+  }
+
+  return best;
 }
 
 export default function ConnectorEdge({

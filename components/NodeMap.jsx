@@ -15,14 +15,36 @@ export default function NodeMap({ nodes, edges, onNodesChange, onEdgesChange, hi
     const nodeTypes = useMemo(() => ({ thinkingNode: ThinkingNode }), []);
     const edgeTypes = useMemo(() => ({ connectorEdge: ConnectorEdge }), []);
 
-    // highlightedNodeIds 기반으로 className을 항상 최신 상태로 유지
+    const portVisibilityByNode = useMemo(() => {
+        const map = new Map();
+        edges.forEach((edge) => {
+            if (edge?.source) {
+                const current = map.get(edge.source) || { hasLeftPort: false, hasRightPort: false };
+                current.hasRightPort = true;
+                map.set(edge.source, current);
+            }
+            if (edge?.target) {
+                const current = map.get(edge.target) || { hasLeftPort: false, hasRightPort: false };
+                current.hasLeftPort = true;
+                map.set(edge.target, current);
+            }
+        });
+        return map;
+    }, [edges]);
+
+    // highlightedNodeIds/연결 포트 상태 기반으로 노드 표시 상태를 항상 최신 유지
     const displayNodes = useMemo(() => {
-        if (!highlightedNodeIds || highlightedNodeIds.size === 0) return nodes;
+        const hasHighlightSet = highlightedNodeIds instanceof Set;
         return nodes.map((n) => ({
             ...n,
-            className: highlightedNodeIds.has(n.id) ? 'node-highlighted' : (n.className || ''),
+            data: {
+                ...n.data,
+                hasLeftPort: portVisibilityByNode.get(n.id)?.hasLeftPort || false,
+                hasRightPort: portVisibilityByNode.get(n.id)?.hasRightPort || false,
+            },
+            className: hasHighlightSet && highlightedNodeIds.has(n.id) ? 'node-highlighted' : (n.className || ''),
         }));
-    }, [nodes, highlightedNodeIds]);
+    }, [nodes, highlightedNodeIds, portVisibilityByNode]);
 
     return (
         <div className="w-full h-full bg-slate-50">

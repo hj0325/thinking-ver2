@@ -111,7 +111,7 @@
 | T-007 | Agent | malformed JSON from model | 보정 시도 또는 명시적 에러 | P1 | Planned |
 | T-008 | Agent | cross-connection empty with history | fallback edge 생성 | P1 | Planned |
 | T-009 | UI+API | language consistency | 사용자 노출 텍스트 영어 100% | P0 | Planned |
-| T-010 | UI | connector endpoint ports | 양 끝 포트 렌더링 + category color 반영 | P0 | Planned |
+| T-010 | UI | connector endpoint ports | 연결된 side에만 포트 렌더링 + category color 반영 | P0 | Planned |
 | T-011 | UI | connector anchor position | 좌/우 포트 기준점 `top 52px` 유지 | P0 | Planned |
 | T-012 | UI | connector direction normalization | Problem->Solution 우선 + left-to-right 정규화 | P0 | Planned |
 | T-013 | UI | connector overlap mitigation | fanout + clearance 경로로 카드/선 겹침 완화 | P1 | Planned |

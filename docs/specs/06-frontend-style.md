@@ -132,7 +132,7 @@
 | Chat Dialog |  | open/loading/error |  |  |
 | Node Card | `summary + body + (optional image) + chips` | default/highlighted | text-only / image | this section is detailed below |
 | Canvas Pan Interaction | `empty-space drag` | idle/panning/dragging-node | modifier/no-modifier | NodeMap interaction spec |
-| Node Connector Edge | `edge + both endpoint ports` | default/highlighted/overlapped | input/chat/cross | logical flow with fixed source/target semantics |
+| Node Connector Edge | `edge + connected-side endpoint ports` | default/highlighted/overlapped | input/chat/cross | logical flow with fixed source/target semantics |
 
 ### 7.1 Node Card (Mockup V1 Spec)
 #### A. Container
@@ -261,7 +261,7 @@
    - width: `--edge-line-width` (`4px`)
    - routing: `orthogonal + arc corner` (수평/수직 세그먼트 + 둥근 코너)
 2. Endpoint ports:
-   - 양 끝점 모두 표시 (source/target 모두)
+   - 각 edge의 양 끝점은 표시하되, 노드 기준으로는 연결이 존재하는 side에만 포트를 표시
    - outer: white ring circle
    - inner: 해당 노드 `category`의 chip color
    - z-layer: node layer에서 렌더링하여 카드 위로 노출
@@ -304,7 +304,7 @@
 - `styles/globals.css`:
   - connector/port 토큰 스타일 정의
 - `components/nodes/ThinkingNode.jsx`:
-  - 좌/우 고정 포트 렌더링
+  - 연결된 좌/우 side만 포트 렌더링
 - `components/edges/ConnectorEdge.jsx`:
   - custom orthogonal path + arc corner + fanout + clearance routing
 
@@ -320,7 +320,7 @@
   - cursor affordance (`grab`/`grabbing`)
 - Edge interaction:
   - direction normalized (`Problem -> Solution`, else left-to-right`)
-  - endpoint ports shown on both sides
+  - endpoint ports shown only on connected sides (per node)
   - fanout and clearance routing for overlap prevention
   - orthogonal + arc corner path for readability and overlap avoidance
 
