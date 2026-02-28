@@ -2,7 +2,7 @@
 
 ## Follow-up To-do
 - [ ] [added: 2026-02-28] [P0] [status: execution-needed] 사용자 노출 문자열을 중앙 관리하는 단일 텍스트 레이어를 도입한다 (UI literal 분산 제거).
-- [ ] [added: 2026-02-28] [P1] [status: execution-needed] [Phase 2] `ChatDialog` 비즈니스 로직을 Drawer Chat body로 이관하고 legacy fallback을 병행 운영한다.
+- [x] [added: 2026-02-28] [P1] [status: completed 2026-02-28] [Phase 2] `ChatDialog` 비즈니스 로직을 Drawer Chat body로 이관하고 legacy fallback을 병행 운영한다.
 - [ ] [added: 2026-02-28] [P1] [status: execution-needed] [Phase 3] `attachedContextNodes` optional contract를 `/api/chat` 경로에 확장한다.
 - [x] [added: 2026-02-28] [P0] [status: completed 2026-02-28] `lib/thinkingAgent.js`의 한국어 기본 라벨/fallback 문구를 영어 기본값으로 교체한다.
 - [ ] [added: 2026-02-28] [P1] [status: execution-needed] Python backend 유지 시 `backend/logic.py` 프롬프트/출력 언어를 영어 정책과 동기화한다.
@@ -42,7 +42,7 @@ flowchart LR
 | `components/NodeMap.jsx` | 그래프 렌더링 | ReactFlow 노드/엣지 표시, 강조 class 반영 |
 | `components/SuggestionPanel.jsx` | 제안 카드 목록 UI | 카드 선택/닫기 |
 | `components/ChatDialog.jsx` | 제안별 대화/변환 | `/api/chat`, `/api/chat-to-nodes` 호출 |
-| `Right Agent Drawer` (planned) | Tip/Chat 통합 서랍 | drawer open state, mode(`tip/chat`), context shelf |
+| `components/RightAgentDrawer.jsx` | Tip/Chat 통합 서랍 + 채팅 본문 | drawer open state, mode(`tip/chat`), context shelf, `/api/chat`, `/api/chat-to-nodes` |
 | `components/InputPanel.jsx` | 입력 폼 | Enter 제출, 로딩 상태 반영 |
 
 Frontend visual/style details are managed in `./06-frontend-style.md`.
@@ -126,10 +126,10 @@ Frontend visual/style details are managed in `./06-frontend-style.md`.
    - Drawer 경계(`rail + right field + content`) 구현
    - mode toggle/close 행동 구현
    - 기존 채팅 로직은 `ChatDialog`에 유지
-2. Phase 2 (chat migration):
-   - `ChatDialog`의 비즈니스 로직을 Drawer Chat body로 이관/재사용
-   - API payload/response 계약은 동일하게 유지
-   - migration 안정화 전까지 legacy fallback 유지
+2. Phase 2 (chat migration, completed 2026-02-28):
+   - `ChatDialog`의 비즈니스 로직을 Drawer Chat body로 이관/재사용 완료
+   - API payload/response 계약(`/api/chat`, `/api/chat-to-nodes`) 동일하게 유지
+   - legacy fallback은 `?legacyChat=1` 경로로 병행 유지
 3. Phase 3 (context attachment):
    - context shelf drag attach state 연결
    - API 호출 시 context block을 프롬프트에 병합

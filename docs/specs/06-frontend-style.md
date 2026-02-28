@@ -9,7 +9,7 @@
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1.3] Drawer 좌측 경계 품질 보정을 위해 `content safe inset`과 `transparent tail`을 강화한다.
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1.4] 경계 미세 절단감 제거를 위해 `alpha-tail 0 종료 + neutral alpha overlay + rail strip 약화 + safe inset 확대`를 적용한다.
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1] 우측 Agent Drawer(`Glow rail + filled field + content panel`) 열기/닫기 구조를 Tip/Chat 토글과 함께 구현한다.
-- [ ] [added: 2026-02-28] [status: execution-needed] [Phase 2] 기존 `ChatDialog` 로직을 Drawer Chat body로 이관/재사용해 채팅 기능을 유지한다.
+- [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 2] 기존 `ChatDialog` 로직을 Drawer Chat body로 이관/재사용해 채팅 기능을 유지한다.
 - [ ] [added: 2026-02-28] [status: execution-needed] [Phase 3] 우측 상단 context shelf에 노드 드래그 첨부 UI를 연결하고, 첨부 카드 맥락을 AI 응답 입력 컨텍스트로 전달한다.
 - [ ] [added: 2026-02-28] [status: execution-needed] Canvas 단계 전환 상태(stage state)와 배경 토큰(`data-stage`) 매핑 로직을 연결한다.
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] Canvas 단면 배경(base + 중앙 gradient) 스타일을 초기 stage(`research-diverge`) 기준으로 코드에 적용

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     useNodesState,
     useEdgesState,
@@ -26,6 +26,7 @@ const EDGE_LANE_GAP = 80;
 const ADMIN_MODE_STORAGE_KEY = "vtm-admin-mode-enabled";
 const ADMIN_HINT_DISMISSED_KEY = "vtm-admin-shortcut-hint-dismissed";
 const ADMIN_SHORTCUT_LABEL = "Ctrl/Cmd + Shift + A";
+const LEGACY_CHAT_QUERY_KEY = "legacyChat";
 
 const CHIP_BG_COLORS = {
     When: "#9DBCFF",
@@ -101,6 +102,14 @@ function buildNodeStyle() {
         overflow: 'visible',
         boxShadow: "0 8px 24px -12px rgb(0 0 0 / 0.22)",
     };
+}
+
+function toChatErrorMessage(error) {
+    return (
+        error?.response?.data?.error ||
+        error?.response?.data?.detail ||
+        "Sorry, something went wrong. Please try again."
+    );
 }
 
 function countExistingBySide(currentEdges) {
@@ -292,13 +301,19 @@ export default function ThinkingMachine() {
     const [showAdminShortcutHint, setShowAdminShortcutHint] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [drawerMode, setDrawerMode] = useState("chat");
+    const [legacyChatFallbackEnabled, setLegacyChatFallbackEnabled] = useState(false);
 
     // AI 제안 패널
     const [suggestions, setSuggestions] = useState([]);
     const [highlightedNodeIds, setHighlightedNodeIds] = useState(new Set());
 
-    // Chat dialog
+    // Chat state (Drawer Chat primary + optional legacy dialog fallback)
     const [activeSuggestion, setActiveSuggestion] = useState(null);
+    const [chatMessages, setChatMessages] = useState([]);
+    const [chatInput, setChatInput] = useState("");
+    const [isChatLoading, setIsChatLoading] = useState(false);
+    const [isChatConverting, setIsChatConverting] = useState(false);
+    const activeSuggestionIdRef = useRef(null);
 
     useEffect(() => {
         try {
@@ -311,6 +326,19 @@ export default function ThinkingMachine() {
             setShowAdminShortcutHint(true);
         }
     }, []);
+
+    useEffect(() => {
+        try {
+            const query = new URLSearchParams(window.location.search);
+            setLegacyChatFallbackEnabled(query.get(LEGACY_CHAT_QUERY_KEY) === "1");
+        } catch {
+            setLegacyChatFallbackEnabled(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        activeSuggestionIdRef.current = activeSuggestion?.id ?? null;
+    }, [activeSuggestion?.id]);
 
     useEffect(() => {
         try {
@@ -359,30 +387,49 @@ export default function ThinkingMachine() {
     const handleDismissSuggestion = (suggestionId) => {
         setSuggestions((prev) => {
             const dismissed = prev.find((s) => s.id === suggestionId);
+            const nextSuggestions = prev.filter((s) => s.id !== suggestionId);
             if (dismissed) {
                 setHighlightedNodeIds((ids) => {
                     const next = new Set(ids);
                     next.delete(dismissed.relatedNodeId);
                     return next;
                 });
-                // 열려있는 채팅창이 dismiss된 카드와 같으면 닫기
+                // 활성 컨텍스트 카드가 dismiss된 경우 다음 카드로 교체(없으면 해제)
                 if (activeSuggestion?.id === suggestionId) {
-                    setActiveSuggestion(null);
+                    setActiveSuggestion(legacyChatFallbackEnabled ? null : (nextSuggestions[0] || null));
+                    if (nextSuggestions.length === 0) {
+                        setChatMessages([]);
+                        setChatInput("");
+                    }
                 }
             }
-            return prev.filter((s) => s.id !== suggestionId);
+            return nextSuggestions;
         });
     };
 
     const handleSuggestionClick = (suggestion) => {
-        // Legacy chat fallback should remain available during drawer phase 1.
-        setIsDrawerOpen(false);
-        // 같은 카드 다시 클릭 시 토글
-        if (activeSuggestion?.id === suggestion.id) {
-            setActiveSuggestion(null);
-        } else {
-            setActiveSuggestion(suggestion);
+        // Legacy fallback path is available with `?legacyChat=1`.
+        if (legacyChatFallbackEnabled) {
+            setIsDrawerOpen(false);
+            if (activeSuggestion?.id === suggestion.id) {
+                setActiveSuggestion(null);
+            } else {
+                setActiveSuggestion(suggestion);
+            }
+            return;
         }
+
+        if (activeSuggestion?.id === suggestion.id && isDrawerOpen && drawerMode === "chat") {
+            setIsDrawerOpen(false);
+            setActiveSuggestion(null);
+            setChatMessages([]);
+            setChatInput("");
+            return;
+        }
+
+        setActiveSuggestion(suggestion);
+        setDrawerMode("chat");
+        setIsDrawerOpen(true);
     };
 
     const handleDrawerModeToggle = (nextMode) => {
@@ -390,8 +437,139 @@ export default function ThinkingMachine() {
             setIsDrawerOpen(false);
             return;
         }
-        setActiveSuggestion(null);
         setDrawerMode(nextMode);
+        setIsDrawerOpen(true);
+        if (nextMode === "chat" && !activeSuggestion && suggestions.length > 0) {
+            setActiveSuggestion(suggestions[0]);
+        }
+    };
+
+    useEffect(() => {
+        if (legacyChatFallbackEnabled) {
+            setChatMessages([]);
+            setChatInput("");
+            setIsChatLoading(false);
+            return;
+        }
+
+        if (!activeSuggestion) {
+            setChatMessages([]);
+            setChatInput("");
+            setIsChatLoading(false);
+            return;
+        }
+
+        let cancelled = false;
+        const targetSuggestion = activeSuggestion;
+
+        const bootstrapChat = async () => {
+            setChatMessages([]);
+            setChatInput("");
+            setIsChatLoading(true);
+            try {
+                const payload = {
+                    suggestion_title: targetSuggestion.title,
+                    suggestion_content: targetSuggestion.content,
+                    suggestion_category: targetSuggestion.category,
+                    suggestion_phase: targetSuggestion.phase,
+                    messages: [],
+                    user_message: "Please explain this suggestion first.",
+                };
+                const res = await axios.post("/api/chat", payload);
+                if (cancelled || activeSuggestionIdRef.current !== targetSuggestion.id) return;
+                setChatMessages([{ role: "assistant", content: res.data.reply }]);
+            } catch (error) {
+                if (cancelled || activeSuggestionIdRef.current !== targetSuggestion.id) return;
+                setChatMessages([{ role: "assistant", content: toChatErrorMessage(error) }]);
+            } finally {
+                if (!cancelled && activeSuggestionIdRef.current === targetSuggestion.id) {
+                    setIsChatLoading(false);
+                }
+            }
+        };
+
+        void bootstrapChat();
+        return () => {
+            cancelled = true;
+        };
+    }, [activeSuggestion?.id, legacyChatFallbackEnabled]);
+
+    const handleDrawerChatSubmit = async () => {
+        const targetSuggestion = activeSuggestion;
+        const trimmedInput = chatInput.trim();
+
+        if (!targetSuggestion || !trimmedInput || isChatLoading) return;
+
+        const historyForApi = chatMessages;
+        const targetSuggestionId = targetSuggestion.id;
+        setChatMessages((prev) => [...prev, { role: "user", content: trimmedInput }]);
+        setChatInput("");
+        setIsChatLoading(true);
+
+        try {
+            const payload = {
+                suggestion_title: targetSuggestion.title,
+                suggestion_content: targetSuggestion.content,
+                suggestion_category: targetSuggestion.category,
+                suggestion_phase: targetSuggestion.phase,
+                messages: historyForApi,
+                user_message: trimmedInput,
+            };
+            const res = await axios.post("/api/chat", payload);
+            if (activeSuggestionIdRef.current !== targetSuggestionId) return;
+            setChatMessages((prev) => [...prev, { role: "assistant", content: res.data.reply }]);
+        } catch (error) {
+            if (activeSuggestionIdRef.current !== targetSuggestionId) return;
+            setChatMessages((prev) => [...prev, { role: "assistant", content: toChatErrorMessage(error) }]);
+        } finally {
+            if (activeSuggestionIdRef.current === targetSuggestionId) {
+                setIsChatLoading(false);
+            }
+        }
+    };
+
+    const handleDrawerChatConvertToNodes = async () => {
+        if (!activeSuggestion || chatMessages.length === 0 || isChatConverting) return;
+        setIsChatConverting(true);
+
+        try {
+            const payload = {
+                suggestion_title: activeSuggestion.title,
+                suggestion_content: activeSuggestion.content,
+                suggestion_category: activeSuggestion.category,
+                suggestion_phase: activeSuggestion.phase,
+                messages: chatMessages,
+                existing_nodes: nodes.map((n) => ({
+                    id: n.id,
+                    data: {
+                        title: n.data.title,
+                        category: n.data.category,
+                        phase: n.data.phase,
+                    },
+                    position: n.position,
+                })),
+            };
+            const res = await axios.post("/api/chat-to-nodes", payload);
+            handleAddNodesFromChat(res.data);
+            setIsDrawerOpen(false);
+            setActiveSuggestion(null);
+            setChatMessages([]);
+            setChatInput("");
+        } catch (error) {
+            const serverMsg =
+                error?.response?.data?.error ||
+                error?.response?.data?.detail ||
+                error?.message;
+            alert(serverMsg ? `Failed to convert conversation to nodes: ${serverMsg}` : "Failed to convert conversation to nodes. Please try again shortly.");
+        } finally {
+            setIsChatConverting(false);
+        }
+    };
+
+    const handleDrawerContextSelect = (suggestion) => {
+        if (!suggestion) return;
+        setActiveSuggestion(suggestion);
+        setDrawerMode("chat");
         setIsDrawerOpen(true);
     };
 
@@ -538,10 +716,19 @@ export default function ThinkingMachine() {
                     suggestions={suggestions}
                     onToggleMode={handleDrawerModeToggle}
                     onClose={() => setIsDrawerOpen(false)}
+                    activeSuggestion={activeSuggestion}
+                    chatMessages={chatMessages}
+                    chatInput={chatInput}
+                    isChatLoading={isChatLoading}
+                    isChatConverting={isChatConverting}
+                    onChatInputChange={setChatInput}
+                    onChatSubmit={handleDrawerChatSubmit}
+                    onChatConvertToNodes={handleDrawerChatConvertToNodes}
+                    onChatContextSelect={handleDrawerContextSelect}
                 />
 
-                {/* AI 채팅 대화창 */}
-                {activeSuggestion && (
+                {/* Legacy fallback chat dialog (`?legacyChat=1`) */}
+                {legacyChatFallbackEnabled && activeSuggestion && (
                     <ChatDialog
                         suggestion={activeSuggestion}
                         onClose={() => setActiveSuggestion(null)}

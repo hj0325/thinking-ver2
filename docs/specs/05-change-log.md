@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Phase 2 chat migrated into Drawer Chat body
+- Summary:
+  - `SuggestionPanel` 카드 클릭의 기본 동선을 `ChatDialog`에서 `RightAgentDrawer(chat mode)`로 전환하고, 기존 `/api/chat`, `/api/chat-to-nodes` 호출 로직을 Drawer Chat 본문에 이관했다.
+  - Drawer Chat에서 초기 설명 메시지 부트스트랩, 사용자 메시지 전송, 변환 버튼(`Convert conversation to nodes`)을 지원하도록 구현했다.
+  - legacy fallback은 제거하지 않고 `?legacyChat=1` 경로에서 기존 `ChatDialog`를 병행 유지했다.
+- Scope: Frontend
+- Files: `components/ThinkingMachine.jsx`, `components/RightAgentDrawer.jsx`, `docs/specs/03-architecture.md`, `docs/specs/06-frontend-style.md`, `docs/specs/05-change-log.md`
+- Validation: API payload 계약 유지(`/api/chat`, `/api/chat-to-nodes`)와 Drawer 채팅 상태 흐름 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/03-architecture.md`, `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Drawer Phase 1.4 alpha-tail and neutral-overlay rules implemented
 - Summary:
   - Phase 1.4 스펙을 코드에 반영했다: `base/radial` 말단 alpha를 투명 종료로 정리하고, edge overlay를 `neutral alpha-fade only`로 변경했다.
