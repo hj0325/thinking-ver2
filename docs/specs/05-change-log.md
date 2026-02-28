@@ -26,6 +26,37 @@
 ```
 
 ## 4. Change Entries
+### [Update] 2026-02-28 - UI-006/UI-007 decisions finalized in frontend spec
+- Summary:
+  - `UI-006`을 `기본 drag pan`으로 확정하고, Canvas pan modifier를 `none`으로 고정했다.
+  - `UI-007`을 `전체 UI Instrument Sans`로 확정하되, 제목급 텍스트(예: Node Card title)는 `Inter` 우선 정책으로 명시했다.
+  - `06-frontend-style`의 Follow-up To-do 및 Open Questions 상태를 `Resolved/Completed`로 동기화했다.
+- Scope: Frontend
+- Files: `docs/specs/06-frontend-style.md`, `docs/specs/05-change-log.md`
+- Validation: 결정 응답(사용자 코멘트)과 토큰/컴포넌트/오픈질문 섹션 간 일관성 대조 확인
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`
+
+### [Update] 2026-02-28 - Spec proposal added for canvas pan and Instrument Sans
+- Summary:
+  - `06-frontend-style`에 Miro/Figma 스타일의 캔버스 빈 영역 drag pan 인터랙션 스펙(행동 규칙, 우선순위, 구현 타깃)을 추가했다.
+  - `Instrument Sans` 웹폰트 도입 방향을 타이포 토큰/구현 매핑에 반영하고, 미확정 의사결정 항목을 Open Questions로 등록했다.
+- Scope: Frontend
+- Files: `docs/specs/06-frontend-style.md`, `docs/specs/05-change-log.md`
+- Validation: 스펙 섹션(토큰/컴포넌트/인터랙션/구현 매핑/오픈질문) 간 참조 일관성 확인
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`
+
+### [Patch] 2026-02-28 - Node card/chip spacing aligned to updated frontend spec
+- Summary:
+  - `06-frontend-style` 최신 수치에 맞춰 Node Card 내부 패딩과 chip 내부 gap을 코드에 반영했다.
+  - Node Card content wrapper padding을 `16px 16px 12px 16px`로 정렬하고, chip inner gap을 `4px`로 조정했다.
+- Scope: Frontend
+- Files: `components/ThinkingMachine.jsx`, `docs/specs/05-change-log.md`
+- Validation: 코드 클래스 값(`px-4 pb-3 pt-4`, `gap-1`)을 스펙 토큰과 대조 확인
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`
+
 ### [Patch] 2026-02-28 - English-only prompt policy enforced in JS/Python
 - Summary:
   - JS/Python `analyze` 및 `chat-to-nodes` 프롬프트에 사용자 노출 텍스트 영어 강제 규칙을 추가했다.

@@ -40,7 +40,7 @@ function Chip({ label }) {
     const backgroundColor = CHIP_BG_COLORS[label] || "#E5E7EB";
     return (
         <span
-            className="inline-flex items-center justify-center gap-2.5 rounded-[99px] px-2 py-1.5 text-[12px] font-semibold leading-none text-[#111111]"
+            className="inline-flex items-center justify-center gap-1 rounded-[99px] px-2 py-1.5 text-[12px] font-semibold leading-none text-[#111111]"
             style={{ backgroundColor }}
         >
             {label}
@@ -51,7 +51,7 @@ function Chip({ label }) {
 // 노드 데이터에서 JSX label 빌드 (재사용)
 function buildNodeLabel(nodeData) {
     return (
-        <div className="flex h-full w-full flex-col items-start gap-3 px-[11px] pb-3 pt-4 text-left">
+        <div className="flex h-full w-full flex-col items-start gap-3 px-4 pb-3 pt-4 text-left">
             <div className="line-clamp-2 text-[15px] font-bold leading-[1.2] text-[#4A4A4A]">
                 {nodeData.title}
             </div>

@@ -4,9 +4,13 @@
 - [ ] [added: 2026-02-28] [status: decision-needed] Node image 비율/크롭 규칙(`cover` vs `contain`)을 Figma Inspect 기준으로 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] Title/Body 타이포(폰트 패밀리, 크기, 굵기, line-height) 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] 6하원칙 chip 토큰 이름(`--chip-when` vs `--chip-where`) 최종 확정
+- [ ] [added: 2026-02-28] [status: execution-needed] 빈 캔버스 드래그 pan(배경 이동) 인터랙션을 NodeMap에 반영
+- [ ] [added: 2026-02-28] [status: execution-needed] `Instrument Sans` 웹 폰트를 설치하고 기본 UI/Node 텍스트에 적용
+- [x] [added: 2026-02-28] [status: completed 2026-02-28] pan 동작의 modifier key 정책을 `기본 drag pan`으로 확정
+- [x] [added: 2026-02-28] [status: completed 2026-02-28] `Instrument Sans` 적용 범위를 전체 UI로 확정하고, 제목급 텍스트는 `Inter` 예외 정책으로 확정
 
 ## 1. Document Meta
-- Version: `v0.3-draft`
+- Version: `v0.4-draft`
 - Status: `Draft`
 - Owner: TBD
 - Reviewers: TBD
@@ -64,12 +68,21 @@
 ### 6.2 Typography Tokens
 | Token | Value | Usage |
 |---|---|---|
-| `--font-family-node` | TBD | Node title/body |
+| `--font-family-ui` | `"Instrument Sans", "Inter", "system-ui", sans-serif` | 앱 공통 UI 텍스트 (default) |
+| `--font-family-heading` | `"Inter", "Instrument Sans", "system-ui", sans-serif` | 제목급 텍스트 (Node Card title 포함) |
+| `--font-family-node-body` | `"Instrument Sans", "Inter", "system-ui", sans-serif` | Node body/보조 텍스트 |
 | `--font-size-node-title` | TBD | Title(summary) 라인 |
 | `--font-size-node-body` | TBD | 본문 미리보기 텍스트 |
 | `--font-weight-node-title` | TBD | Title 강조 |
 | `--line-height-node-title` | TBD | Title 가독성 |
 | `--line-height-node-body` | TBD | Body 가독성 |
+
+### 6.5 Interaction Tokens (Canvas Pan)
+| Token | Value | Usage |
+|---|---|---|
+| `--canvas-pan-enabled` | `true` | 빈 캔버스 drag 이동 활성화 |
+| `--canvas-pan-mode` | `drag-empty-space` (default) | pan 트리거 방식 |
+| `--canvas-pan-modifier` | `none` (resolved) | modifier key 요구 여부 |
 
 ### 6.3 Radius / Shadow / Border
 | Token | Value | Usage |
@@ -90,7 +103,7 @@
 | `--space-node-image-h` | `136px` | Node 이미지 영역 높이 (code 기준) |
 | `--chip-pad-y` | `6px` | Chip 수직 패딩 |
 | `--chip-pad-x` | `8px` | Chip 수평 패딩 |
-| `--chip-gap-inner` | `10px` | Chip 내부 gap |
+| `--chip-gap-inner` | `4px` | Chip 내부 gap |
 
 ## 7. Component Style Template
 | Component | Structure | States | Variant | Notes |
@@ -99,18 +112,22 @@
 | Suggestion Card |  | default/active/hover | category-based |  |
 | Chat Dialog |  | open/loading/error |  |  |
 | Node Card | `summary + body + (optional image) + chips` | default/highlighted | text-only / image | this section is detailed below |
+| Canvas Pan Interaction | `empty-space drag` | idle/panning/dragging-node | modifier/no-modifier | NodeMap interaction spec |
 
 ### 7.1 Node Card (Mockup V1 Spec)
 #### A. Container
 - `display: flex`
 - `width: 232px`
-- `padding: 16px 11px 12px 11px`
+- `padding: 16px 16px 12px 16px`
 - `flex-direction: column`
 - `align-items: flex-start`
 - `gap: 12px`
 - border: `none`
 - background: `#FFF`
 - border-radius: `30px`
+- typography:
+  - title-level text uses `--font-family-heading` (`Inter` priority)
+  - body/supporting text uses `--font-family-node-body` (`Instrument Sans` priority)
 
 #### B. Content Structure
 1. Title line:
@@ -179,12 +196,46 @@
 - 제공된 스니펫(`background: var(--Chips-When, #9DBCFF);`)은 색상값 기준으로 `When` chip에 매칭된다.
 - 문구상 `Where` 스타일로 전달되었으므로, 토큰 네이밍은 UI-005에서 최종 확정한다.
 
+### 7.3 Canvas Pan Interaction (Miro/Figma-style)
+#### A. Goal
+- 사용자가 빈 배경 영역을 drag할 때 캔버스(viewport)가 이동해야 한다.
+- 노드를 drag할 때는 노드 이동이 우선되어야 하며 pan이 개입하면 안 된다.
+
+#### B. Behavior Rules
+1. Empty-space drag:
+   - action: viewport pan
+   - cursor: `grab`(idle) -> `grabbing`(panning)
+2. Node drag:
+   - action: node move only
+   - pan disabled while node is actively dragged
+3. Wheel/trackpad:
+   - 기존 zoom/scroll 동작 유지
+4. Touch:
+   - single-finger drag: pan
+   - pinch: zoom
+
+#### C. Key Policy (Resolved)
+- 확정 정책: modifier 없는 빈 영역 drag pan
+- `Space + drag` 제한 모드는 현재 범위에서 적용하지 않음
+
+#### D. Implementation Targets
+- file: `components/NodeMap.jsx`
+- primary config:
+  - ReactFlow pan 설정 활성화
+  - 노드 drag와 pan 충돌 방지 설정
+- QA baseline:
+  - 노드/엣지가 많은 상태에서도 프레임 드랍 없이 drag pan 동작
+
 ## 8. Motion and Interaction
 - Page transition:
 - Panel transition:
 - Hover/active behavior:
 - Loading behavior:
 - Reduced motion policy:
+- Canvas interaction:
+  - empty-space drag pan enabled
+  - node drag precedence over pan
+  - cursor affordance (`grab`/`grabbing`)
 
 ## 9. Responsive Rules
 | Breakpoint | Rule |
@@ -207,6 +258,8 @@
 | Global style | `styles/globals.css` |
 | Visual graph layer | `components/NodeMap.jsx` |
 | Interaction panels | `components/InputPanel.jsx`, `components/SuggestionPanel.jsx`, `components/ChatDialog.jsx` |
+| Web font loading (`Instrument Sans`) | `pages/_app.jsx`, `styles/globals.css` |
+| Canvas pan behavior | `components/NodeMap.jsx` |
 
 ## 12. Open Questions
 | ID | Question | Owner | Due Date | Status |
@@ -216,3 +269,5 @@
 | UI-003 | `Solution` chip color token은 무엇으로 확정할지? |  |  | Resolved (`#E8A0E6`, 2026-02-28) |
 | UI-004 | Node hover/active state가 목업 범위에 포함되는지? |  |  | Open |
 | UI-005 | 전달된 `Where` 스타일의 토큰 이름이 `--Chips-When`인 이유(오타/의도) 확인 필요 |  |  | Open |
+| UI-006 | Canvas pan을 기본 drag로 둘지, `Space+drag`로 제한할지? |  |  | Resolved (기본 drag pan, 2026-02-28) |
+| UI-007 | `Instrument Sans` 적용 범위를 전체 UI로 확장할지 Node/Card 우선으로 둘지? |  |  | Resolved (전체 UI + 제목급 Inter 예외, 2026-02-28) |
