@@ -1,0 +1,75 @@
+# 01. Overview
+
+## Follow-up To-do
+- [ ] [added: 2026-02-28] 문서 오너/리뷰어 확정
+- [ ] [added: 2026-02-28] 운영 기준 성능 목표치(p95, 에러율) 최종 합의
+- [ ] [added: 2026-02-28] Next API 단일 운영 여부 vs Python backend 병행 여부 결정
+- [ ] [added: 2026-02-28] 배포/롤백 책임자 지정
+
+## 1. Document Meta
+- Version: `v1.0-draft`
+- Status: `Draft`
+- Owner: TBD
+- Reviewers: TBD
+- Last Updated: `2026-02-28`
+
+## 2. Product Summary
+Visual Thinking Machine은 사용자의 자유 입력 문장을 받아 6하원칙(Who/What/When/Where/Why/How) 기반 노드 그래프로 구조화하고, AI 제안을 카드/채팅 형태로 확장한 뒤 다시 노드로 환원하는 인터랙티브 사고 보조 도구다.
+
+## 3. Current Product Context
+- Frontend: Next.js Pages Router + ReactFlow 시각화 UI
+- Server API: `pages/api/analyze`, `pages/api/chat`, `pages/api/chat-to-nodes`
+- AI Core: `lib/thinkingAgent.js` (OpenAI 호출 + Zod 기반 정규화/검증)
+- Optional Backend: `backend/*` (FastAPI 기반 병행 구현, 현재 프론트 기본 경로는 Next API)
+
+## 4. Problem Statement
+1. 사용자의 아이디어는 문장 단위로 흩어져 있어 구조적 사고로 전환하기 어렵다.
+2. 1회 분석 결과만으로는 아이디어를 확장/검증하기 어렵다.
+3. AI 결과가 스키마를 벗어나면 화면 반영이 불안정해질 수 있다.
+
+## 5. Goals
+1. 한 번의 입력으로 최소 1개~최대 4개의 구조화 노드를 생성한다.
+2. 생성 결과와 연결된 AI 제안 카드를 별도 패널로 제시한다.
+3. 제안 기반 대화를 통해 추가 아이디어를 노드/엣지로 다시 그래프에 병합한다.
+4. 모델 출력 변동에도 클라이언트가 동작하도록 JSON 정규화/검증/보정 경로를 유지한다.
+
+## 6. Non-Goals
+1. 사용자 인증/권한 관리 시스템 제공
+2. 실시간 다중 협업 편집
+3. 장기 저장소(DB) 기반 영속화
+4. 다국어 UI 완성도(현재 한/영 혼합)
+
+## 7. Scope
+### 7.1 In Scope
+- 입력 분석 -> 노드/엣지 생성
+- 제안 카드 표시/닫기/선택
+- 제안 채팅 및 채팅->노드 변환
+- 오류 메시지 표출(알럿 및 카드 내 오류 안내)
+
+### 7.2 Out of Scope
+- 계정/프로젝트 단위 데이터 저장
+- 운영 대시보드/관리자 화면
+- 모델 A/B 실험 프레임워크
+
+## 8. Primary User Journey
+1. 사용자가 입력 패널에 아이디어를 입력하고 제출한다.
+2. `/api/analyze` 호출 결과로 그래프 노드/엣지가 생성된다.
+3. 제안 카드가 우측 패널에 쌓이고, 관련 노드가 강조된다.
+4. 사용자가 제안 카드를 클릭해 채팅을 진행한다.
+5. 대화가 충분하면 `대화를 노드로 만들기`를 눌러 그래프에 병합한다.
+
+## 9. Dependencies
+- `OPENAI_API_KEY` (server env)
+- NPM dependencies: `next`, `reactflow`, `openai`, `zod`, `axios`, `framer-motion`
+
+## 10. Risks and Known Gaps
+- Python backend와 JS agent의 중복 구현으로 유지보수 비용 증가 가능성
+- 테스트 자동화 범위가 제한적(Next API 경로에 대한 테스트 부재)
+- README/운영 문서와 실제 구조 간 불일치 가능성
+
+## 11. Related Specs
+- `./02-requirements.md`
+- `./03-architecture.md`
+- `./04-test-rollout.md`
+- `./05-change-log.md`
+- `./SPEC_TEMPLATE.md`
