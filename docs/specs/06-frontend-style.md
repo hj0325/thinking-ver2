@@ -285,6 +285,7 @@
    - 카드 측면 포트에서 즉시 수평 이탈(`--edge-clearance-x`) 후 경로 진행
    - source clear point -> orthogonal lane -> target clear point -> target 포트 순으로 경로 구성
    - 각 꺾임점은 `arc`로 라운딩 처리(`--edge-corner-radius`)
+   - source/target의 Y 범위가 벌어진 경우, 외곽 우회보다 두 카드 사이 corridor 경로를 우선 선택
    - 목적: 선이 카드 본문/라운드 코너 영역을 가로지르지 않도록 보장
 3. Reverse placement (right-to-left layouts):
    - 노드가 역순으로 배치된 경우 상/하 우회 lane(`--edge-lane-gap`)을 통해 ㄹ자 경로를 우선 적용

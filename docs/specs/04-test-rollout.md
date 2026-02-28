@@ -90,6 +90,7 @@
 - [ ] 그 외 연결은 노드 좌->우 방향으로 정규화되어 렌더링된다.
 - [ ] 선이 카드 본문을 가로지르지 않고 card boundary 바깥 clearance 경로를 따른다.
 - [ ] 역순 배치(right-to-left)에서도 ㄹ자 우회 경로 + arc 코너로 카드와 겹치지 않는다.
+- [ ] 상/하로 벌어진 카드 연결 시, 외곽 상단 우회보다 카드 사이 corridor 경로가 우선 선택된다.
 - [ ] `e-input-*`, `e-chat-*`, `e-cross-*` 타입에서 모두 동일한 기본 connector 규칙이 유지된다.
 
 #### 3.6.1 Suggested Execution Steps

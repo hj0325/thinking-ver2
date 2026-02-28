@@ -64,9 +64,12 @@ function scorePath(points, { isForward, startX, endX, sourceY, targetY }) {
 
   const length = manhattanLength(pts);
   const bends = countBends(pts);
+  const bandTop = Math.min(sourceY, targetY);
+  const bandBottom = Math.max(sourceY, targetY);
   let horizontalBacktrackPenalty = 0;
   let sideAttachPenalty = 0;
   let directionFlipPenalty = 0;
+  let outsideBandPenalty = 0;
   let previousHorizontalSign = 0;
 
   for (let i = 1; i < pts.length; i += 1) {
@@ -84,6 +87,13 @@ function scorePath(points, { isForward, startX, endX, sourceY, targetY }) {
       directionFlipPenalty += 120;
     }
     previousHorizontalSign = sign;
+
+    const y = curr.y;
+    if (y < bandTop) {
+      outsideBandPenalty += (bandTop - y) * 6 + 80;
+    } else if (y > bandBottom) {
+      outsideBandPenalty += (y - bandBottom) * 6 + 80;
+    }
   }
 
   const firstDx = pts[1].x - pts[0].x;
@@ -110,6 +120,7 @@ function scorePath(points, { isForward, startX, endX, sourceY, targetY }) {
     horizontalBacktrackPenalty +
     sideAttachPenalty +
     directionFlipPenalty +
+    outsideBandPenalty +
     endGapPenalty
   );
 }
@@ -167,6 +178,8 @@ function buildOrthogonalPoints(sourceX, sourceY, targetX, targetY, clearance, la
   const isForward = pathEndX >= pathStartX;
   const laneTopY = Math.min(sourceY, targetY) - laneGap;
   const laneBottomY = Math.max(sourceY, targetY) + laneGap;
+  const midBandY = (sourceY + targetY) / 2;
+  const verticalGap = Math.abs(targetY - sourceY);
   const candidates = [];
 
   const startPoint = { x: pathStartX, y: sourceY };
@@ -187,6 +200,18 @@ function buildOrthogonalPoints(sourceX, sourceY, targetX, targetY, clearance, la
       startPoint,
       { x: startStubX, y: sourceY },
       { x: startStubX, y: targetY },
+      { x: endStubX, y: targetY },
+      endPoint,
+    ]);
+  }
+
+  // Prefer the corridor between cards first when vertical separation exists.
+  if (verticalGap >= 8) {
+    candidates.push([
+      startPoint,
+      { x: startStubX, y: sourceY },
+      { x: startStubX, y: midBandY },
+      { x: endStubX, y: midBandY },
       { x: endStubX, y: targetY },
       endPoint,
     ]);

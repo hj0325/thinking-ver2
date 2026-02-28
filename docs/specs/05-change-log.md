@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Prefer between-card corridor routing for vertical offsets
+- Summary:
+  - connector 경로 점수 계산에 Y-band(두 포트 사이 범위) 이탈 패널티를 추가해 상단/하단 과도 우회를 억제했다.
+  - source/target가 상하로 벌어진 경우 두 카드 사이 corridor(mid-band) 후보 경로를 추가해 위쪽으로 크게 도는 경로를 줄였다.
+  - 기존 arc 코너 처리와 clearance 기반 직교 라우팅은 유지했다.
+- Scope: Frontend
+- Files: `components/edges/ConnectorEdge.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: 라우팅 후보/점수 계산 수동 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Connected-side ports and path scoring optimization
 - Summary:
   - 노드 포트 표시를 양쪽 고정에서 연결된 side만 표시하도록 변경했다(미연결 side 포트 제거).
