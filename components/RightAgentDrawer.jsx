@@ -39,6 +39,8 @@ export default function RightAgentDrawer({
   const isChat = mode === "chat";
   const drawerFieldGradient =
     "radial-gradient(100.27% 97.75% at 97.75% 50%, #E0FFF4 0%, #AEF1DA 22.12%, #BBD8E6 80.17%, #FFFFEA 100%)";
+  const drawerFieldFeather =
+    "linear-gradient(90deg, rgba(166,255,211,0) 0%, rgba(166,255,211,0.72) 12%, rgba(166,255,211,0.96) 22%, rgba(166,255,211,1) 30%)";
 
   return (
     <div className="pointer-events-none absolute inset-y-0 right-0 z-[45] overflow-hidden">
@@ -86,7 +88,7 @@ export default function RightAgentDrawer({
           }`}
           aria-hidden={!isOpen}
           style={{
-            background: `${drawerFieldGradient}, #AEE7D0`,
+            background: `${drawerFieldFeather}, ${drawerFieldGradient}, #AEE7D0`,
           }}
         >
           <div className="relative z-10 flex h-full flex-col gap-3 p-4">

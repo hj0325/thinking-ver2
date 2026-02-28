@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Drawer left-edge feather gradient applied (no blur)
+- Summary:
+  - Drawer 좌측 경계가 잘려 보이는 현상을 줄이기 위해 background에 `linear feather` 레이어를 추가했다.
+  - 구현은 `linear feather + radial + base fill` 다중 배경 합성으로 적용했고, 별도 blur/filter 없이 처리해 렌더링 비용을 최소화했다.
+  - 콘텐츠 글라스 패널 스타일은 변경하지 않고 배경 레이어만 조정했다.
+- Scope: Frontend
+- Files: `components/RightAgentDrawer.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`, `docs/specs/05-change-log.md`
+- Validation: 배경 합성 순서/토큰/QA 항목 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Patch] 2026-02-28 - Drawer radial background clarity tuning (gray wash removed)
 - Summary:
   - 콘텐츠 글라스 패널 스타일은 유지하고, drawer 배경 레이어만 조정해 눌려 보이는(회색 탁도) 현상을 줄였다.

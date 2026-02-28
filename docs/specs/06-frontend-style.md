@@ -117,6 +117,7 @@
 | `--agent-tip-dot-color` | `#C084FC` | Tip 버튼 상태 점 색상 |
 | `--agent-field-bg-base` | `#AEE7D0` | 우측 drawer field 기본 채우기 |
 | `--agent-field-radial` | `radial-gradient(100.27% 97.75% at 97.75% 50%, #E0FFF4 0%, #AEF1DA 22.12%, #BBD8E6 80.17%, #FFFFEA 100%)` | 우측 drawer radial gradient |
+| `--agent-field-feather` | `linear-gradient(90deg, rgba(166,255,211,0) 0%, rgba(166,255,211,0.72) 12%, rgba(166,255,211,0.96) 22%, rgba(166,255,211,1) 30%)` | 좌측 경계 feather(잘림 방지) |
 | `--agent-field-radial-blur` | `0px` | 우측 drawer radial blur (회색 눌림 방지 목적) |
 | `--agent-field-radial-border` | `none` | 우측 drawer radial overlay border |
 | `--agent-drawer-inset-top` | `0px` | Drawer 상단 여백(기본 0) |
@@ -391,6 +392,7 @@
 1. Rail and field:
    - rail은 카드형 박스보다 단순한 세로 레이어로 표현한다.
    - right field는 `base fill + radial gradient overlay` 조합으로 표현한다.
+   - 좌측 경계는 별도 `linear feather`를 추가해 잘리는 경계를 부드럽게 풀어준다.
    - radial 값은 `radial-gradient(100.27% 97.75% at 97.75% 50%, #E0FFF4 0%, #AEF1DA 22.12%, #BBD8E6 80.17%, #FFFFEA 100%)`를 기준으로 한다.
    - 배경이 회색으로 눌려 보이는 현상 방지를 위해 radial blur는 기본 `0px`로 유지한다.
 2. Tip/Chat buttons:
