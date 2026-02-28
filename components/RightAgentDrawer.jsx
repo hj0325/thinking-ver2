@@ -38,11 +38,11 @@ export default function RightAgentDrawer({
   const isTip = mode === "tip";
   const isChat = mode === "chat";
   const drawerFieldBaseFade =
-    "linear-gradient(90deg, rgba(166,255,211,0) 0%, rgba(166,255,211,0.74) 22%, rgba(166,255,211,1) 42%)";
+    "linear-gradient(90deg, rgba(166,255,211,0) 0%, rgba(166,255,211,0.70) 24%, rgba(166,255,211,1) 46%)";
   const drawerFieldRadialAlpha =
-    "radial-gradient(100.27% 97.75% at 97.75% 50%, rgba(224,255,244,0.94) 0%, rgba(174,241,218,0.84) 22.12%, rgba(187,216,230,0.62) 80.17%, rgba(255,255,234,0.68) 100%)";
+    "radial-gradient(100.27% 97.75% at 97.75% 50%, rgba(224,255,244,0.94) 0%, rgba(174,241,218,0.84) 22.12%, rgba(187,216,230,0.42) 80.17%, rgba(255,255,234,0) 100%)";
   const drawerFieldEdgeOverlay =
-    "linear-gradient(90deg, rgba(166,255,211,0.98) 0%, rgba(166,255,211,0.78) 38%, rgba(166,255,211,0.26) 72%, rgba(166,255,211,0) 100%)";
+    "linear-gradient(90deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.10) 42%, rgba(255,255,255,0) 100%)";
 
   return (
     <div className="pointer-events-none absolute inset-y-0 right-0 z-[45] overflow-hidden">
@@ -52,7 +52,7 @@ export default function RightAgentDrawer({
         }`}
       >
         <div className="pointer-events-auto relative w-[78px]">
-          <div className="absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-white/18 to-transparent" />
+          <div className="absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-white/10 to-transparent" />
           <div className="absolute right-3 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-[10px]">
             <button
               type="button"
@@ -98,7 +98,7 @@ export default function RightAgentDrawer({
             aria-hidden
             style={{ background: drawerFieldEdgeOverlay }}
           />
-          <div className="relative z-10 flex h-full flex-col gap-3 py-4 pl-8 pr-6">
+          <div className="relative z-10 flex h-full flex-col gap-3 py-4 pl-10 pr-7">
             <div className="grid grid-cols-2 gap-2">
               {contextItems.length > 0 ? (
                 contextItems.map((item) => <ContextMiniCard key={item.id} item={item} />)

@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Drawer Phase 1.4 alpha-tail and neutral-overlay rules implemented
+- Summary:
+  - Phase 1.4 스펙을 코드에 반영했다: `base/radial` 말단 alpha를 투명 종료로 정리하고, edge overlay를 `neutral alpha-fade only`로 변경했다.
+  - rail 경계 strip를 추가 약화(`w-4`, 저강도 alpha)하고, content safe inset을 확대(`left 40px`, `right 28px`)해 경계 절단감을 줄였다.
+  - Drawer 구조/동작(`rail + field + content`, full-height, off-canvas motion, glass panel)은 유지했다.
+- Scope: Frontend
+- Files: `components/RightAgentDrawer.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/05-change-log.md`
+- Validation: Phase 1.4 값(alpha/overlay role/rail strip/safe inset) 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Update] 2026-02-28 - Pre-patch spec tightened for edge seam removal (Phase 1.4)
 - Summary:
   - 실제 패치 전 스펙으로 Drawer 경계 개선 원칙 4가지를 확정했다: `base/radial alpha 0 종료`, `neutral alpha overlay-only`, `rail strip 추가 약화`, `content safe inset 확대`.
