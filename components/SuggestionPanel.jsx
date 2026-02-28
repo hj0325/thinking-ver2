@@ -28,7 +28,7 @@ export default function SuggestionPanel({
             exit={{ x: 340, opacity: 0 }}
             transition={{ type: "spring", damping: 22, stiffness: 200 }}
             className={`absolute top-20 bottom-28 z-40 flex w-80 flex-col gap-3 overflow-y-auto pr-1 transition-all duration-300 ${
-                drawerOpen ? "right-[404px]" : "right-4"
+                drawerOpen ? "right-[156px]" : "right-4"
             }`}
             style={{ scrollbarWidth: "none" }}
         >

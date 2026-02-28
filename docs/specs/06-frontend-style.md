@@ -4,7 +4,7 @@
 - [ ] [added: 2026-02-28] [status: decision-needed] Node image 비율/크롭 규칙(`cover` vs `contain`)을 Figma Inspect 기준으로 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] Title/Body 타이포(폰트 패밀리, 크기, 굵기, line-height) 확정
 - [ ] [added: 2026-02-28] [status: decision-needed] 6하원칙 chip 토큰 이름(`--chip-when` vs `--chip-where`) 최종 확정
-- [ ] [added: 2026-02-28] [status: execution-needed] [Phase 1.1] Right Agent Drawer 버튼/필드 스타일을 최신 목업(원형 Tip/Chat 버튼 + 보라 점 + 단순 세로 gradient field) 기준으로 리파인한다.
+- [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1.1] Right Agent Drawer 버튼/필드 스타일을 최신 목업(원형 Tip/Chat 버튼 + 보라 점 + 단순 세로 gradient field) 기준으로 리파인한다.
 - [x] [added: 2026-02-28] [status: completed 2026-02-28] [Phase 1] 우측 Agent Drawer(`Glow rail + filled field + content panel`) 열기/닫기 구조를 Tip/Chat 토글과 함께 구현한다.
 - [ ] [added: 2026-02-28] [status: execution-needed] [Phase 2] 기존 `ChatDialog` 로직을 Drawer Chat body로 이관/재사용해 채팅 기능을 유지한다.
 - [ ] [added: 2026-02-28] [status: execution-needed] [Phase 3] 우측 상단 context shelf에 노드 드래그 첨부 UI를 연결하고, 첨부 카드 맥락을 AI 응답 입력 컨텍스트로 전달한다.

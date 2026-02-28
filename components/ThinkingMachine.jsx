@@ -537,7 +537,6 @@ export default function ThinkingMachine() {
                     mode={drawerMode}
                     suggestions={suggestions}
                     onToggleMode={handleDrawerModeToggle}
-                    onClose={() => setIsDrawerOpen(false)}
                 />
 
                 {/* AI 채팅 대화창 */}

@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Agent drawer visual refinement applied (Phase 1.1)
+- Summary:
+  - Right Agent Drawer를 최신 목업 기준으로 리파인했다: 단순 세로 gradient field + 원형 `Tip/Chat` 버튼 + `Tip` 보라색 점.
+  - 기존 rail 카드형/복합 placeholder 패널을 제거하고, 버튼 중심의 최소 Drawer shell 형태로 단순화했다.
+  - drawer open 시 SuggestionPanel 오프셋을 새 field 폭에 맞게 조정했다.
+- Scope: Frontend
+- Files: `components/RightAgentDrawer.jsx`, `components/SuggestionPanel.jsx`, `components/ThinkingMachine.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/05-change-log.md`
+- Validation: 첨부 목업 기준(버튼 형태/점/배경필드) 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Update] 2026-02-28 - Agent drawer visual spec refined to latest mockup
 - Summary:
   - Right Agent Drawer의 시각 규칙을 최신 목업 기준으로 구체화했다(원형 Tip/Chat 버튼, Tip 보라색 점, 단순 세로 gradient field).
