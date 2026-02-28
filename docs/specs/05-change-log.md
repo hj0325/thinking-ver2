@@ -26,6 +26,17 @@
 ```
 
 ## 4. Change Entries
+### [Patch] 2026-02-28 - Drawer Phase 1.2 edge blend implemented (overlay-first, no mask)
+- Summary:
+  - `RightAgentDrawer` 배경을 `base linear fade + radial alpha + canvas-color edge overlay` 3레이어로 재구성해 좌측 solid cut 현상을 완화했다.
+  - `mask-image`/`blur` 없이 구현해 유지보수/디버깅 복잡도를 낮췄고, content glass 패널 스타일은 그대로 유지했다.
+  - rail 경계 강조를 줄이기 위해 우측 white strip 강도를 완화했다.
+- Scope: Frontend
+- Files: `components/RightAgentDrawer.jsx`, `docs/specs/06-frontend-style.md`, `docs/specs/05-change-log.md`
+- Validation: 배경 합성/무마스크 정책/content panel 보존 여부 수동 코드 리뷰 완료; 자동 lint/build는 로컬 실행 바이너리 부재로 미실행
+- English-only Policy Impact: No
+- Spec: `docs/specs/06-frontend-style.md`, `docs/specs/04-test-rollout.md`
+
 ### [Update] 2026-02-28 - Drawer edge blend spec updated to overlay-first (no mask)
 - Summary:
   - Drawer 좌측 경계 처리 정책을 `overlay-first`(무마스크)로 명확히 고정했다.

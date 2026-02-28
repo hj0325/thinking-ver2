@@ -37,10 +37,12 @@ export default function RightAgentDrawer({
   const hasTipSignal = suggestions.length > 0;
   const isTip = mode === "tip";
   const isChat = mode === "chat";
-  const drawerFieldGradient =
-    "radial-gradient(100.27% 97.75% at 97.75% 50%, #E0FFF4 0%, #AEF1DA 22.12%, #BBD8E6 80.17%, #FFFFEA 100%)";
-  const drawerFieldFeather =
-    "linear-gradient(90deg, rgba(166,255,211,0) 0%, rgba(166,255,211,0.72) 12%, rgba(166,255,211,0.96) 22%, rgba(166,255,211,1) 30%)";
+  const drawerFieldBaseFade =
+    "linear-gradient(90deg, rgba(166,255,211,0) 0%, rgba(166,255,211,0.88) 14%, rgba(166,255,211,1) 30%)";
+  const drawerFieldRadialAlpha =
+    "radial-gradient(100.27% 97.75% at 97.75% 50%, rgba(224,255,244,0.96) 0%, rgba(174,241,218,0.88) 22.12%, rgba(187,216,230,0.70) 80.17%, rgba(255,255,234,0.78) 100%)";
+  const drawerFieldEdgeOverlay =
+    "linear-gradient(90deg, rgba(166,255,211,0.92) 0%, rgba(166,255,211,0.52) 46%, rgba(166,255,211,0) 100%)";
 
   return (
     <div className="pointer-events-none absolute inset-y-0 right-0 z-[45] overflow-hidden">
@@ -50,7 +52,7 @@ export default function RightAgentDrawer({
         }`}
       >
         <div className="pointer-events-auto relative w-[78px]">
-          <div className="absolute inset-y-0 right-0 w-7 bg-gradient-to-l from-white/35 to-transparent" />
+          <div className="absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-white/18 to-transparent" />
           <div className="absolute right-3 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-[10px]">
             <button
               type="button"
@@ -88,9 +90,14 @@ export default function RightAgentDrawer({
           }`}
           aria-hidden={!isOpen}
           style={{
-            background: `${drawerFieldFeather}, ${drawerFieldGradient}, #AEE7D0`,
+            background: `${drawerFieldRadialAlpha}, ${drawerFieldBaseFade}`,
           }}
         >
+          <div
+            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-11"
+            aria-hidden
+            style={{ background: drawerFieldEdgeOverlay }}
+          />
           <div className="relative z-10 flex h-full flex-col gap-3 p-4">
             <div className="grid grid-cols-2 gap-2">
               {contextItems.length > 0 ? (
