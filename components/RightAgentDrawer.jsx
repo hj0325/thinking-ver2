@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Check, GitBranch, Lightbulb, Loader2, Send, X } from "lucide-react";
+import { Check, GitBranch, Loader2, Send, X } from "lucide-react";
 
 const CATEGORY_COLORS = {
   Who: { bg: "bg-rose-50", border: "border-rose-200", text: "text-rose-700" },
@@ -58,11 +58,17 @@ export default function RightAgentDrawer({
   onChatSubmit,
   onChatConvertToNodes,
   onChatContextSelect,
+  attachedContext,
+  chatButtonRef,
+  chatDropZoneRef,
+  isChatDropActive,
 }) {
-  const contextItems = suggestions.slice(0, 2);
-  const hasTipSignal = suggestions.length > 0;
   const isTip = mode === "tip";
   const isChat = mode === "chat";
+  const contextItems = isChat
+    ? [...(attachedContext ? [attachedContext] : [])]
+    : suggestions;
+  const hasTipSignal = suggestions.length > 0;
   const categoryColors = CATEGORY_COLORS[activeSuggestion?.category] || CATEGORY_COLORS.What;
   const drawerFieldBaseFade =
     "linear-gradient(90deg, rgba(166,255,211,0) 0%, rgba(166,255,211,0.70) 24%, rgba(166,255,211,1) 46%)";
@@ -118,11 +124,12 @@ export default function RightAgentDrawer({
             </button>
             <button
               type="button"
-              className={`inline-flex h-[52px] w-[52px] items-center justify-center rounded-full text-[13px] font-semibold text-[#111111] shadow-[0_4px_14px_rgba(0,0,0,0.14)] transition ${
+              className={`relative inline-flex h-[52px] w-[52px] items-center justify-center rounded-full text-[13px] font-semibold text-[#111111] shadow-[0_4px_14px_rgba(0,0,0,0.14)] transition ${
                 isChat && isOpen ? "bg-white" : "bg-white/95 hover:bg-white"
-              }`}
+              } ${isChatDropActive ? "ring-4 ring-teal-300/70 scale-[1.05]" : ""}`}
               onClick={() => onToggleMode("chat")}
               aria-label="Open chat drawer"
+              ref={chatButtonRef}
             >
               Chat
             </button>
@@ -130,9 +137,10 @@ export default function RightAgentDrawer({
         </div>
 
         <div
+          ref={chatDropZoneRef}
           className={`relative h-full w-[430px] overflow-hidden rounded-l-[30px] transition-opacity duration-200 ${
             isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
-          }`}
+          } ${isChat && isChatDropActive ? "ring-4 ring-teal-300/40" : ""}`}
           aria-hidden={!isOpen}
           style={{
             background: `${drawerFieldRadialAlpha}, ${drawerFieldBaseFade}`,
@@ -147,7 +155,7 @@ export default function RightAgentDrawer({
             className="relative z-10 flex h-full flex-col gap-3 pb-4 pl-10 pr-7"
             style={{ paddingTop: DRAWER_TOP_SAFE_ZONE }}
           >
-            <div className="grid grid-cols-2 gap-2">
+            <div className={`grid ${isChat ? "grid-cols-1" : "grid-cols-2"} gap-2`}>
               {contextItems.length > 0 ? (
                 contextItems.map((item) => (
                   <ContextMiniCard
@@ -159,7 +167,9 @@ export default function RightAgentDrawer({
                 ))
               ) : (
                 <div className="col-span-2 rounded-2xl border border-dashed border-white/75 bg-white/42 px-3 py-2 text-[11px] text-slate-600 backdrop-blur-[8px]">
-                  Context shelf placeholder. Drag-and-attach is planned for Phase 3.
+                  {isChat
+                    ? "노드를 선택한 뒤 오른쪽으로 드래그해서 놓으면, 노드가 채팅 컨텍스트로 첨부됩니다."
+                    : "Tip 컨텍스트를 선택해 AI와 대화하거나 확장할 수 있어요."}
                 </div>
               )}
             </div>
@@ -189,18 +199,7 @@ export default function RightAgentDrawer({
               </div>
 
               <div className="min-h-0 flex-1 rounded-2xl border border-white/60 bg-white/25 px-3 py-2 text-sm text-slate-700 backdrop-blur-[12px]">
-                {isTip ? (
-                  <div className="flex h-full flex-col gap-3">
-                    <div className="flex items-center gap-2 text-slate-700">
-                      <Lightbulb className="h-4 w-4 text-amber-500" />
-                      <span className="font-semibold">Tip mode content is active.</span>
-                    </div>
-                    <p className="text-xs leading-relaxed text-slate-600">
-                      The glassmorphism content panel remains visible while we refine button/field visuals.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="flex h-full min-h-0 flex-col gap-2">
+                <div className="flex h-full min-h-0 flex-col gap-2">
                     {activeSuggestion ? (
                       <div className={`rounded-xl border ${categoryColors.border} ${categoryColors.bg} px-2.5 py-2`}>
                         <div className={`text-[10px] font-bold uppercase tracking-wider ${categoryColors.text}`}>
@@ -209,10 +208,23 @@ export default function RightAgentDrawer({
                         <div className="font-heading mt-1 line-clamp-1 text-xs font-semibold text-slate-800">
                           {activeSuggestion.title}
                         </div>
+                        {activeSuggestion?.type === "attachedNodes" && Array.isArray(activeSuggestion?.attached_nodes) && (
+                          <div className="mt-2 -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1" style={{ scrollbarWidth: "none" }}>
+                            {activeSuggestion.attached_nodes.map((n) => (
+                              <span
+                                key={n.id}
+                                className="inline-flex shrink-0 max-w-full items-center gap-1 rounded-full border border-white/70 bg-white/70 px-2 py-0.5 text-[10px] text-slate-700"
+                                title={n?.content || n?.title || ""}
+                              >
+                                <span className="font-semibold">{n?.title || "Node"}</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="rounded-xl border border-dashed border-white/70 bg-white/35 px-3 py-2 text-xs text-slate-600">
-                        Select a context card to start chat.
+                        {isChat ? "Drag nodes in to start chat." : "Select a tip context card to start chat."}
                       </div>
                     )}
 
@@ -289,8 +301,7 @@ export default function RightAgentDrawer({
                         </button>
                       )}
                     </div>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           </div>

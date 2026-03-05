@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
     useNodesState,
     useEdgesState,
 } from "reactflow";
 import axios from "axios";
+import { AnimatePresence, motion } from "framer-motion";
 import NodeMap from "./NodeMap";
 import InputPanel from "./InputPanel";
 import SuggestionPanel from "./SuggestionPanel";
@@ -71,7 +72,7 @@ function buildNodeLabel(nodeData) {
                 {nodeData.title}
             </div>
             <div className="font-node-body line-clamp-3 text-[12px] leading-[1.4] text-[#666666]">
-                {nodeData.label}
+                {nodeData.content}
             </div>
             {nodeData.imageUrl && (
                 <div className="h-[136px] w-full overflow-hidden rounded-[30px] bg-[#F3F4F6]">
@@ -276,7 +277,7 @@ function toConnectorEdges(rawEdges, nodeList, currentEdges = []) {
 function toReactFlowNode(n, highlightedId) {
     const nodeData = {
         title: n.data.label,
-        label: n.data.content,
+        content: n.data.content,
         phase: n.data.phase,
         category: n.data.category,
         imageUrl: extractNodeImageUrl(n.data),
@@ -290,12 +291,14 @@ function toReactFlowNode(n, highlightedId) {
         data: { ...nodeData },
         style: buildNodeStyle(),
     };
+    // ReactFlow node renderer expects `data.label` to be renderable content (JSX).
+    // Keep the raw text in `data.content` for AI + exports.
     rfNode.data.label = buildNodeLabel(nodeData);
     return rfNode;
 }
 
 export default function ThinkingMachine() {
-    const [nodes, setNodes, onNodesChange] = useNodesState(INITIAL_NODES);
+    const [nodes, setNodes, baseOnNodesChange] = useNodesState(INITIAL_NODES);
     const [edges, setEdges, onEdgesChange] = useEdgesState(INITIAL_EDGES);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isAdminMode, setIsAdminMode] = useState(false);
@@ -314,7 +317,117 @@ export default function ThinkingMachine() {
     const [chatInput, setChatInput] = useState("");
     const [isChatLoading, setIsChatLoading] = useState(false);
     const [isChatConverting, setIsChatConverting] = useState(false);
+    const [attachedNodes, setAttachedNodes] = useState([]); // [{id,title,content,category,phase}]
+    const [isChatDropActive, setIsChatDropActive] = useState(false);
+    const [ghostDrag, setGhostDrag] = useState(null); // {x,y,count,phase:"dragging"|"dropping", targetX?, targetY?}
     const activeSuggestionIdRef = useRef(null);
+    const chatButtonRef = useRef(null);
+    const chatDropZoneRef = useRef(null);
+    const didAutoOpenOnDragRef = useRef(false);
+    const dragOriginRef = useRef(null); // { ids: string[], positions: Map<id, {x,y}> }
+    const isNodeDraggingRef = useRef(false);
+    const restoreRafRef = useRef(null);
+    const dragStartPointRef = useRef(null); // {x,y}
+    const didShowGhostRef = useRef(false);
+
+    const makeAttachedContextId = (ids) => {
+        const base = Array.isArray(ids) ? ids.join(",") : "";
+        return `attached-${Date.now()}-${base.length}-${Math.random().toString(16).slice(2, 6)}`;
+    };
+
+    const buildAttachedNodesContext = (selected) => {
+        const safeSelected = Array.isArray(selected) ? selected : [];
+        const items = safeSelected
+            .map((n) => ({
+                id: n?.id,
+                title: n?.data?.title,
+                content: n?.data?.content,
+                category: n?.data?.category,
+                phase: n?.data?.phase,
+            }))
+            .filter((n) => typeof n.id === "string" && n.id && typeof n.title === "string" && n.title.trim().length > 0);
+
+        return {
+            id: makeAttachedContextId(items.map((i) => i.id)),
+            type: "attachedNodes",
+            title: items.length === 1 ? "Attached node" : `Attached nodes (${items.length})`,
+            content: "Use these nodes as the primary context for this chat.",
+            category: "What",
+            phase: "Problem",
+            attached_nodes: items,
+        };
+    };
+
+    const getPointerClientPoint = (event) => {
+        const e = event?.nativeEvent ?? event;
+        const touch = e?.touches?.[0] || e?.changedTouches?.[0];
+        if (touch) return { x: touch.clientX, y: touch.clientY };
+        if (typeof e?.clientX === "number" && typeof e?.clientY === "number") return { x: e.clientX, y: e.clientY };
+        return null;
+    };
+
+    const isPointNearChatButton = (pt) => {
+        const el = chatButtonRef.current;
+        if (!pt || !el?.getBoundingClientRect) return false;
+        const rect = el.getBoundingClientRect();
+        const pad = 28;
+        const left = rect.left - pad;
+        const right = rect.right + pad;
+        const top = rect.top - pad;
+        const bottom = rect.bottom + pad;
+        return pt.x >= left && pt.x <= right && pt.y >= top && pt.y <= bottom;
+    };
+
+    const getChatDropZoneRect = () => {
+        const el = chatDropZoneRef.current;
+        if (!el?.getBoundingClientRect) return null;
+        return el.getBoundingClientRect();
+    };
+
+    const isPointInRect = (pt, rect, pad = 0) => {
+        if (!pt || !rect) return false;
+        return (
+            pt.x >= rect.left - pad &&
+            pt.x <= rect.right + pad &&
+            pt.y >= rect.top - pad &&
+            pt.y <= rect.bottom + pad
+        );
+    };
+
+    const isPointInChatRegion = (pt) => {
+        if (!pt) return false;
+        const width = typeof window !== "undefined" ? window.innerWidth : 0;
+        if (!width) return false;
+        // 오른쪽 영역 진입만으로도 Chat 모드가 자연스럽게 열리도록 넓게 잡음
+        return pt.x >= width - 240;
+    };
+
+    const isPointInChatDropZone = (pt) => {
+        const rect = getChatDropZoneRect();
+        if (rect) return isPointInRect(pt, rect, 24);
+        // Drawer가 아직 열리지 않았을 때도 오른쪽 영역이면 드롭 허용
+        return isPointInChatRegion(pt);
+    };
+
+    const getDropAnimationTarget = () => {
+        const rect = getChatDropZoneRect();
+        if (rect) return { x: rect.left + rect.width * 0.55, y: rect.top + 120 };
+        const width = typeof window !== "undefined" ? window.innerWidth : 0;
+        const height = typeof window !== "undefined" ? window.innerHeight : 0;
+        return { x: Math.max(0, width - 180), y: Math.max(0, height * 0.35) };
+    };
+
+    const filteredOnNodesChange = useMemo(() => {
+        return (changes) => {
+            // 고스트 드래그 UX: 원본 노드는 드래그 중 위치가 바뀌지 않도록 position changes 무시
+            if (isNodeDraggingRef.current && Array.isArray(changes)) {
+                const next = changes.filter((c) => c?.type !== "position");
+                baseOnNodesChange(next);
+                return;
+            }
+            baseOnNodesChange(changes);
+        };
+    }, [baseOnNodesChange]);
 
     useEffect(() => {
         try {
@@ -440,8 +553,12 @@ export default function ThinkingMachine() {
         }
         setDrawerMode(nextMode);
         setIsDrawerOpen(true);
-        if (nextMode === "chat" && !activeSuggestion && suggestions.length > 0) {
-            setActiveSuggestion(suggestions[0]);
+        // Chat 모드는 "첨부 노드 컨텍스트" 전용 (Tip 컨텍스트와 분리)
+        if (nextMode === "chat" && activeSuggestion?.type !== "attachedNodes") {
+            setActiveSuggestion(null);
+        }
+        if (nextMode === "tip" && activeSuggestion?.type === "attachedNodes") {
+            setActiveSuggestion(suggestions[0] || null);
         }
     };
 
@@ -468,13 +585,18 @@ export default function ThinkingMachine() {
             setChatInput("");
             setIsChatLoading(true);
             try {
+                const isAttachedNodesContext = targetSuggestion?.type === "attachedNodes";
+                const attached = isAttachedNodesContext ? (targetSuggestion?.attached_nodes ?? []) : [];
                 const payload = {
                     suggestion_title: targetSuggestion.title,
                     suggestion_content: targetSuggestion.content,
                     suggestion_category: targetSuggestion.category,
                     suggestion_phase: targetSuggestion.phase,
                     messages: [],
-                    user_message: "Please explain this suggestion first.",
+                    attached_nodes: attached,
+                    user_message: isAttachedNodesContext
+                        ? "Analyze the attached nodes, summarize what they collectively imply, and ask me one clarifying question to move forward."
+                        : "Please explain this suggestion first.",
                 };
                 const res = await axios.post("/api/chat", payload);
                 if (cancelled || activeSuggestionIdRef.current !== targetSuggestion.id) return;
@@ -508,6 +630,8 @@ export default function ThinkingMachine() {
         setIsChatLoading(true);
 
         try {
+            const isAttachedNodesContext = targetSuggestion?.type === "attachedNodes";
+            const attached = isAttachedNodesContext ? (targetSuggestion?.attached_nodes ?? []) : [];
             const payload = {
                 suggestion_title: targetSuggestion.title,
                 suggestion_content: targetSuggestion.content,
@@ -515,6 +639,7 @@ export default function ThinkingMachine() {
                 suggestion_phase: targetSuggestion.phase,
                 messages: historyForApi,
                 user_message: trimmedInput,
+                attached_nodes: attached,
             };
             const res = await axios.post("/api/chat", payload);
             if (activeSuggestionIdRef.current !== targetSuggestionId) return;
@@ -534,12 +659,15 @@ export default function ThinkingMachine() {
         setIsChatConverting(true);
 
         try {
+            const isAttachedNodesContext = activeSuggestion?.type === "attachedNodes";
+            const attached = isAttachedNodesContext ? (activeSuggestion?.attached_nodes ?? []) : [];
             const payload = {
                 suggestion_title: activeSuggestion.title,
                 suggestion_content: activeSuggestion.content,
                 suggestion_category: activeSuggestion.category,
                 suggestion_phase: activeSuggestion.phase,
                 messages: chatMessages,
+                attached_nodes: attached,
                 existing_nodes: nodes.map((n) => ({
                     id: n.id,
                     data: {
@@ -567,12 +695,145 @@ export default function ThinkingMachine() {
         }
     };
 
-    const handleDrawerContextSelect = (suggestion) => {
-        if (!suggestion) return;
-        setActiveSuggestion(suggestion);
-        setDrawerMode("chat");
+    const handleDrawerContextSelect = (item) => {
+        if (!item) return;
+        setActiveSuggestion(item);
+        // attachedNodes는 Chat 모드, 그 외 suggestion은 Tip 모드로
+        setDrawerMode(item?.type === "attachedNodes" ? "chat" : "tip");
         setIsDrawerOpen(true);
     };
+
+    const handleNodeDragUpdate = (event) => {
+        const pt = getPointerClientPoint(event);
+        const near = isPointInChatRegion(pt) || isPointNearChatButton(pt);
+        setIsChatDropActive(Boolean(near));
+
+        if (pt) {
+            const start = dragStartPointRef.current;
+            const dx = start ? pt.x - start.x : 0;
+            const dy = start ? pt.y - start.y : 0;
+            const dist2 = dx * dx + dy * dy;
+            const movedEnough = dist2 >= 36; // 6px threshold
+
+            const origin = dragOriginRef.current;
+            const count = origin?.ids?.length || 1;
+            if (movedEnough) {
+                didShowGhostRef.current = true;
+                setGhostDrag((prev) => {
+                    if (prev?.phase === "dropping") return prev;
+                    return { x: pt.x, y: pt.y, count, phase: "dragging" };
+                });
+            }
+        }
+
+        // 원본 노드 위치 유지: 드래그 중에는 저장된 원점으로 계속 복원 (RAF로 부하 제한)
+        const origin = dragOriginRef.current;
+        if (origin?.positions && origin?.ids?.length && !restoreRafRef.current) {
+            restoreRafRef.current = requestAnimationFrame(() => {
+                restoreRafRef.current = null;
+                const idSet = new Set(origin.ids);
+                setNodes((prev) =>
+                    prev.map((n) => {
+                        if (!idSet.has(n.id)) return n;
+                        const pos = origin.positions.get(n.id);
+                        if (!pos) return n;
+                        if (n.position?.x === pos.x && n.position?.y === pos.y) return n;
+                        return { ...n, position: { x: pos.x, y: pos.y } };
+                    })
+                );
+            });
+        }
+
+        if (near && !didAutoOpenOnDragRef.current) {
+            didAutoOpenOnDragRef.current = true;
+            setDrawerMode("chat");
+            setIsDrawerOpen(true);
+        }
+    };
+
+    const handleNodeDragStart = (event, node) => {
+        didAutoOpenOnDragRef.current = false;
+        isNodeDraggingRef.current = true;
+        didShowGhostRef.current = false;
+        const selectedNodes = nodes.filter((n) => n?.selected);
+        const ids =
+            node?.selected && selectedNodes.length
+                ? selectedNodes.map((n) => n.id)
+                : node?.id
+                    ? [node.id]
+                    : [];
+        const positions = new Map();
+        nodes.forEach((n) => {
+            if (ids.includes(n.id)) positions.set(n.id, { x: n.position?.x ?? 0, y: n.position?.y ?? 0 });
+        });
+        dragOriginRef.current = { ids, positions };
+
+        const pt = getPointerClientPoint(event);
+        if (pt) dragStartPointRef.current = { x: pt.x, y: pt.y };
+        // 고스트는 실제로 일정 거리 이상 움직였을 때만 보여준다 (클릭/탭 오작동 방지)
+        setGhostDrag(null);
+    };
+
+    const handleNodeDragStop = (event, node) => {
+        const pt = getPointerClientPoint(event);
+        const shouldAttach = isPointInChatDropZone(pt);
+        setIsChatDropActive(false);
+        didAutoOpenOnDragRef.current = false;
+        isNodeDraggingRef.current = false;
+        dragStartPointRef.current = null;
+
+        // 드래그가 "의도"되지 않았거나(짧은 탭) 드롭존이 아니면 고스트만 정리
+        if (!shouldAttach) {
+            setGhostDrag(null);
+            return;
+        }
+
+        const selectedNodes = nodes.filter((n) => n?.selected);
+        const draggedNode = node ? (nodes.find((n) => n.id === node.id) || node) : null;
+        const toAttach =
+            draggedNode?.selected && selectedNodes.length
+                ? selectedNodes
+                : draggedNode
+                    ? [draggedNode]
+                    : [];
+        if (toAttach.length === 0) return;
+
+        const context = buildAttachedNodesContext(toAttach);
+        setAttachedNodes(context.attached_nodes);
+        setActiveSuggestion(context);
+        setDrawerMode("chat");
+        setIsDrawerOpen(true);
+
+        // 고스트 흡수 애니메이션 (고스트가 실제로 표시된 경우에만)
+        if (pt && didShowGhostRef.current) {
+            const target = getDropAnimationTarget();
+            setGhostDrag({ x: pt.x, y: pt.y, count: context.attached_nodes.length, phase: "dropping", targetX: target.x, targetY: target.y });
+            window.setTimeout(() => setGhostDrag(null), 260);
+        } else {
+            setGhostDrag(null);
+        }
+    };
+
+    useEffect(() => {
+        if (!ghostDrag) return undefined;
+        const clear = () => {
+            setGhostDrag(null);
+            setIsChatDropActive(false);
+            isNodeDraggingRef.current = false;
+            didAutoOpenOnDragRef.current = false;
+            dragStartPointRef.current = null;
+        };
+        window.addEventListener("mouseup", clear);
+        window.addEventListener("touchend", clear);
+        window.addEventListener("touchcancel", clear);
+        window.addEventListener("blur", clear);
+        return () => {
+            window.removeEventListener("mouseup", clear);
+            window.removeEventListener("touchend", clear);
+            window.removeEventListener("touchcancel", clear);
+            window.removeEventListener("blur", clear);
+        };
+    }, [ghostDrag]);
 
     // 채팅 대화에서 노드+엣지 추가
     const handleAddNodesFromChat = (data) => {
@@ -699,9 +960,12 @@ export default function ThinkingMachine() {
                 <NodeMap
                     nodes={nodes}
                     edges={edges}
-                    onNodesChange={onNodesChange}
+                    onNodesChange={filteredOnNodesChange}
                     onEdgesChange={onEdgesChange}
                     highlightedNodeIds={highlightedNodeIds}
+                    onNodeDragStart={handleNodeDragStart}
+                    onNodeDrag={handleNodeDragUpdate}
+                    onNodeDragStop={handleNodeDragStop}
                 />
 
                 {/* Legacy fallback suggestion panel (`?legacyChat=1`) */}
@@ -730,7 +994,51 @@ export default function ThinkingMachine() {
                     onChatSubmit={handleDrawerChatSubmit}
                     onChatConvertToNodes={handleDrawerChatConvertToNodes}
                     onChatContextSelect={handleDrawerContextSelect}
+                    attachedContext={
+                        attachedNodes.length
+                            ? {
+                                id: "attached-nodes",
+                                type: "attachedNodes",
+                                title: attachedNodes.length === 1 ? "Attached node" : `Attached nodes (${attachedNodes.length})`,
+                                content: "Use these nodes as the primary context for this chat.",
+                                category: "What",
+                                phase: "Problem",
+                                attached_nodes: attachedNodes,
+                            }
+                            : null
+                    }
+                    chatButtonRef={chatButtonRef}
+                    chatDropZoneRef={chatDropZoneRef}
+                    isChatDropActive={isChatDropActive}
                 />
+
+                <AnimatePresence>
+                    {ghostDrag && (
+                        <motion.div
+                            key="ghost-drag"
+                            initial={{ opacity: 0, scale: 0.96 }}
+                            animate={{
+                                opacity: ghostDrag.phase === "dropping" ? 0 : 0.55,
+                                scale: ghostDrag.phase === "dropping" ? 0.72 : 1,
+                                x: (ghostDrag.phase === "dropping" ? ghostDrag.targetX : ghostDrag.x) - 90,
+                                y: (ghostDrag.phase === "dropping" ? ghostDrag.targetY : ghostDrag.y) - 40,
+                            }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            transition={{ type: "spring", damping: 26, stiffness: 420 }}
+                            className="pointer-events-none fixed left-0 top-0 z-[90]"
+                            style={{ width: 180, height: 80 }}
+                        >
+                            <div
+                                className="h-full w-full rounded-[26px] border border-white/70 bg-white/35 shadow-[0_16px_38px_rgba(0,0,0,0.14)] backdrop-blur-[10px]"
+                                aria-hidden
+                            >
+                                <div className="flex h-full w-full items-center justify-center px-4 text-[12px] font-semibold text-slate-800/80">
+                                    {ghostDrag.count > 1 ? `${ghostDrag.count} nodes` : "1 node"}
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Legacy fallback chat dialog (`?legacyChat=1`) */}
                 {legacyChatFallbackEnabled && activeSuggestion && (

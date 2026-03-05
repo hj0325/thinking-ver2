@@ -10,7 +10,16 @@ import "reactflow/dist/style.css";
 import ThinkingNode from "./nodes/ThinkingNode";
 import ConnectorEdge from "./edges/ConnectorEdge";
 
-export default function NodeMap({ nodes, edges, onNodesChange, onEdgesChange, highlightedNodeIds }) {
+export default function NodeMap({
+    nodes,
+    edges,
+    onNodesChange,
+    onEdgesChange,
+    highlightedNodeIds,
+    onNodeDragStart,
+    onNodeDrag,
+    onNodeDragStop,
+}) {
     const currentCanvasStage = "research-diverge";
 
     const nodeTypes = useMemo(() => ({ thinkingNode: ThinkingNode }), []);
@@ -54,6 +63,9 @@ export default function NodeMap({ nodes, edges, onNodesChange, onEdgesChange, hi
                 edges={edges}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
+                onNodeDragStart={onNodeDragStart}
+                onNodeDrag={onNodeDrag}
+                onNodeDragStop={onNodeDragStop}
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
                 connectionMode={ConnectionMode.Loose}
