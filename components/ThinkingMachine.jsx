@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     useNodesState,
     useEdgesState,
@@ -8,7 +8,7 @@ import {
 import axios from "axios";
 import { AnimatePresence, motion } from "framer-motion";
 import NodeMap from "./NodeMap";
-import InputPanel from "./InputPanel";
+import LeftCanvasTools from "./LeftCanvasTools";
 import SuggestionPanel from "./SuggestionPanel";
 import ChatDialog from "./ChatDialog";
 import RightAgentDrawer from "./RightAgentDrawer";
@@ -29,6 +29,14 @@ const ADMIN_MODE_STORAGE_KEY = "vtm-admin-mode-enabled";
 const ADMIN_HINT_DISMISSED_KEY = "vtm-admin-shortcut-hint-dismissed";
 const ADMIN_SHORTCUT_LABEL = "Ctrl/Cmd + Shift + A";
 const LEGACY_CHAT_QUERY_KEY = "legacyChat";
+const POSTIT_DRAFT_SIZE = { w: 272, h: 240 };
+const IMAGE_DRAFT_SIZE = { w: 272, h: 240 };
+const GROUP_PADDING = 44;
+const GROUP_TOP_PADDING = 56;
+const GROUP_INNER_PAD_X = 28;
+const GROUP_INNER_PAD_BOTTOM = 28;
+const GROUP_DRAFT_GAP = 16;
+const GROUP_DRAFT_MIN_SIZE = { w: 196, h: 176 };
 
 const CHIP_BG_COLORS = {
     When: "#9DBCFF",
@@ -103,6 +111,7 @@ function buildNodeStyle() {
         flexDirection: 'column',
         overflow: 'visible',
         boxShadow: "0 8px 24px -12px rgb(0 0 0 / 0.22)",
+        zIndex: 20,
     };
 }
 
@@ -207,7 +216,9 @@ function buildNodeMap(nodeList) {
 
 function getNodeX(node) {
     const x = node?.position?.x;
-    return Number.isFinite(x) ? Number(x) : 0;
+    const base = Number.isFinite(x) ? Number(x) : 0;
+    const w = node?.style?.width;
+    return Number.isFinite(w) ? base + Number(w) / 2 : base;
 }
 
 function normalizeEdgeDirection(edge, nodeMap) {
@@ -329,6 +340,15 @@ export default function ThinkingMachine() {
     const restoreRafRef = useRef(null);
     const dragStartPointRef = useRef(null); // {x,y}
     const didShowGhostRef = useRef(false);
+    const reactFlowRef = useRef(null);
+    const [selectedDraftIds, setSelectedDraftIds] = useState([]);
+    const [showDraftConvertPrompt, setShowDraftConvertPrompt] = useState(false);
+    const draftConvertIdsRef = useRef([]);
+    const prevDraftSelectionRef = useRef({ idsKey: "", shouldPrompt: false });
+    const [selectionBoxEnabled, setSelectionBoxEnabled] = useState(false);
+    const ghostCaptureRef = useRef(false);
+    const convertDraftsToGroupRef = useRef(null);
+    const [draftSubmittingIds, setDraftSubmittingIds] = useState(() => new Set());
 
     const makeAttachedContextId = (ids) => {
         const base = Array.isArray(ids) ? ids.join(",") : "";
@@ -420,7 +440,7 @@ export default function ThinkingMachine() {
     const filteredOnNodesChange = useMemo(() => {
         return (changes) => {
             // 고스트 드래그 UX: 원본 노드는 드래그 중 위치가 바뀌지 않도록 position changes 무시
-            if (isNodeDraggingRef.current && Array.isArray(changes)) {
+            if (isNodeDraggingRef.current && ghostCaptureRef.current && Array.isArray(changes)) {
                 const next = changes.filter((c) => c?.type !== "position");
                 baseOnNodesChange(next);
                 return;
@@ -428,6 +448,479 @@ export default function ThinkingMachine() {
             baseOnNodesChange(changes);
         };
     }, [baseOnNodesChange]);
+
+    const handleFlowInit = (instance) => {
+        reactFlowRef.current = instance;
+    };
+
+    const screenCenterToFlowPosition = () => {
+        const inst = reactFlowRef.current;
+        if (!inst || typeof window === "undefined") return { x: 0, y: 0 };
+        const pt = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        if (typeof inst.screenToFlowPosition === "function") return inst.screenToFlowPosition(pt);
+        // fallback for older APIs
+        if (typeof inst.project === "function") return inst.project(pt);
+        return { x: 0, y: 0 };
+    };
+
+    const buildDraftStyle = (kind) => {
+        const size = kind === "image" ? IMAGE_DRAFT_SIZE : POSTIT_DRAFT_SIZE;
+        return {
+            width: size.w,
+            height: size.h,
+            border: "none",
+            background: "transparent",
+            padding: 0,
+            zIndex: 60,
+        };
+    };
+
+    const computeNodeBounds = (nodeList) => {
+        const list = Array.isArray(nodeList) ? nodeList : [];
+        if (list.length === 0) return null;
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+        list.forEach((n) => {
+            const x = n?.position?.x ?? 0;
+            const y = n?.position?.y ?? 0;
+            const w = n?.style?.width ?? 240;
+            const h = n?.style?.height ?? 180;
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x + w);
+            maxY = Math.max(maxY, y + h);
+        });
+        return { minX, minY, maxX, maxY };
+    };
+
+    const shiftClusterRightOfExisting = (existingNodes, incomingNodes) => {
+        const existingBounds = computeNodeBounds(existingNodes);
+        const incomingBounds = computeNodeBounds(incomingNodes);
+        if (!incomingBounds) return incomingNodes;
+        if (!existingBounds) return incomingNodes;
+
+        const desiredMinX = existingBounds.maxX + 320;
+        const deltaX = desiredMinX - incomingBounds.minX;
+        if (!Number.isFinite(deltaX) || deltaX <= 0) return incomingNodes;
+
+        return incomingNodes.map((n) => ({
+            ...n,
+            position: { x: (n.position?.x ?? 0) + deltaX, y: n.position?.y ?? 0 },
+        }));
+    };
+
+    const layoutDraftsInGroupGrid = ({ draftNodes, groupW, groupH }) => {
+        const list = Array.isArray(draftNodes) ? draftNodes : [];
+        if (list.length === 0) return [];
+
+        const innerTop = GROUP_TOP_PADDING + 18;
+        const innerW = Math.max(0, groupW - GROUP_INNER_PAD_X * 2);
+        const innerH = Math.max(0, groupH - innerTop - GROUP_INNER_PAD_BOTTOM);
+
+        const count = list.length;
+        const aspect = innerW > 0 && innerH > 0 ? innerW / innerH : 1;
+        const idealCols = Math.ceil(Math.sqrt(count * aspect));
+        const cols = Math.max(1, Math.min(count, idealCols || 1));
+        const rows = Math.max(1, Math.ceil(count / cols));
+
+        const cellW = innerW / cols;
+        const cellH = innerH / rows;
+
+        const maxW = Math.max(0, Math.floor(cellW - GROUP_DRAFT_GAP));
+        const maxH = Math.max(0, Math.floor(cellH - GROUP_DRAFT_GAP));
+        const minW = Math.min(GROUP_DRAFT_MIN_SIZE.w, maxW);
+        const minH = Math.min(GROUP_DRAFT_MIN_SIZE.h, maxH);
+        const targetW = Math.max(minW, Math.floor(Math.min(POSTIT_DRAFT_SIZE.w, maxW)));
+        const targetH = Math.max(minH, Math.floor(Math.min(POSTIT_DRAFT_SIZE.h, maxH)));
+
+        return list.map((n, idx) => {
+            const col = idx % cols;
+            const row = Math.floor(idx / cols);
+            const x = GROUP_INNER_PAD_X + Math.round(col * cellW + (cellW - targetW) / 2);
+            const y = innerTop + Math.round(row * cellH + (cellH - targetH) / 2);
+            return {
+                ...n,
+                style: { ...(n.style || {}), width: targetW, height: targetH, zIndex: 60 },
+                position: { x, y },
+            };
+        });
+    };
+
+    const createPostitDraft = () => {
+        const center = screenCenterToFlowPosition();
+        const topLevelDraftCount = nodes.filter((n) => (n?.type === "postitDraft" || n?.type === "imageDraft") && !n?.parentNode).length;
+        const offset = (topLevelDraftCount % 9) * 26;
+        const id = `draft-postit-${Date.now()}`;
+        const node = {
+            id,
+            type: "postitDraft",
+            position: { x: center.x - POSTIT_DRAFT_SIZE.w / 2 + offset, y: center.y - POSTIT_DRAFT_SIZE.h / 2 + offset },
+            data: {
+                text: "",
+            },
+            style: buildDraftStyle("postit"),
+        };
+        setNodes((prev) => [...prev, node]);
+    };
+
+    const createImageDraft = () => {
+        const center = screenCenterToFlowPosition();
+        const topLevelDraftCount = nodes.filter((n) => (n?.type === "postitDraft" || n?.type === "imageDraft") && !n?.parentNode).length;
+        const offset = (topLevelDraftCount % 9) * 26;
+        const id = `draft-image-${Date.now()}`;
+        const node = {
+            id,
+            type: "imageDraft",
+            position: { x: center.x - IMAGE_DRAFT_SIZE.w / 2 + offset, y: center.y - IMAGE_DRAFT_SIZE.h / 2 + offset },
+            data: {
+                imageUrl: "",
+                fileName: "",
+                caption: "",
+            },
+            style: buildDraftStyle("image"),
+        };
+        setNodes((prev) => [...prev, node]);
+    };
+
+    const handlePostitChangeText = useCallback((nodeId, nextText) => {
+        setNodes((prev) =>
+            prev.map((n) => (n.id === nodeId ? { ...n, data: { ...n.data, text: nextText } } : n))
+        );
+    }, []);
+
+    const handleImageChangeCaption = useCallback((nodeId, nextCaption) => {
+        setNodes((prev) =>
+            prev.map((n) => (n.id === nodeId ? { ...n, data: { ...n.data, caption: nextCaption } } : n))
+        );
+    }, []);
+
+    const handleImagePick = useCallback((nodeId, file) => {
+        const url = URL.createObjectURL(file);
+        setNodes((prev) =>
+            prev.map((n) => {
+                if (n.id !== nodeId) return n;
+                const prevUrl = typeof n?.data?.imageUrl === "string" ? n.data.imageUrl : "";
+                if (prevUrl && prevUrl.startsWith("blob:")) {
+                    try {
+                        URL.revokeObjectURL(prevUrl);
+                    } catch {
+                        // ignore
+                    }
+                }
+                return {
+                    ...n,
+                    data: {
+                        ...n.data,
+                        imageUrl: url,
+                        fileName: file?.name || "",
+                    },
+                };
+            })
+        );
+    }, []);
+
+    const handleDraftSubmit = useCallback((nodeId) => {
+        const fn = convertDraftsToGroupRef.current;
+        if (typeof fn === "function") void fn([nodeId]);
+    }, []);
+
+    const handleSelectionChange = useCallback(({ nodes: selectedNodes } = {}) => {
+        const selected = Array.isArray(selectedNodes) ? selectedNodes : [];
+        const draftIds = selected
+            .filter((n) => n?.type === "postitDraft" || n?.type === "imageDraft")
+            .map((n) => n.id)
+            .filter(Boolean)
+            .sort();
+
+        const shouldPrompt = draftIds.length >= 2;
+        const idsKey = draftIds.join("|");
+        const prev = prevDraftSelectionRef.current;
+
+        // Prevent infinite update loops: only update state when selection actually changes.
+        if (prev.idsKey !== idsKey) {
+            setSelectedDraftIds(draftIds);
+            draftConvertIdsRef.current = draftIds;
+            prevDraftSelectionRef.current = { ...prevDraftSelectionRef.current, idsKey };
+        }
+        if (prev.shouldPrompt !== shouldPrompt) {
+            setShowDraftConvertPrompt(shouldPrompt);
+            prevDraftSelectionRef.current = { ...prevDraftSelectionRef.current, shouldPrompt };
+        }
+    }, []);
+
+    const buildDraftBundleText = (draftNodeList) => {
+        return draftNodeList
+            .map((n, idx) => {
+                if (n.type === "postitDraft") {
+                    const t = typeof n?.data?.text === "string" ? n.data.text.trim() : "";
+                    return t ? `Draft ${idx + 1} (Post-it): ${t}` : "";
+                }
+                if (n.type === "imageDraft") {
+                    const name = typeof n?.data?.fileName === "string" ? n.data.fileName.trim() : "";
+                    const caption = typeof n?.data?.caption === "string" ? n.data.caption.trim() : "";
+                    const parts = [];
+                    parts.push(`Draft ${idx + 1} (Image)`);
+                    if (name) parts.push(`file: ${name}`);
+                    if (caption) parts.push(`note: ${caption}`);
+                    if (!name && !caption) parts.push("uploaded image (no caption)");
+                    return parts.join(" | ");
+                }
+                return "";
+            })
+            .filter(Boolean)
+            .join("\n");
+    };
+
+    useEffect(() => {
+        const handleDown = (event) => {
+            if (event.key === "Shift") setSelectionBoxEnabled(true);
+        };
+        const handleUp = (event) => {
+            if (event.key === "Shift") setSelectionBoxEnabled(false);
+        };
+        window.addEventListener("keydown", handleDown);
+        window.addEventListener("keyup", handleUp);
+        return () => {
+            window.removeEventListener("keydown", handleDown);
+            window.removeEventListener("keyup", handleUp);
+        };
+    }, []);
+
+    const computeBounds = computeNodeBounds;
+
+    const layoutThinkingNodesInGroup = (rfNodes, groupW) => {
+        const CATEGORY_ORDER = ["Why", "Who", "What", "How", "When", "Where"];
+        const rowMap = new Map(CATEGORY_ORDER.map((c, i) => [c, i]));
+        const colX = { Problem: 24, Solution: 320 };
+        const baseY = 62;
+        const rowGap = 178;
+        const slotGap = 54;
+
+        const byRowCol = new Map();
+        rfNodes.forEach((n) => {
+            const cat = n?.data?.category || "What";
+            const phase = n?.data?.phase || "Problem";
+            const row = rowMap.get(cat) ?? 2;
+            const col = phase === "Solution" ? "Solution" : "Problem";
+            const key = `${row}:${col}`;
+            const arr = byRowCol.get(key) || [];
+            arr.push(n);
+            byRowCol.set(key, arr);
+        });
+
+        const maxColX = Math.max(colX.Problem, colX.Solution);
+        const safeRight = Math.max(groupW - 260, maxColX);
+
+        const out = [];
+        byRowCol.forEach((arr, key) => {
+            const [rowStr, col] = key.split(":");
+            const row = Number(rowStr);
+            arr.forEach((n, idx) => {
+                const x = Math.min(colX[col] + idx * slotGap, safeRight);
+                const y = baseY + row * rowGap;
+                out.push({ ...n, position: { x, y } });
+            });
+        });
+        return out;
+    };
+
+    const toggleIdeaGroupMode = (groupId) => {
+        setNodes((prev) => {
+            const group = prev.find((n) => n.id === groupId);
+            const currentMode = group?.data?.mode === "raw" ? "raw" : "nodes";
+            const nextMode = currentMode === "raw" ? "nodes" : "raw";
+            const groupW = group?.style?.width ?? 520;
+            const groupH = group?.style?.height ?? 360;
+
+            let rawGridMap = null;
+            if (nextMode === "raw") {
+                const draftChildren = prev
+                    .filter((n) => n.parentNode === groupId && (n.type === "postitDraft" || n.type === "imageDraft"))
+                    .map((n) => ({ ...n, hidden: false }));
+                const laidOutDrafts = layoutDraftsInGroupGrid({ draftNodes: draftChildren, groupW, groupH });
+                rawGridMap = new Map(laidOutDrafts.map((n) => [n.id, n]));
+            }
+            return prev.map((n) => {
+                if (n.id === groupId) return { ...n, data: { ...n.data, mode: nextMode } };
+                if (n.parentNode !== groupId) return n;
+                const isDraft = n.type === "postitDraft" || n.type === "imageDraft";
+                const isThinking = n.type === "thinkingNode";
+                if (nextMode === "raw") {
+                    if (isDraft) return rawGridMap?.get?.(n.id) || { ...n, hidden: false };
+                    if (isThinking) return { ...n, hidden: true };
+                } else {
+                    if (isDraft) return { ...n, hidden: true };
+                    if (isThinking) return { ...n, hidden: false };
+                }
+                return n;
+            });
+        });
+    };
+
+    const convertDraftsToGroup = async (draftIds) => {
+        const ids = Array.isArray(draftIds) ? draftIds : [];
+        if (ids.length === 0 || isAnalyzing) return;
+
+        const draftNodes = nodes.filter((n) => ids.includes(n.id));
+        const bundleText = buildDraftBundleText(draftNodes);
+        if (!bundleText.trim()) return;
+
+        setDraftSubmittingIds((prev) => {
+            const next = new Set(prev);
+            ids.forEach((id) => next.add(id));
+            return next;
+        });
+        setIsAnalyzing(true);
+        try {
+            const history = nodes
+                .filter((n) => n.type === "thinkingNode")
+                .map((n) => ({
+                    id: n.id,
+                    data: { title: n.data.title, category: n.data.category, phase: n.data.phase },
+                    position: n.position,
+                }));
+            const payload = { text: bundleText, history };
+            const response = await axios.post("/api/analyze", payload);
+            const data = response.data;
+
+            const suggestionNodeData = data.nodes.find((n) => n.data.is_ai_generated);
+            const userNodeDatas = data.nodes.filter((n) => !n.data.is_ai_generated);
+            const rawEdges = data.edges.filter((e) => !e.id.startsWith("e-suggest-"));
+
+            const bounds = computeBounds(draftNodes) || { minX: 0, minY: 0, maxX: 520, maxY: 420 };
+            const groupId = `idea-group-${Date.now()}`;
+            const groupPos = { x: bounds.minX - GROUP_PADDING, y: bounds.minY - GROUP_PADDING - 12 };
+            const DRAFT_AREA_W = (bounds.maxX - bounds.minX) + GROUP_PADDING * 2;
+            const DRAFT_AREA_H = (bounds.maxY - bounds.minY) + GROUP_PADDING * 2 + GROUP_TOP_PADDING;
+
+            const tempRfNodes = userNodeDatas.map((n) => toReactFlowNode(n, null));
+            const CARD_W = 232;
+            const CARD_H = 186;
+            const seedLayout = layoutThinkingNodesInGroup(tempRfNodes, 820);
+            const seedMaxX = Math.max(0, ...seedLayout.map((n) => (n.position?.x ?? 0) + CARD_W));
+            const seedMaxY = Math.max(0, ...seedLayout.map((n) => (n.position?.y ?? 0) + CARD_H));
+            const thinkingAreaW = seedMaxX + 36;
+            const thinkingAreaH = seedMaxY + 40;
+
+            const groupW = Math.max(DRAFT_AREA_W, thinkingAreaW, 520);
+            const groupH = Math.max(DRAFT_AREA_H, thinkingAreaH, 360);
+
+            const groupNode = {
+                id: groupId,
+                type: "ideaGroup",
+                position: groupPos,
+                data: {
+                    mode: "nodes",
+                    title: ids.length === 1 ? "Post-it idea" : `Draft bundle (${ids.length})`,
+                    onToggle: toggleIdeaGroupMode,
+                    category: "What",
+                    phase: "Problem",
+                },
+                style: { width: groupW, height: groupH, background: "transparent", border: "none", zIndex: 0 },
+            };
+
+            // Move drafts into group as children (grid layout so they don't dominate the space in Raw mode)
+            const draftChildrenBase = draftNodes.map((n) => ({
+                ...n,
+                parentNode: groupId,
+                extent: "parent",
+                hidden: true, // nodes mode default
+            }));
+            const draftChildrenGrid = layoutDraftsInGroupGrid({ draftNodes: draftChildrenBase, groupW, groupH });
+            const movedDrafts = draftChildrenGrid.map((n) => ({
+                ...n,
+                parentNode: groupId,
+                extent: "parent",
+                hidden: true,
+            }));
+
+            // Create thinking nodes inside group
+            const laidOut = layoutThinkingNodesInGroup(tempRfNodes, groupW).map((n) => ({
+                ...n,
+                parentNode: groupId,
+                extent: "parent",
+                position: { x: n.position.x, y: n.position.y },
+                hidden: false,
+            }));
+
+            // Merge nodes: remove drafts from base, then add group (behind) + moved drafts + new thinking nodes
+            const otherNodes = nodes.filter((n) => !ids.includes(n.id));
+            const nextNodes = [...otherNodes, groupNode, ...movedDrafts, ...laidOut];
+
+            // Route cross-boundary edges to groups (group-to-group / group-to-outside)
+            const childToGroup = new Map();
+            nextNodes.forEach((n) => {
+                if (n?.parentNode && n.type === "thinkingNode") childToGroup.set(n.id, n.parentNode);
+            });
+            // include existing grouped thinking nodes already in state
+            nodes.forEach((n) => {
+                if (n?.parentNode && n.type === "thinkingNode") childToGroup.set(n.id, n.parentNode);
+            });
+
+            const routedRawEdges = [];
+            const seenPairs = new Set();
+            rawEdges.forEach((e) => {
+                const src = e?.source;
+                const tgt = e?.target;
+                if (!src || !tgt) return;
+                const sG = childToGroup.get(src);
+                const tG = childToGroup.get(tgt);
+                // Keep internal edges within same group
+                let nextSource = src;
+                let nextTarget = tgt;
+                if (sG && tG && sG === tG) {
+                    // no change
+                } else {
+                    if (sG) nextSource = sG;
+                    if (tG) nextTarget = tG;
+                }
+                if (nextSource === nextTarget) return;
+                const key = `${nextSource}->${nextTarget}`;
+                if (seenPairs.has(key)) return;
+                seenPairs.add(key);
+                routedRawEdges.push({ ...e, source: nextSource, target: nextTarget });
+            });
+
+            // Build edges (connector styling)
+            const nextEdges = toConnectorEdges(routedRawEdges, nextNodes, edges);
+            setNodes(nextNodes);
+            setEdges((prev) => [...prev, ...nextEdges]);
+
+            // Push suggestion to Tip shelf
+            if (suggestionNodeData) {
+                const newSuggestion = {
+                    id: `suggestion-${Date.now()}`,
+                    title: suggestionNodeData.data.label,
+                    content: suggestionNodeData.data.content,
+                    category: suggestionNodeData.data.category,
+                    phase: suggestionNodeData.data.phase,
+                    relatedNodeId: null,
+                };
+                setSuggestions((prev) => [newSuggestion, ...prev]);
+            }
+
+            setShowDraftConvertPrompt(false);
+            setSelectedDraftIds([]);
+        } catch (error) {
+            const serverMsg =
+                error?.response?.data?.error ||
+                error?.response?.data?.detail ||
+                error?.message;
+            alert(serverMsg ? `Failed to analyze draft: ${serverMsg}` : "Failed to analyze draft. Please try again.");
+        } finally {
+            setIsAnalyzing(false);
+            setDraftSubmittingIds((prev) => {
+                const next = new Set(prev);
+                ids.forEach((id) => next.delete(id));
+                return next;
+            });
+        }
+    };
+
+    // Keep a ref to the latest converter so draft nodes never call stale closures.
+    convertDraftsToGroupRef.current = convertDraftsToGroup;
 
     useEffect(() => {
         try {
@@ -717,7 +1210,12 @@ export default function ThinkingMachine() {
 
             const origin = dragOriginRef.current;
             const count = origin?.ids?.length || 1;
-            if (movedEnough) {
+            // 고스트 드래그는 "오른쪽(Chat) 첨부" 제스처로 진입했을 때만 활성화
+            if (!ghostCaptureRef.current && movedEnough && near) {
+                ghostCaptureRef.current = true;
+            }
+
+            if (ghostCaptureRef.current && movedEnough) {
                 didShowGhostRef.current = true;
                 setGhostDrag((prev) => {
                     if (prev?.phase === "dropping") return prev;
@@ -728,7 +1226,7 @@ export default function ThinkingMachine() {
 
         // 원본 노드 위치 유지: 드래그 중에는 저장된 원점으로 계속 복원 (RAF로 부하 제한)
         const origin = dragOriginRef.current;
-        if (origin?.positions && origin?.ids?.length && !restoreRafRef.current) {
+        if (ghostCaptureRef.current && origin?.positions && origin?.ids?.length && !restoreRafRef.current) {
             restoreRafRef.current = requestAnimationFrame(() => {
                 restoreRafRef.current = null;
                 const idSet = new Set(origin.ids);
@@ -754,6 +1252,7 @@ export default function ThinkingMachine() {
     const handleNodeDragStart = (event, node) => {
         didAutoOpenOnDragRef.current = false;
         isNodeDraggingRef.current = true;
+        ghostCaptureRef.current = false;
         didShowGhostRef.current = false;
         const selectedNodes = nodes.filter((n) => n?.selected);
         const ids =
@@ -780,6 +1279,7 @@ export default function ThinkingMachine() {
         setIsChatDropActive(false);
         didAutoOpenOnDragRef.current = false;
         isNodeDraggingRef.current = false;
+        ghostCaptureRef.current = false;
         dragStartPointRef.current = null;
 
         // 드래그가 "의도"되지 않았거나(짧은 탭) 드롭존이 아니면 고스트만 정리
@@ -837,12 +1337,15 @@ export default function ThinkingMachine() {
 
     // 채팅 대화에서 노드+엣지 추가
     const handleAddNodesFromChat = (data) => {
-        const newNodes = data.nodes.map((n) => toReactFlowNode(n, null));
-        const mergedNodes = [...nodes, ...newNodes];
-        const newEdges = toConnectorEdges(data.edges, mergedNodes, edges);
-
-        setNodes((nds) => [...nds, ...newNodes]);
-        setEdges((eds) => [...eds, ...newEdges]);
+        const incoming = Array.isArray(data?.nodes) ? data.nodes : [];
+        const incomingEdges = Array.isArray(data?.edges) ? data.edges : [];
+        setNodes((prevNodes) => {
+            const rawNewNodes = incoming.map((n) => toReactFlowNode(n, null));
+            const newNodes = shiftClusterRightOfExisting(prevNodes, rawNewNodes);
+            const mergedNodes = [...prevNodes, ...newNodes];
+            setEdges((prevEdges) => [...prevEdges, ...toConnectorEdges(incomingEdges, mergedNodes, prevEdges)]);
+            return mergedNodes;
+        });
     };
 
     const handleInputSubmit = async (text) => {
@@ -874,7 +1377,8 @@ export default function ThinkingMachine() {
             const highlightedMainNodeId = suggestEdge ? suggestEdge.source : null;
 
             // 사용자 노드 → ReactFlow
-            const enrichedNodes = userNodeDatas.map((n) => toReactFlowNode(n, highlightedMainNodeId));
+            const rawNewNodes = userNodeDatas.map((n) => toReactFlowNode(n, highlightedMainNodeId));
+            const enrichedNodes = nodes.length ? shiftClusterRightOfExisting(nodes, rawNewNodes) : rawNewNodes;
 
             // 제안 노드 → SuggestionPanel
             if (suggestionNodeData) {
@@ -966,7 +1470,46 @@ export default function ThinkingMachine() {
                     onNodeDragStart={handleNodeDragStart}
                     onNodeDrag={handleNodeDragUpdate}
                     onNodeDragStop={handleNodeDragStop}
+                    onInit={handleFlowInit}
+                    onSelectionChange={handleSelectionChange}
+                    selectionBoxEnabled={selectionBoxEnabled}
+                    draftHandlers={{
+                        onPostitChangeText: handlePostitChangeText,
+                        onImagePick: handleImagePick,
+                        onImageChangeCaption: handleImageChangeCaption,
+                        onDraftSubmit: handleDraftSubmit,
+                    }}
+                    draftSubmittingIds={draftSubmittingIds}
                 />
+
+                <LeftCanvasTools onAddPostit={createPostitDraft} onAddImage={createImageDraft} />
+
+                {showDraftConvertPrompt && (
+                    <div className="pointer-events-none absolute inset-x-0 top-20 z-[75] flex justify-center">
+                        <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/70 bg-white/72 px-4 py-2 text-[12px] font-semibold text-slate-700 shadow-[0_12px_26px_rgba(0,0,0,0.14)] backdrop-blur-[12px]">
+                            <span>
+                                Convert {selectedDraftIds.length} drafts into nodes?
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => void convertDraftsToGroup(draftConvertIdsRef.current)}
+                                className="inline-flex items-center justify-center rounded-full bg-teal-500 px-3 py-1 text-[12px] font-semibold text-white transition hover:bg-teal-600 disabled:opacity-55"
+                                disabled={isAnalyzing}
+                                aria-label="Confirm convert drafts"
+                            >
+                                ✓
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowDraftConvertPrompt(false)}
+                                className="inline-flex items-center justify-center rounded-full border border-white/70 bg-white/70 px-3 py-1 text-[12px] font-semibold text-slate-600 transition hover:bg-white/80"
+                                aria-label="Cancel convert drafts"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Legacy fallback suggestion panel (`?legacyChat=1`) */}
                 {legacyChatFallbackEnabled && (
@@ -1050,7 +1593,7 @@ export default function ThinkingMachine() {
                     />
                 )}
 
-                <InputPanel onSubmit={handleInputSubmit} isAnalyzing={isAnalyzing} />
+                {/* Idea input has moved into Post-it drafts (Left toolbar). */}
             </main>
         </div>
     );

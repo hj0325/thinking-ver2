@@ -8,6 +8,9 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import ThinkingNode from "./nodes/ThinkingNode";
+import PostitDraftNode from "./nodes/PostitDraftNode";
+import ImageDraftNode from "./nodes/ImageDraftNode";
+import IdeaGroupNode from "./nodes/IdeaGroupNode";
 import ConnectorEdge from "./edges/ConnectorEdge";
 
 export default function NodeMap({
@@ -19,10 +22,23 @@ export default function NodeMap({
     onNodeDragStart,
     onNodeDrag,
     onNodeDragStop,
+    onInit,
+    onSelectionChange,
+    selectionBoxEnabled = false,
+    draftHandlers,
+    draftSubmittingIds,
 }) {
     const currentCanvasStage = "research-diverge";
 
-    const nodeTypes = useMemo(() => ({ thinkingNode: ThinkingNode }), []);
+    const nodeTypes = useMemo(
+        () => ({
+            thinkingNode: ThinkingNode,
+            postitDraft: PostitDraftNode,
+            imageDraft: ImageDraftNode,
+            ideaGroup: IdeaGroupNode,
+        }),
+        []
+    );
     const edgeTypes = useMemo(() => ({ connectorEdge: ConnectorEdge }), []);
 
     const portVisibilityByNode = useMemo(() => {
@@ -51,10 +67,25 @@ export default function NodeMap({
                 ...n.data,
                 hasLeftPort: portVisibilityByNode.get(n.id)?.hasLeftPort || false,
                 hasRightPort: portVisibilityByNode.get(n.id)?.hasRightPort || false,
+                ...(n.type === "postitDraft"
+                    ? {
+                        onChangeText: draftHandlers?.onPostitChangeText,
+                        onSubmit: draftHandlers?.onDraftSubmit,
+                        isSubmitting: Boolean(draftSubmittingIds?.has?.(n.id)),
+                    }
+                    : {}),
+                ...(n.type === "imageDraft"
+                    ? {
+                        onPickImage: draftHandlers?.onImagePick,
+                        onChangeCaption: draftHandlers?.onImageChangeCaption,
+                        onSubmit: draftHandlers?.onDraftSubmit,
+                        isSubmitting: Boolean(draftSubmittingIds?.has?.(n.id)),
+                    }
+                    : {}),
             },
             className: hasHighlightSet && highlightedNodeIds.has(n.id) ? 'node-highlighted' : (n.className || ''),
         }));
-    }, [nodes, highlightedNodeIds, portVisibilityByNode]);
+    }, [nodes, highlightedNodeIds, portVisibilityByNode, draftHandlers, draftSubmittingIds]);
 
     return (
         <div className="tm-canvas-bg h-full w-full" data-stage={currentCanvasStage}>
@@ -66,14 +97,18 @@ export default function NodeMap({
                 onNodeDragStart={onNodeDragStart}
                 onNodeDrag={onNodeDrag}
                 onNodeDragStop={onNodeDragStop}
+                onInit={onInit}
+                onSelectionChange={onSelectionChange}
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
                 connectionMode={ConnectionMode.Loose}
                 fitView
                 className="reactflow-canvas-pan tm-canvas-flow z-10"
                 minZoom={0.2}
-                panOnDrag={true}
-                selectionOnDrag={false}
+                // Default interaction: empty-space drag pan (touchpad friendly).
+                // Hold Shift to enable box selection for drafts.
+                panOnDrag={selectionBoxEnabled ? [1, 2] : true}
+                selectionOnDrag={selectionBoxEnabled}
             >
                 <Background gap={20} color="#FFFFFF4D" />
                 <Controls className="bg-white/80 backdrop-blur-sm border-white/50 shadow-xl" />
