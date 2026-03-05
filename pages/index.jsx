@@ -1,4 +1,4 @@
-import ThinkingMachine from "@/components/ThinkingMachine";
+import ThinkingMachine from "@/components/thinkingMachine/ThinkingMachine";
 
 export default function Home() {
   return (
