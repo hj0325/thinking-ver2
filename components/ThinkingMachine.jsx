@@ -11,6 +11,7 @@ import NodeMap from "./NodeMap";
 import LeftCanvasTools from "./LeftCanvasTools";
 import SuggestionPanel from "./SuggestionPanel";
 import ChatDialog from "./ChatDialog";
+import InputPanel from "./InputPanel";
 import RightAgentDrawer from "./RightAgentDrawer";
 import TopBar from "./TopBar";
 
@@ -349,6 +350,10 @@ export default function ThinkingMachine() {
     const ghostCaptureRef = useRef(false);
     const convertDraftsToGroupRef = useRef(null);
     const [draftSubmittingIds, setDraftSubmittingIds] = useState(() => new Set());
+
+    const hasThinkingGraph = useMemo(() => {
+        return nodes.some((n) => n?.type === "thinkingNode" || n?.type === "ideaGroup");
+    }, [nodes]);
 
     const makeAttachedContextId = (ids) => {
         const base = Array.isArray(ids) ? ids.join(",") : "";
@@ -1461,28 +1466,59 @@ export default function ThinkingMachine() {
             </header>
 
             <main className="flex-1 w-full h-full relative">
-                <NodeMap
-                    nodes={nodes}
-                    edges={edges}
-                    onNodesChange={filteredOnNodesChange}
-                    onEdgesChange={onEdgesChange}
-                    highlightedNodeIds={highlightedNodeIds}
-                    onNodeDragStart={handleNodeDragStart}
-                    onNodeDrag={handleNodeDragUpdate}
-                    onNodeDragStop={handleNodeDragStop}
-                    onInit={handleFlowInit}
-                    onSelectionChange={handleSelectionChange}
-                    selectionBoxEnabled={selectionBoxEnabled}
-                    draftHandlers={{
-                        onPostitChangeText: handlePostitChangeText,
-                        onImagePick: handleImagePick,
-                        onImageChangeCaption: handleImageChangeCaption,
-                        onDraftSubmit: handleDraftSubmit,
-                    }}
-                    draftSubmittingIds={draftSubmittingIds}
-                />
+                {!hasThinkingGraph ? (
+                    <div className="tm-canvas-bg h-full w-full" data-stage="research-diverge">
+                        <div className="absolute inset-0 z-[5] flex items-center justify-center px-6">
+                            <motion.div
+                                initial={{ opacity: 0, y: 14 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex w-full max-w-3xl flex-col items-center gap-6"
+                            >
+                                <div className="text-center">
+                                    <div className="font-heading text-[44px] font-bold tracking-[-0.02em] text-white/90">
+                                        Analyze your idea
+                                    </div>
+                                    <div className="mt-2 text-[14px] font-medium text-white/70">
+                                        Start with a short message. We’ll turn it into connected nodes.
+                                    </div>
+                                </div>
 
-                <LeftCanvasTools onAddPostit={createPostitDraft} onAddImage={createImageDraft} />
+                                <div className="relative h-[110px] w-[220px]">
+                                    <div className="absolute left-1/2 top-1/2 h-[86px] w-[170px] -translate-x-1/2 -translate-y-1/2 rounded-[26px] border border-white/40 bg-white/20 shadow-[0_18px_45px_rgba(0,0,0,0.18)] backdrop-blur-[10px]" />
+                                    <div className="absolute left-1/2 top-1/2 h-[86px] w-[170px] -translate-x-[45%] -translate-y-[60%] rotate-[-6deg] rounded-[26px] border border-white/40 bg-white/18 shadow-[0_18px_45px_rgba(0,0,0,0.18)] backdrop-blur-[10px]" />
+                                    <div className="absolute left-1/2 top-1/2 h-[86px] w-[170px] -translate-x-[55%] -translate-y-[45%] rotate-[7deg] rounded-[26px] border border-white/40 bg-white/22 shadow-[0_18px_45px_rgba(0,0,0,0.18)] backdrop-blur-[10px]" />
+                                </div>
+                            </motion.div>
+                        </div>
+
+                        <InputPanel onSubmit={handleInputSubmit} isAnalyzing={isAnalyzing} />
+                    </div>
+                ) : (
+                    <>
+                        <NodeMap
+                            nodes={nodes}
+                            edges={edges}
+                            onNodesChange={filteredOnNodesChange}
+                            onEdgesChange={onEdgesChange}
+                            highlightedNodeIds={highlightedNodeIds}
+                            onNodeDragStart={handleNodeDragStart}
+                            onNodeDrag={handleNodeDragUpdate}
+                            onNodeDragStop={handleNodeDragStop}
+                            onInit={handleFlowInit}
+                            onSelectionChange={handleSelectionChange}
+                            selectionBoxEnabled={selectionBoxEnabled}
+                            draftHandlers={{
+                                onPostitChangeText: handlePostitChangeText,
+                                onImagePick: handleImagePick,
+                                onImageChangeCaption: handleImageChangeCaption,
+                                onDraftSubmit: handleDraftSubmit,
+                            }}
+                            draftSubmittingIds={draftSubmittingIds}
+                        />
+
+                        <LeftCanvasTools onAddPostit={createPostitDraft} onAddImage={createImageDraft} />
+                    </>
+                )}
 
                 {showDraftConvertPrompt && (
                     <div className="pointer-events-none absolute inset-x-0 top-20 z-[75] flex justify-center">
@@ -1512,7 +1548,7 @@ export default function ThinkingMachine() {
                 )}
 
                 {/* Legacy fallback suggestion panel (`?legacyChat=1`) */}
-                {legacyChatFallbackEnabled && (
+                {hasThinkingGraph && legacyChatFallbackEnabled && (
                     <SuggestionPanel
                         suggestions={suggestions}
                         onDismiss={handleDismissSuggestion}
@@ -1522,38 +1558,40 @@ export default function ThinkingMachine() {
                     />
                 )}
 
-                <RightAgentDrawer
-                    isOpen={isDrawerOpen}
-                    mode={drawerMode}
-                    suggestions={suggestions}
-                    onToggleMode={handleDrawerModeToggle}
-                    onClose={() => setIsDrawerOpen(false)}
-                    activeSuggestion={activeSuggestion}
-                    chatMessages={chatMessages}
-                    chatInput={chatInput}
-                    isChatLoading={isChatLoading}
-                    isChatConverting={isChatConverting}
-                    onChatInputChange={setChatInput}
-                    onChatSubmit={handleDrawerChatSubmit}
-                    onChatConvertToNodes={handleDrawerChatConvertToNodes}
-                    onChatContextSelect={handleDrawerContextSelect}
-                    attachedContext={
-                        attachedNodes.length
-                            ? {
-                                id: "attached-nodes",
-                                type: "attachedNodes",
-                                title: attachedNodes.length === 1 ? "Attached node" : `Attached nodes (${attachedNodes.length})`,
-                                content: "Use these nodes as the primary context for this chat.",
-                                category: "What",
-                                phase: "Problem",
-                                attached_nodes: attachedNodes,
-                            }
-                            : null
-                    }
-                    chatButtonRef={chatButtonRef}
-                    chatDropZoneRef={chatDropZoneRef}
-                    isChatDropActive={isChatDropActive}
-                />
+                {hasThinkingGraph && (
+                    <RightAgentDrawer
+                        isOpen={isDrawerOpen}
+                        mode={drawerMode}
+                        suggestions={suggestions}
+                        onToggleMode={handleDrawerModeToggle}
+                        onClose={() => setIsDrawerOpen(false)}
+                        activeSuggestion={activeSuggestion}
+                        chatMessages={chatMessages}
+                        chatInput={chatInput}
+                        isChatLoading={isChatLoading}
+                        isChatConverting={isChatConverting}
+                        onChatInputChange={setChatInput}
+                        onChatSubmit={handleDrawerChatSubmit}
+                        onChatConvertToNodes={handleDrawerChatConvertToNodes}
+                        onChatContextSelect={handleDrawerContextSelect}
+                        attachedContext={
+                            attachedNodes.length
+                                ? {
+                                    id: "attached-nodes",
+                                    type: "attachedNodes",
+                                    title: attachedNodes.length === 1 ? "Attached node" : `Attached nodes (${attachedNodes.length})`,
+                                    content: "Use these nodes as the primary context for this chat.",
+                                    category: "What",
+                                    phase: "Problem",
+                                    attached_nodes: attachedNodes,
+                                }
+                                : null
+                        }
+                        chatButtonRef={chatButtonRef}
+                        chatDropZoneRef={chatDropZoneRef}
+                        isChatDropActive={isChatDropActive}
+                    />
+                )}
 
                 <AnimatePresence>
                     {ghostDrag && (
@@ -1584,7 +1622,7 @@ export default function ThinkingMachine() {
                 </AnimatePresence>
 
                 {/* Legacy fallback chat dialog (`?legacyChat=1`) */}
-                {legacyChatFallbackEnabled && activeSuggestion && (
+                {hasThinkingGraph && legacyChatFallbackEnabled && activeSuggestion && (
                     <ChatDialog
                         suggestion={activeSuggestion}
                         onClose={() => setActiveSuggestion(null)}
