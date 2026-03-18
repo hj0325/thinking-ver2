@@ -9,7 +9,36 @@ const TOPBAR_TEXT_STYLE = {
   letterSpacing: "-0.352px",
 };
 
-export default function TopBar() {
+function parseStage(stage) {
+  const value = typeof stage === "string" ? stage : "research-diverge";
+  const isIdeation = value.startsWith("ideation-");
+  const isConverge = value.endsWith("-converge");
+  return {
+    mode: isIdeation ? "ideation" : "research",
+    flow: isConverge ? "converge" : "diverge",
+  };
+}
+
+export default function TopBar({ stage = "research-diverge", onStageChange }) {
+  const { mode, flow } = parseStage(stage);
+
+  const handleModeClick = (nextMode) => {
+    if (!onStageChange) return;
+    const nextStage = `${nextMode}-${flow}`;
+    onStageChange(nextStage);
+  };
+
+  const handleFlowClick = (nextFlow) => {
+    if (!onStageChange) return;
+    const nextStage = `${mode}-${nextFlow}`;
+    onStageChange(nextStage);
+  };
+
+  const isResearch = mode === "research";
+  const isIdeation = mode === "ideation";
+  const isDiverge = flow === "diverge";
+  const isConverge = flow === "converge";
+
   return (
     <header className="pointer-events-none absolute inset-x-0 top-0 z-[60] px-9 py-3">
       <div
@@ -54,8 +83,49 @@ export default function TopBar() {
           Visual Thinking Machine
         </div>
 
-        <div className="w-[92px] justify-self-end" aria-hidden>
-          <span className="inline-block h-6 w-6" />
+        <div className="w-[92px] justify-self-end">
+          <div className="pointer-events-auto flex items-center gap-1 justify-end">
+            <div className="inline-flex rounded-full bg-white/80 px-1 py-0.5 shadow-sm border border-white/70">
+              <button
+                type="button"
+                onClick={() => handleModeClick("research")}
+                className={`px-2 py-0.5 text-[10px] font-semibold rounded-full transition ${
+                  isResearch ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-white"
+                }`}
+              >
+                Research
+              </button>
+              <button
+                type="button"
+                onClick={() => handleModeClick("ideation")}
+                className={`px-2 py-0.5 text-[10px] font-semibold rounded-full transition ${
+                  isIdeation ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-white"
+                }`}
+              >
+                Design
+              </button>
+            </div>
+            <div className="inline-flex rounded-full bg-white/80 px-1 py-0.5 shadow-sm border border-white/70">
+              <button
+                type="button"
+                onClick={() => handleFlowClick("diverge")}
+                className={`px-2 py-0.5 text-[10px] font-semibold rounded-full transition ${
+                  isDiverge ? "bg-emerald-500 text-white" : "text-slate-600 hover:bg-white"
+                }`}
+              >
+                Diverge
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFlowClick("converge")}
+                className={`px-2 py-0.5 text-[10px] font-semibold rounded-full transition ${
+                  isConverge ? "bg-amber-400 text-slate-900" : "text-slate-600 hover:bg-white"
+                }`}
+              >
+                Converge
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </header>

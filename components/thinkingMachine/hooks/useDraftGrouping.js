@@ -22,6 +22,7 @@ export function useDraftGrouping({
   setIsAnalyzing,
   setSuggestions,
   reactFlowRef,
+  stage = "research-diverge",
 } = {}) {
   const [selectedDraftIds, setSelectedDraftIds] = useState([]);
   const [showDraftConvertPrompt, setShowDraftConvertPrompt] = useState(false);
@@ -242,7 +243,7 @@ export function useDraftGrouping({
             data: { title: n.data.title, category: n.data.category, phase: n.data.phase },
             position: n.position,
           }));
-        const payload = { text: bundleText, history };
+        const payload = { text: bundleText, history, stage };
         const data = await analyze(payload);
 
         const suggestionNodeData = data.nodes.find((n) => n.data.is_ai_generated);
@@ -375,7 +376,7 @@ export function useDraftGrouping({
         });
       }
     },
-    [edges, isAnalyzing, nodes, setEdges, setIsAnalyzing, setNodes, setSuggestions, toggleIdeaGroupMode]
+    [edges, isAnalyzing, nodes, setEdges, setIsAnalyzing, setNodes, setSuggestions, stage, toggleIdeaGroupMode]
   );
 
   // Keep a ref to the latest converter so draft nodes never call stale closures.

@@ -10,6 +10,7 @@ export function useDrawerChat({
   setIsDrawerOpen,
   drawerMode,
   setDrawerMode,
+  stage = "research-diverge",
 } = {}) {
   const [activeSuggestion, setActiveSuggestion] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
@@ -114,6 +115,7 @@ export function useDrawerChat({
           user_message: isAttachedNodesContext
             ? "Analyze the attached nodes, summarize what they collectively imply, and ask me one clarifying question to move forward."
             : "Please explain this suggestion first.",
+          stage,
         };
         const res = await chat(payload);
         if (cancelled || activeSuggestionIdRef.current !== targetSuggestion.id) return;
@@ -132,7 +134,7 @@ export function useDrawerChat({
     return () => {
       cancelled = true;
     };
-  }, [activeSuggestion, legacyChatFallbackEnabled, resetChat]);
+  }, [activeSuggestion, legacyChatFallbackEnabled, resetChat, stage]);
 
   const handleDrawerChatSubmit = useCallback(async () => {
     const targetSuggestion = activeSuggestion;
@@ -157,6 +159,7 @@ export function useDrawerChat({
         messages: historyForApi,
         user_message: trimmedInput,
         attached_nodes: attached,
+        stage,
       };
       const res = await chat(payload);
       if (activeSuggestionIdRef.current !== targetSuggestionId) return;
@@ -169,7 +172,7 @@ export function useDrawerChat({
         setIsChatLoading(false);
       }
     }
-  }, [activeSuggestion, chatInput, chatMessages, isChatLoading]);
+  }, [activeSuggestion, chatInput, chatMessages, isChatLoading, stage]);
 
   const handleDrawerChatConvertToNodes = useCallback(async () => {
     if (!activeSuggestion || chatMessages.length === 0 || isChatConverting) return;
@@ -194,6 +197,7 @@ export function useDrawerChat({
           },
           position: n.position,
         })),
+        stage,
       };
       const data = await chatToNodes(payload);
       onAddNodesFromChat?.(data);

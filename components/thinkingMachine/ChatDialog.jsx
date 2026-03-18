@@ -14,7 +14,7 @@ const CATEGORY_COLORS = {
     How: { border: "border-indigo-200", bg: "bg-indigo-50", header: "bg-indigo-100/60", text: "text-indigo-700", dot: "bg-indigo-400", accent: "#818cf8" },
 };
 
-export default function ChatDialog({ suggestion, onClose, onAddNodes, existingNodes }) {
+export default function ChatDialog({ suggestion, onClose, onAddNodes, existingNodes, stage = "research-diverge" }) {
     const [messages, setMessages] = useState([]);      // { role, content }
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -54,6 +54,7 @@ export default function ChatDialog({ suggestion, onClose, onAddNodes, existingNo
                 suggestion_phase: suggestion.phase,
                 messages: historyForApi,
                 user_message: text,
+                stage,
             };
             const res = await axios.post("/api/chat", payload);
             setMessages((prev) => [...prev, { role: "assistant", content: res.data.reply }]);
@@ -99,6 +100,7 @@ export default function ChatDialog({ suggestion, onClose, onAddNodes, existingNo
                     },
                     position: n.position,
                 })),
+                stage,
             };
             const res = await axios.post("/api/chat-to-nodes", payload);
             onAddNodes(res.data);

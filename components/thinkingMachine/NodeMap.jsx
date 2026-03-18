@@ -27,8 +27,8 @@ export default function NodeMap({
     selectionBoxEnabled = false,
     draftHandlers,
     draftSubmittingIds,
+    canvasStage = "research-diverge",
 }) {
-    const currentCanvasStage = "research-diverge";
 
     const nodeTypes = useMemo(
         () => ({
@@ -88,7 +88,7 @@ export default function NodeMap({
     }, [nodes, highlightedNodeIds, portVisibilityByNode, draftHandlers, draftSubmittingIds]);
 
     return (
-        <div className="tm-canvas-bg h-full w-full" data-stage={currentCanvasStage}>
+        <div className="tm-canvas-bg h-full w-full" data-stage={canvasStage}>
             <ReactFlow
                 nodes={displayNodes}
                 edges={edges}

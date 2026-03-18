@@ -36,6 +36,7 @@ export default function ThinkingMachine() {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [drawerMode, setDrawerMode] = useState("chat");
+    const [stage, setStage] = useState("research-diverge");
 
     const { isAdminMode, showAdminShortcutHint, dismissAdminShortcutHint } = useAdminMode({
         storageKey: ADMIN_MODE_STORAGE_KEY,
@@ -74,6 +75,7 @@ export default function ThinkingMachine() {
         setIsDrawerOpen,
         drawerMode,
         setDrawerMode,
+        stage,
     });
 
     const {
@@ -100,6 +102,7 @@ export default function ThinkingMachine() {
         setIsAnalyzing,
         setSuggestions,
         reactFlowRef,
+        stage,
     });
 
     const {
@@ -192,6 +195,7 @@ export default function ThinkingMachine() {
                     },
                     position: n.position,
                 })),
+                stage,
             };
 
             const data = await analyze(payload);
@@ -250,7 +254,7 @@ export default function ThinkingMachine() {
 
     return (
         <div className="w-full h-screen relative flex flex-col overflow-hidden bg-slate-50">
-            <TopBar />
+            <TopBar stage={stage} onStageChange={setStage} />
 
             {showAdminShortcutHint && (
                 <div className="pointer-events-auto absolute left-1/2 top-14 z-[80] -translate-x-1/2">
@@ -290,7 +294,7 @@ export default function ThinkingMachine() {
 
             <main className="flex-1 w-full h-full relative">
                 {!hasThinkingGraph ? (
-                    <div className="tm-canvas-bg h-full w-full" data-stage="research-diverge">
+                    <div className="tm-canvas-bg h-full w-full" data-stage={stage}>
                         <div className="absolute inset-0 z-[5] flex items-center justify-center px-6">
                             <motion.div
                                 initial={{ opacity: 0, y: 14 }}
@@ -337,6 +341,7 @@ export default function ThinkingMachine() {
                                 onDraftSubmit: handleDraftSubmit,
                             }}
                             draftSubmittingIds={draftSubmittingIds}
+                            canvasStage={stage}
                         />
 
                         <LeftCanvasTools onAddPostit={createPostitDraft} onAddImage={createImageDraft} />
@@ -451,6 +456,7 @@ export default function ThinkingMachine() {
                         onClose={() => setActiveSuggestion(null)}
                         onAddNodes={handleAddNodesFromChat}
                         existingNodes={nodes}
+                        stage={stage}
                     />
                 )}
 

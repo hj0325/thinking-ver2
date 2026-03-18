@@ -19,7 +19,7 @@ export default async function handler(req, res) {
   if (error) return res.status(500).json({ error });
 
   try {
-    const { text, history } = req.body ?? {};
+    const { text, history, stage } = req.body ?? {};
     if (typeof text !== "string" || !text.trim()) {
       return res.status(400).json({ error: "Missing required field: text" });
     }
@@ -27,6 +27,7 @@ export default async function handler(req, res) {
     const result = await agent.processIdea({
       text,
       history: Array.isArray(history) ? history : [],
+      stage,
     });
 
     return res.status(200).json(result);
