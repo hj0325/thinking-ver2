@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import ReactFlow, {
     Background,
-    Controls,
     ConnectionMode,
 } from "reactflow";
 import "reactflow/dist/style.css";
@@ -25,6 +24,7 @@ export default function NodeMap({
     onInit,
     onSelectionChange,
     selectionBoxEnabled = false,
+    isCanvasInteractive = true,
     draftHandlers,
     draftSubmittingIds,
     canvasStage = "research-diverge",
@@ -83,7 +83,9 @@ export default function NodeMap({
                     }
                     : {}),
             },
-            className: hasHighlightSet && highlightedNodeIds.has(n.id) ? 'node-highlighted' : (n.className || ''),
+            className: [n.className || "", hasHighlightSet && highlightedNodeIds.has(n.id) ? "node-highlighted" : ""]
+                .filter(Boolean)
+                .join(" "),
         }));
     }, [nodes, highlightedNodeIds, portVisibilityByNode, draftHandlers, draftSubmittingIds]);
 
@@ -105,13 +107,19 @@ export default function NodeMap({
                 fitView
                 className="reactflow-canvas-pan tm-canvas-flow z-10"
                 minZoom={0.2}
+                maxZoom={1}
+                nodesDraggable={isCanvasInteractive}
+                nodesConnectable={isCanvasInteractive}
+                elementsSelectable={isCanvasInteractive}
+                zoomOnScroll={isCanvasInteractive}
+                zoomOnPinch={isCanvasInteractive}
+                panOnScroll={isCanvasInteractive}
                 // Default interaction: empty-space drag pan (touchpad friendly).
                 // Hold Shift to enable box selection for drafts.
-                panOnDrag={selectionBoxEnabled ? [1, 2] : true}
-                selectionOnDrag={selectionBoxEnabled}
+                panOnDrag={isCanvasInteractive ? (selectionBoxEnabled ? [1, 2] : true) : false}
+                selectionOnDrag={isCanvasInteractive && selectionBoxEnabled}
             >
                 <Background gap={20} color="#FFFFFF4D" />
-                <Controls className="bg-white/80 backdrop-blur-sm border-white/50 shadow-xl" />
             </ReactFlow>
         </div>
     );

@@ -13,6 +13,19 @@ import {
   layoutThinkingNodesInGroup,
 } from "@/lib/thinkingMachine/draftLayout";
 
+function mergeSuggestionUnique(prev, nextSuggestion) {
+  if (!nextSuggestion) return prev;
+  const key = `${String(nextSuggestion.category || "").toLowerCase()}::${String(nextSuggestion.title || "").trim().toLowerCase()}::${String(nextSuggestion.content || "").trim().toLowerCase()}`;
+  const existingIndex = prev.findIndex((item) => {
+    const existingKey = `${String(item?.category || "").toLowerCase()}::${String(item?.title || "").trim().toLowerCase()}::${String(item?.content || "").trim().toLowerCase()}`;
+    return existingKey === key;
+  });
+  if (existingIndex === -1) return [nextSuggestion, ...prev];
+  const clone = [...prev];
+  clone.splice(existingIndex, 1);
+  return [nextSuggestion, ...clone];
+}
+
 export function useDraftGrouping({
   nodes,
   edges,
@@ -276,7 +289,7 @@ export function useDraftGrouping({
             mode: "nodes",
             title: ids.length === 1 ? "Post-it idea" : `Draft bundle (${ids.length})`,
             onToggle: toggleIdeaGroupMode,
-            category: "What",
+            category: "Insight",
             phase: "Problem",
           },
           style: { width: groupW, height: groupH, background: "transparent", border: "none", zIndex: 0 },
@@ -357,9 +370,12 @@ export function useDraftGrouping({
             content: suggestionNodeData.data.content,
             category: suggestionNodeData.data.category,
             phase: suggestionNodeData.data.phase,
+            sourceType: suggestionNodeData.data.sourceType,
+            visibility: suggestionNodeData.data.visibility,
+            confidence: suggestionNodeData.data.confidence,
             relatedNodeId: null,
           };
-          setSuggestions?.((prev) => [newSuggestion, ...prev]);
+          setSuggestions?.((prev) => mergeSuggestionUnique(prev, newSuggestion));
         }
 
         setShowDraftConvertPrompt(false);
@@ -405,4 +421,3 @@ export function useDraftGrouping({
     convertDraftsToGroup,
   };
 }
-

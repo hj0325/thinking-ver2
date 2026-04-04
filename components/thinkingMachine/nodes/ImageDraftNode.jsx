@@ -17,22 +17,22 @@ export default function ImageDraftNode({ id, data, selected }) {
 
   return (
     <div
-      className={`relative h-full w-full overflow-hidden rounded-[28px] border ${
-        selected ? "border-teal-300 ring-2 ring-teal-200" : "border-white/70"
-      } bg-white/72 shadow-[0_14px_34px_rgba(0,0,0,0.14)] backdrop-blur-[10px]`}
+      className={`relative h-full w-full overflow-hidden rounded-[22px] border ${
+        selected ? "border-teal-300 ring-2 ring-teal-200/70" : "border-white/70"
+      } bg-white/78 shadow-[0_10px_24px_rgba(0,0,0,0.12)] backdrop-blur-[10px]`}
     >
-      <div className="absolute right-3 top-3 z-10">
+      <div className="absolute right-2.5 top-2.5 z-10">
         <button
           type="button"
           onClick={() => onSubmit?.(id)}
           onMouseDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-teal-500 text-white shadow-sm transition hover:bg-teal-600 active:scale-[0.98] disabled:opacity-40"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] bg-teal-500 text-white shadow-sm transition hover:bg-teal-600 active:scale-[0.98] disabled:opacity-40"
           disabled={!canSubmit || isSubmitting}
           aria-label="Send image draft for analysis"
           title="Analyze"
         >
-          {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          {isSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
         </button>
       </div>
 
@@ -48,14 +48,14 @@ export default function ImageDraftNode({ id, data, selected }) {
         }}
       />
 
-      <div className="relative flex h-full w-full flex-col gap-3 px-4 pb-4 pt-4">
+      <div className="relative flex h-full w-full flex-col gap-2 px-3 pb-3 pt-3">
         <button
           type="button"
           onClick={handlePick}
           onMouseDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
           disabled={isSubmitting}
-          className={`group relative flex min-h-[88px] flex-1 items-center justify-center overflow-hidden rounded-[24px] border border-white/60 ${
+          className={`group relative flex min-h-[78px] flex-1 items-center justify-center overflow-hidden rounded-[16px] border border-white/60 ${
             imageUrl ? "bg-black/5" : "bg-white/45"
           } nodrag nopan shadow-sm transition hover:bg-white/55 disabled:opacity-70`}
           aria-label="Click to upload an image"
@@ -66,11 +66,11 @@ export default function ImageDraftNode({ id, data, selected }) {
             <img src={imageUrl} alt="Draft" className="h-full w-full object-cover" />
           ) : (
             <div className="flex flex-col items-center gap-2 text-slate-700/80">
-              <ImageIcon className="h-6 w-6" />
-              <span className="text-[12px] font-medium">Click to upload an image.</span>
+              <ImageIcon className="h-5 w-5" />
+              <span className="text-[11px] font-medium">Click to upload an image.</span>
             </div>
           )}
-          <div className="pointer-events-none absolute inset-0 rounded-[24px] ring-0 ring-teal-300/50 transition group-hover:ring-4" />
+          <div className="pointer-events-none absolute inset-0 rounded-[16px] ring-0 ring-teal-300/40 transition group-hover:ring-2" />
         </button>
 
         <textarea
@@ -81,10 +81,9 @@ export default function ImageDraftNode({ id, data, selected }) {
           onMouseDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
           rows={3}
-          className="nodrag nopan w-full resize-none rounded-2xl border border-white/60 bg-white/50 px-3 py-2 text-[12px] leading-relaxed text-slate-700 outline-none placeholder:text-slate-400 focus:border-teal-300 disabled:opacity-70"
+          className="nodrag nopan w-full resize-none rounded-[16px] border border-white/60 bg-white/50 px-2.5 py-2 text-[11px] leading-[1.4] text-slate-700 outline-none placeholder:text-slate-400 focus:border-teal-300 disabled:opacity-70"
         />
       </div>
     </div>
   );
 }
-

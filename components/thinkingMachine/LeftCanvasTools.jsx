@@ -1,33 +1,112 @@
 "use client";
 
-import { Image as ImageIcon, StickyNote } from "lucide-react";
+import { Image as ImageIcon, Lock, ScanSearch, StickyNote, Unlock, ZoomIn, ZoomOut } from "lucide-react";
 
-export default function LeftCanvasTools({ onAddPostit, onAddImage }) {
+const COPY = {
+  en: {
+    label: "Canvas tools",
+    note: "Note",
+    image: "Image",
+    view: "View",
+    zoomIn: "Zoom in",
+    zoomOut: "Zoom out",
+    fit: "Fit",
+    lock: "Lock",
+    unlock: "Unlock",
+  },
+  ko: {
+    label: "캔버스 도구",
+    note: "노트",
+    image: "이미지",
+    view: "뷰",
+    zoomIn: "확대",
+    zoomOut: "축소",
+    fit: "맞춤",
+    lock: "잠금",
+    unlock: "잠금 해제",
+  },
+};
+
+function IconButton({ onClick, label, children, active = false }) {
   return (
-    <div className="pointer-events-none absolute left-6 top-1/2 z-[70] -translate-y-1/2">
-      <div className="pointer-events-auto rounded-[22px] bg-white/30 p-2 shadow-[0_18px_45px_rgba(0,0,0,0.12)] backdrop-blur-[14px]">
-        <div className="flex flex-col gap-3 rounded-[18px] bg-white/25 px-2 py-3">
-          <button
-            type="button"
-            onClick={onAddPostit}
-            className="group inline-flex h-14 w-14 items-center justify-center rounded-full bg-slate-400/55 text-white shadow-[0_8px_18px_rgba(0,0,0,0.18)] transition-all hover:bg-slate-400/70 hover:shadow-[0_12px_26px_rgba(0,0,0,0.18)] hover:scale-[1.05] active:scale-[0.97]"
-            aria-label="Create a post-it draft"
-            title="Post-it"
-          >
-            <StickyNote className="h-6 w-6 opacity-90 transition-opacity group-hover:opacity-100" />
-          </button>
-          <button
-            type="button"
-            onClick={onAddImage}
-            className="group inline-flex h-14 w-14 items-center justify-center rounded-full bg-slate-400/55 text-white shadow-[0_8px_18px_rgba(0,0,0,0.18)] transition-all hover:bg-slate-400/70 hover:shadow-[0_12px_26px_rgba(0,0,0,0.18)] hover:scale-[1.05] active:scale-[0.97]"
-            aria-label="Create an image draft"
-            title="Image"
-          >
-            <ImageIcon className="h-6 w-6 opacity-90 transition-opacity group-hover:opacity-100" />
-          </button>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={`group inline-flex h-10 w-10 items-center justify-center rounded-full transition-all active:scale-[0.97] ${
+        active
+          ? "bg-slate-800 text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)]"
+          : "bg-white text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.10)] ring-1 ring-slate-200 hover:bg-slate-50 hover:shadow-[0_12px_26px_rgba(15,23,42,0.14)] hover:scale-[1.04]"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+export default function LeftCanvasTools({
+  onAddPostit,
+  onAddImage,
+  onZoomIn,
+  onZoomOut,
+  onFitView,
+  onToggleInteractive,
+  isInteractive = true,
+  uiLanguage = "en",
+}) {
+  const copy = COPY[uiLanguage] || COPY.en;
+
+  return (
+    <div className="pointer-events-none absolute bottom-5 left-6 z-[72]">
+      <div className="pointer-events-auto rounded-[24px] border border-white/70 bg-white/84 p-2.5 shadow-[0_16px_36px_rgba(15,23,42,0.14)] backdrop-blur-[14px]">
+        <div className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-normal text-slate-500">
+          {copy.label}
+        </div>
+        <div className="flex flex-col gap-3 rounded-[18px] bg-slate-50/90 px-2 py-2.5">
+          <div>
+            <div className="mb-2 text-center text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+              Create
+            </div>
+            <div className="flex gap-2">
+              <div className="flex flex-col items-center gap-1">
+                <IconButton onClick={onAddPostit} label={copy.note} active>
+                  <StickyNote className="h-4.5 w-4.5 opacity-90 transition-opacity group-hover:opacity-100" />
+                </IconButton>
+                <div className="text-center text-[10px] font-medium text-slate-600">{copy.note}</div>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <IconButton onClick={onAddImage} label={copy.image}>
+                  <ImageIcon className="h-4.5 w-4.5 opacity-90 transition-opacity group-hover:opacity-100" />
+                </IconButton>
+                <div className="text-center text-[10px] font-medium text-slate-600">{copy.image}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="h-px bg-slate-200/80" />
+
+          <div>
+            <div className="mb-2 text-center text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+              {copy.view}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <IconButton onClick={onZoomIn} label={copy.zoomIn}>
+                <ZoomIn className="h-4.5 w-4.5" />
+              </IconButton>
+              <IconButton onClick={onZoomOut} label={copy.zoomOut}>
+                <ZoomOut className="h-4.5 w-4.5" />
+              </IconButton>
+              <IconButton onClick={onFitView} label={copy.fit}>
+                <ScanSearch className="h-4.5 w-4.5" />
+              </IconButton>
+              <IconButton onClick={onToggleInteractive} label={isInteractive ? copy.lock : copy.unlock} active={!isInteractive}>
+                {isInteractive ? <Lock className="h-4.5 w-4.5" /> : <Unlock className="h-4.5 w-4.5" />}
+              </IconButton>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-

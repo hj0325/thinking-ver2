@@ -1,18 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 
 export function useAdminMode({
   storageKey = "vtm-admin-mode-enabled",
   hintDismissedKey = "vtm-admin-shortcut-hint-dismissed",
 } = {}) {
-  // Important: avoid reading from window/storage during render,
-  // otherwise SSR markup can differ from the first client render (hydration mismatch).
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [showAdminShortcutHint, setShowAdminShortcutHint] = useState(false);
   const hasLoadedFromStorageRef = useRef(false);
 
   useEffect(() => {
     let enabled = false;
-    let hintDismissed = false;
+    let shouldShowHint = false;
 
     try {
       enabled = window.localStorage.getItem(storageKey) === "1";
@@ -21,13 +19,15 @@ export function useAdminMode({
     }
 
     try {
-      hintDismissed = window.sessionStorage.getItem(hintDismissedKey) === "1";
+      shouldShowHint = window.sessionStorage.getItem(hintDismissedKey) !== "1";
     } catch {
-      hintDismissed = false;
+      shouldShowHint = false;
     }
 
-    setIsAdminMode(enabled);
-    setShowAdminShortcutHint(!hintDismissed);
+    startTransition(() => {
+      setIsAdminMode(enabled);
+      setShowAdminShortcutHint(shouldShowHint);
+    });
     hasLoadedFromStorageRef.current = true;
   }, [storageKey, hintDismissedKey]);
 
@@ -70,4 +70,3 @@ export function useAdminMode({
     dismissAdminShortcutHint,
   };
 }
-

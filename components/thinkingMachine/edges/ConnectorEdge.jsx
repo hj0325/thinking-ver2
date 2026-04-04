@@ -1,14 +1,15 @@
 "use client";
 
 import { BaseEdge } from "reactflow";
+import { getTypeMeta } from "@/lib/thinkingMachine/nodeMeta";
 
-const DEFAULT_LINE_COLOR = "#FFFFFF";
-const DEFAULT_LINE_WIDTH = 2;
+const DEFAULT_LINE_COLOR = "rgba(255, 255, 255, 0.68)";
+const DEFAULT_LINE_WIDTH = 1.65;
 const DEFAULT_CLEARANCE = 20;
-const OUTER_RADIUS = 10;
+const OUTER_RADIUS = 7;
 const MIN_CLEARANCE = 8;
-const DEFAULT_CORNER_RADIUS = 24;
 const DEFAULT_LANE_GAP = 80;
+const DEFAULT_CURVE_TENSION = 0.34;
 
 function toFiniteNumber(value, fallback = 0) {
   return Number.isFinite(value) ? Number(value) : fallback;
@@ -125,48 +126,24 @@ function scorePath(points, { isForward, startX, endX, sourceY, targetY }) {
   );
 }
 
-function buildRoundedOrthogonalPath(points, cornerRadius) {
+function buildOrganicBezierPath(points, tension = DEFAULT_CURVE_TENSION) {
   const pts = compressPoints(points);
   if (!pts.length) return "";
   if (pts.length === 1) return `M ${round(pts[0].x)} ${round(pts[0].y)}`;
 
-  let d = `M ${round(pts[0].x)} ${round(pts[0].y)}`;
-  for (let i = 1; i < pts.length; i += 1) {
-    if (i === pts.length - 1) {
-      d += ` L ${round(pts[i].x)} ${round(pts[i].y)}`;
-      continue;
-    }
+  const start = pts[0];
+  const end = pts[pts.length - 1];
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const spanX = Math.abs(dx);
+  const controlDistance = Math.min(Math.max(spanX * (0.34 + tension * 0.12), 56), 168);
+  const verticalEase = Math.min(Math.abs(dy) * 0.16, 36);
+  const cp1x = start.x + controlDistance;
+  const cp2x = end.x - controlDistance;
+  const cp1y = start.y + (dy >= 0 ? verticalEase : -verticalEase) * 0.25;
+  const cp2y = end.y - (dy >= 0 ? verticalEase : -verticalEase) * 0.25;
 
-    const prev = pts[i - 1];
-    const curr = pts[i];
-    const next = pts[i + 1];
-    const v1 = { x: curr.x - prev.x, y: curr.y - prev.y };
-    const v2 = { x: next.x - curr.x, y: next.y - curr.y };
-    const len1 = Math.hypot(v1.x, v1.y);
-    const len2 = Math.hypot(v2.x, v2.y);
-
-    if (len1 === 0 || len2 === 0) {
-      d += ` L ${round(curr.x)} ${round(curr.y)}`;
-      continue;
-    }
-
-    const r = Math.min(cornerRadius, len1 / 2, len2 / 2);
-    if (r <= 0.1) {
-      d += ` L ${round(curr.x)} ${round(curr.y)}`;
-      continue;
-    }
-
-    const u1 = { x: v1.x / len1, y: v1.y / len1 };
-    const u2 = { x: v2.x / len2, y: v2.y / len2 };
-    const enter = { x: curr.x - u1.x * r, y: curr.y - u1.y * r };
-    const exit = { x: curr.x + u2.x * r, y: curr.y + u2.y * r };
-    const cross = v1.x * v2.y - v1.y * v2.x;
-    const sweep = cross > 0 ? 1 : 0;
-
-    d += ` L ${round(enter.x)} ${round(enter.y)}`;
-    d += ` A ${round(r)} ${round(r)} 0 0 ${sweep} ${round(exit.x)} ${round(exit.y)}`;
-  }
-  return d;
+  return `M ${round(start.x)} ${round(start.y)} C ${round(cp1x)} ${round(cp1y)} ${round(cp2x)} ${round(cp2y)} ${round(end.x)} ${round(end.y)}`;
 }
 
 function buildOrthogonalPoints(sourceX, sourceY, targetX, targetY, clearance, laneGap) {
@@ -269,31 +246,96 @@ export default function ConnectorEdge({
   targetX,
   targetY,
   data,
+  selected,
 }) {
   const sourceOffsetY = toFiniteNumber(data?.sourceOffsetY, 0);
   const targetOffsetY = toFiniteNumber(data?.targetOffsetY, 0);
   const clearanceX = toFiniteNumber(data?.clearanceX, DEFAULT_CLEARANCE);
-  const cornerRadius = toFiniteNumber(data?.cornerRadius, DEFAULT_CORNER_RADIUS);
   const laneGap = toFiniteNumber(data?.laneGap, DEFAULT_LANE_GAP);
   const lineColor = data?.lineColor || DEFAULT_LINE_COLOR;
   const lineWidth = toFiniteNumber(data?.lineWidth, DEFAULT_LINE_WIDTH);
+  const curveTension = toFiniteNumber(data?.curveTension, DEFAULT_CURVE_TENSION);
 
   const sy = sourceY + sourceOffsetY;
   const ty = targetY + targetOffsetY;
   const points = buildOrthogonalPoints(sourceX, sy, targetX, ty, clearanceX, laneGap);
-  const path = buildRoundedOrthogonalPath(points, cornerRadius);
+  const path = buildOrganicBezierPath(points, curveTension);
+  const startPoint = points[0] ?? { x: sourceX, y: sy };
+  const endPoint = points[points.length - 1] ?? { x: targetX, y: ty };
+  const label = typeof data?.label === "string" ? data.label.replace(/_/g, " ") : "";
+  const labelX = (sourceX + targetX) / 2;
+  const labelY = (sy + ty) / 2;
+  const sourceTypeMeta = getTypeMeta(data?.sourceCategory);
+  const isSelected = Boolean(selected);
+  const underlayStroke = isSelected ? "rgba(255, 255, 255, 0.24)" : "rgba(255, 255, 255, 0.12)";
+  const primaryStroke = isSelected ? "rgba(255, 255, 255, 0.92)" : lineColor;
+  const primaryWidth = isSelected ? lineWidth + 0.2 : lineWidth;
+  const endpointRadius = isSelected ? 2.1 : 1.8;
 
   return (
-    <BaseEdge
-      id={id}
-      path={path}
-      style={{
-        stroke: lineColor,
-        strokeWidth: lineWidth,
-        strokeLinecap: "round",
-        strokeLinejoin: "round",
-        filter: "drop-shadow(0 0 1px rgba(0, 0, 0, 0.18))",
-      }}
-    />
+    <g className={`tm-connector-edge ${isSelected ? "is-selected" : ""}`}>
+      <BaseEdge
+        path={path}
+        style={{
+          stroke: underlayStroke,
+          strokeWidth: lineWidth + 2.2,
+          strokeLinecap: "round",
+          strokeLinejoin: "round",
+          opacity: isSelected ? 0.95 : 0.82,
+          filter: "blur(0.35px)",
+        }}
+      />
+      <BaseEdge
+        id={id}
+        path={path}
+        style={{
+          stroke: primaryStroke,
+          strokeWidth: primaryWidth,
+          strokeLinecap: "round",
+          strokeLinejoin: "round",
+          opacity: isSelected ? 1 : 0.92,
+          filter: isSelected
+            ? "drop-shadow(0 1px 1px rgba(15, 23, 42, 0.10))"
+            : "drop-shadow(0 1px 1px rgba(15, 23, 42, 0.08))",
+        }}
+      />
+      <circle
+        cx={startPoint.x}
+        cy={startPoint.y}
+        r={endpointRadius}
+        fill={primaryStroke}
+        stroke={isSelected ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.68)"}
+        strokeWidth="0.85"
+      />
+      <circle
+        cx={endPoint.x}
+        cy={endPoint.y}
+        r={endpointRadius}
+        fill={primaryStroke}
+        stroke={isSelected ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.68)"}
+        strokeWidth="0.85"
+      />
+      {label ? (
+        <foreignObject
+          width={112}
+          height={24}
+          x={labelX - 56}
+          y={labelY - 12}
+          requiredExtensions="http://www.w3.org/1999/xhtml"
+        >
+          <div className="flex h-full w-full items-center justify-center">
+            <span
+              className="rounded-full border border-white/40 px-2 py-1 text-[9px] font-semibold capitalize tracking-[-0.01em] text-slate-700 shadow-sm backdrop-blur-sm"
+              style={{
+                backgroundColor: `${sourceTypeMeta.color}${isSelected ? "D9" : "B3"}`,
+                opacity: isSelected ? 0.98 : 0.92,
+              }}
+            >
+              {label}
+            </span>
+          </div>
+        </foreignObject>
+      ) : null}
+    </g>
   );
 }

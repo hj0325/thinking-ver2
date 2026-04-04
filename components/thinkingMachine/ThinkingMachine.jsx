@@ -1,55 +1,135 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     useNodesState,
     useEdgesState,
+    getViewportForBounds,
 } from "reactflow";
 import { AnimatePresence, motion } from "framer-motion";
 import NodeMap from "./NodeMap";
 import LeftCanvasTools from "./LeftCanvasTools";
-import SuggestionPanel from "./SuggestionPanel";
-import ChatDialog from "./ChatDialog";
 import InputPanel from "./InputPanel";
 import RightAgentDrawer from "./RightAgentDrawer";
 import TopBar from "./TopBar";
 import { toConnectorEdges } from "@/lib/thinkingMachine/connectorEdges";
 import { toReactFlowNode } from "@/lib/thinkingMachine/reactflowTransforms";
-import { computeNodeBounds, shiftClusterRightOfExisting } from "@/lib/thinkingMachine/graphMerge";
+import { computeNodeBounds, relayoutTopLevelThinkingNodes, shiftClusterRelativeToAnchor, shiftClusterRightOfExisting } from "@/lib/thinkingMachine/graphMerge";
 import { analyze } from "@/lib/thinkingMachine/apiClient";
 import { useAdminMode } from "@/components/thinkingMachine/hooks/useAdminMode";
-import { useLegacyChatFallback } from "@/components/thinkingMachine/hooks/useLegacyChatFallback";
 import { useDrawerChat } from "@/components/thinkingMachine/hooks/useDrawerChat";
 import { useDraftGrouping } from "@/components/thinkingMachine/hooks/useDraftGrouping";
 import { useGhostDragToChat } from "@/components/thinkingMachine/hooks/useGhostDragToChat";
+import {
+    getReasoningModeProfile,
+    getRoleMeta,
+    getNextVisibility,
+    getPreviousVisibility,
+    normalizeReasoningStage,
+    normalizeOwnerId,
+    normalizeRelationLabel,
+    normalizeVisibility,
+} from "@/lib/thinkingMachine/nodeMeta";
 
 const INITIAL_NODES = [];
 const INITIAL_EDGES = [];
 const ADMIN_MODE_STORAGE_KEY = "vtm-admin-mode-enabled";
 const ADMIN_HINT_DISMISSED_KEY = "vtm-admin-shortcut-hint-dismissed";
 const ADMIN_SHORTCUT_LABEL = "Ctrl/Cmd + Shift + A";
-const LEGACY_CHAT_QUERY_KEY = "legacyChat";
+const PERSONAL_VISIBILITY = new Set(["private", "candidate"]);
+const TEAM_VISIBILITY = new Set(["shared", "reviewed", "agreed"]);
+const MOCK_CURRENT_USER_ID = "mock-user-1";
+const MOCK_CURRENT_USER_ROLE = "owner";
+const PROJECTS_STORAGE_KEY = "thinking-machine-projects";
+const AUTO_REFRESH_MS = 15000;
+const MAX_ACTIVITY_ITEMS = 24;
+const AUTO_FIT_MAX_ZOOM = 1;
 
-export default function ThinkingMachine() {
+function mergeSuggestionUnique(prev, nextSuggestion) {
+    if (!nextSuggestion) return prev;
+    const key = `${String(nextSuggestion.category || "").toLowerCase()}::${String(nextSuggestion.title || "").trim().toLowerCase()}::${String(nextSuggestion.content || "").trim().toLowerCase()}`;
+    const existingIndex = prev.findIndex((item) => {
+        const existingKey = `${String(item?.category || "").toLowerCase()}::${String(item?.title || "").trim().toLowerCase()}::${String(item?.content || "").trim().toLowerCase()}`;
+        return existingKey === key;
+    });
+    if (existingIndex === -1) return [nextSuggestion, ...prev];
+    const clone = [...prev];
+    clone.splice(existingIndex, 1);
+    return [nextSuggestion, ...clone];
+}
+
+function getActivityStorageKey(projectId) {
+    return `thinking-machine-activity-${projectId}`;
+}
+
+function readProjectsFromStorage() {
+    if (typeof window === "undefined") return [];
+    try {
+        const raw = window.localStorage.getItem(PROJECTS_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function writeProjectsToStorage(projects) {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
+}
+
+function readActivityLog(projectId) {
+    if (typeof window === "undefined" || !projectId) return [];
+    try {
+        const raw = window.localStorage.getItem(getActivityStorageKey(projectId));
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function writeActivityLog(projectId, entries) {
+    if (typeof window === "undefined" || !projectId) return;
+    window.localStorage.setItem(getActivityStorageKey(projectId), JSON.stringify(entries.slice(0, MAX_ACTIVITY_ITEMS)));
+}
+
+function cubicOut(t) {
+    return 1 - Math.pow(1 - t, 3);
+}
+
+export default function ThinkingMachine({
+    projectId = "",
+    initialProjectTitle = "Thinking Machine",
+    projectMetaHref = "/projects",
+    projectMetaLabel = "Back to projects",
+}) {
     const [nodes, setNodes, baseOnNodesChange] = useNodesState(INITIAL_NODES);
     const [edges, setEdges, onEdgesChange] = useEdgesState(INITIAL_EDGES);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [drawerMode, setDrawerMode] = useState("chat");
+    const [isDrawerOpen, setIsDrawerOpen] = useState(true);
+    const [drawerMode, setDrawerMode] = useState("tip");
     const [stage, setStage] = useState("research-diverge");
+    const [projectTitle, setProjectTitle] = useState(initialProjectTitle);
+    const [canvasMode, setCanvasMode] = useState("personal");
+    const [isCanvasInteractive, setIsCanvasInteractive] = useState(true);
+    const [selectedNodeId, setSelectedNodeId] = useState(null);
+    const [pendingChatCandidateGraph, setPendingChatCandidateGraph] = useState(null);
+    const [projectLastUpdated, setProjectLastUpdated] = useState(null);
+    const [activityLog, setActivityLog] = useState([]);
+    const [lastRefreshedAt, setLastRefreshedAt] = useState(null);
 
     const { isAdminMode, showAdminShortcutHint, dismissAdminShortcutHint } = useAdminMode({
         storageKey: ADMIN_MODE_STORAGE_KEY,
         hintDismissedKey: ADMIN_HINT_DISMISSED_KEY,
     });
-    const legacyChatFallbackEnabled = useLegacyChatFallback(LEGACY_CHAT_QUERY_KEY);
 
     // AI 제안 패널
     const [suggestions, setSuggestions] = useState([]);
     const [highlightedNodeIds, setHighlightedNodeIds] = useState(new Set());
 
     // Chat state (Drawer Chat primary + optional legacy dialog fallback)
-    const [attachedNodes, setAttachedNodes] = useState([]); // [{id,title,content,category,phase}]
+    const [attachedNodes, setAttachedNodes] = useState([]); // [{id,title,content,category,phase,sourceType,visibility,confidence}]
     const reactFlowRef = useRef(null);
 
     const {
@@ -60,17 +140,14 @@ export default function ThinkingMachine() {
         setChatInput,
         isChatLoading,
         isChatConverting,
-        handleSuggestionClick,
         handleDrawerModeToggle,
         handleDrawerChatSubmit,
         handleDrawerChatConvertToNodes,
         handleDrawerContextSelect,
-        resetChat,
     } = useDrawerChat({
-        legacyChatFallbackEnabled,
         suggestions,
         nodes,
-        onAddNodesFromChat: handleAddNodesFromChat,
+        onPreviewNodesFromChat: handlePreviewNodesFromChat,
         isDrawerOpen,
         setIsDrawerOpen,
         drawerMode,
@@ -127,65 +204,413 @@ export default function ThinkingMachine() {
     const hasThinkingGraph = useMemo(() => {
         return nodes.some((n) => n?.type === "thinkingNode" || n?.type === "ideaGroup");
     }, [nodes]);
+    const currentRoleMeta = getRoleMeta(MOCK_CURRENT_USER_ROLE);
+
+    const refreshProjectCollaborationMeta = useCallback(() => {
+        if (!projectId || typeof window === "undefined") return;
+        const projects = readProjectsFromStorage();
+        const matchedProject = projects.find((item) => item?.id === projectId) || null;
+        const nextActivity = readActivityLog(projectId);
+        startTransition(() => {
+            setProjectLastUpdated(matchedProject?.updatedAt || null);
+            setActivityLog(nextActivity);
+            setLastRefreshedAt(new Date().toISOString());
+        });
+    }, [projectId]);
+
+    const recordProjectActivity = useCallback((actionType, payload = {}) => {
+        if (!projectId || typeof window === "undefined") return;
+        const timestamp = new Date().toISOString();
+        const nextProjects = readProjectsFromStorage().map((project) =>
+            project?.id === projectId ? { ...project, updatedAt: timestamp } : project
+        );
+        writeProjectsToStorage(nextProjects);
+
+        const nextEntry = {
+            id: `${actionType}-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`,
+            type: actionType,
+            timestamp,
+            userId: MOCK_CURRENT_USER_ID,
+            userRole: MOCK_CURRENT_USER_ROLE,
+            ...payload,
+        };
+        const nextActivity = [nextEntry, ...readActivityLog(projectId)].slice(0, MAX_ACTIVITY_ITEMS);
+        writeActivityLog(projectId, nextActivity);
+        refreshProjectCollaborationMeta();
+    }, [projectId, refreshProjectCollaborationMeta]);
 
     const handleFlowInit = (instance) => {
         reactFlowRef.current = instance;
     };
 
-    useEffect(() => {
-        if (!isDrawerOpen) return undefined;
+    const handleZoomIn = useCallback(() => {
+        reactFlowRef.current?.zoomIn?.({ duration: 220 });
+    }, []);
 
-        const handleEscClose = (event) => {
-            if (event.key === "Escape") {
-                setIsDrawerOpen(false);
-            }
-        };
+    const handleZoomOut = useCallback(() => {
+        reactFlowRef.current?.zoomOut?.({ duration: 220 });
+    }, []);
 
-        window.addEventListener("keydown", handleEscClose);
-        return () => window.removeEventListener("keydown", handleEscClose);
-    }, [isDrawerOpen]);
+    const handleFitCanvas = useCallback(() => {
+        reactFlowRef.current?.fitView?.({ duration: 320, padding: 0.18, maxZoom: 1 });
+    }, []);
 
-    const handleDismissSuggestion = (suggestionId) => {
-        setSuggestions((prev) => {
-            const dismissed = prev.find((s) => s.id === suggestionId);
-            const nextSuggestions = prev.filter((s) => s.id !== suggestionId);
-            if (dismissed) {
-                setHighlightedNodeIds((ids) => {
-                    const next = new Set(ids);
-                    next.delete(dismissed.relatedNodeId);
-                    return next;
+    const handleToggleCanvasInteractive = useCallback(() => {
+        setIsCanvasInteractive((prev) => !prev);
+    }, []);
+
+    const animateViewportToNodes = useCallback((targetNodes) => {
+        const inst = reactFlowRef?.current;
+        const bounds = computeNodeBounds(targetNodes);
+        if (!inst || !bounds) return;
+        const canvasElement = document.querySelector(".tm-canvas-flow");
+        const viewportWidth = canvasElement?.clientWidth ?? window.innerWidth;
+        const viewportHeight = canvasElement?.clientHeight ?? window.innerHeight;
+        if (typeof inst.setViewport === "function") {
+            requestAnimationFrame(() => {
+                const nextViewport = getViewportForBounds(
+                    {
+                        x: bounds.minX - 72,
+                        y: bounds.minY - 72,
+                        width: Math.max(260, bounds.maxX - bounds.minX) + 144,
+                        height: Math.max(220, bounds.maxY - bounds.minY) + 144,
+                    },
+                    viewportWidth,
+                    viewportHeight,
+                    0.2,
+                    AUTO_FIT_MAX_ZOOM,
+                    0.18
+                );
+                nextViewport.zoom = Math.min(nextViewport.zoom, AUTO_FIT_MAX_ZOOM);
+                inst.setViewport(nextViewport, {
+                    duration: 700,
+                    ease: cubicOut,
                 });
-                // 활성 컨텍스트 카드가 dismiss된 경우 다음 카드로 교체(없으면 해제)
-                if (activeSuggestion?.id === suggestionId) {
-                    setActiveSuggestion(legacyChatFallbackEnabled ? null : (nextSuggestions[0] || null));
-                    if (nextSuggestions.length === 0) {
-                        resetChat();
-                    }
-                }
-            }
-            return nextSuggestions;
-        });
-    };
+            });
+        }
+    }, []);
+
+    useEffect(() => {
+        refreshProjectCollaborationMeta();
+    }, [refreshProjectCollaborationMeta]);
+
+    useEffect(() => {
+        if (!projectId) return undefined;
+        const intervalId = window.setInterval(() => {
+            refreshProjectCollaborationMeta();
+        }, AUTO_REFRESH_MS);
+        return () => window.clearInterval(intervalId);
+    }, [projectId, refreshProjectCollaborationMeta]);
 
     // 채팅 대화에서 노드+엣지 추가
-    function handleAddNodesFromChat(data) {
+    const handleAddNodesFromChat = useCallback((data, { commitVisibility = "shared" } = {}) => {
         const incoming = Array.isArray(data?.nodes) ? data.nodes : [];
         const incomingEdges = Array.isArray(data?.edges) ? data.edges : [];
-        setNodes((prevNodes) => {
-            const rawNewNodes = incoming.map((n) => toReactFlowNode(n, null));
-            const newNodes = shiftClusterRightOfExisting(prevNodes, rawNewNodes);
-            const mergedNodes = [...prevNodes, ...newNodes];
-            setEdges((prevEdges) => [...prevEdges, ...toConnectorEdges(incomingEdges, mergedNodes, prevEdges)]);
-            return mergedNodes;
+        const normalizedIncoming = incoming.map((n) => ({
+            ...n,
+            data: {
+                ...n.data,
+                ownerId: MOCK_CURRENT_USER_ID,
+                editedBy: "You",
+                visibility: normalizeVisibility(n?.data?.visibility === "candidate" ? commitVisibility : n?.data?.visibility),
+            },
+        }));
+        const rawNewNodes = normalizedIncoming.map((n) => toReactFlowNode(n, null));
+        const seededNodes = nodes.length ? shiftClusterRightOfExisting(nodes, rawNewNodes) : rawNewNodes;
+        const mergedNodes = [...nodes, ...seededNodes];
+        const nextEdges = [...edges, ...toConnectorEdges(incomingEdges, mergedNodes, edges)];
+        const relaidNodes = relayoutTopLevelThinkingNodes(mergedNodes, nextEdges);
+        const insertedIds = new Set(seededNodes.map((node) => node.id));
+
+        setNodes(relaidNodes);
+        setEdges(nextEdges);
+        animateViewportToNodes(relaidNodes.filter((node) => insertedIds.has(node.id)));
+        normalizedIncoming.forEach((node) => {
+            recordProjectActivity("node_created", {
+                nodeId: node.id,
+                nodeTitle: node?.data?.label,
+                nodeType: node?.data?.category,
+            });
+            if (node?.data?.category === "Conflict") {
+                recordProjectActivity("conflict_created", {
+                    nodeId: node.id,
+                    nodeTitle: node?.data?.label,
+                });
+            }
         });
+    }, [animateViewportToNodes, edges, nodes, recordProjectActivity, setEdges, setNodes]);
+
+    function handlePreviewNodesFromChat(data) {
+        const incoming = Array.isArray(data?.nodes) ? data.nodes : [];
+        const incomingEdges = Array.isArray(data?.edges) ? data.edges : [];
+        const candidateNodes = incoming.map((n) => ({
+            ...n,
+            data: {
+                ...n.data,
+                ownerId: MOCK_CURRENT_USER_ID,
+                editedBy: "You",
+                visibility: "candidate",
+            },
+        }));
+        const candidateEdges = incomingEdges.map((e) => ({
+            ...e,
+            label: normalizeRelationLabel(e?.label),
+        }));
+        setPendingChatCandidateGraph({
+            nodes: candidateNodes,
+            edges: candidateEdges,
+        });
+        setDrawerMode("chat");
+        setIsDrawerOpen(true);
     }
 
-    const handleInputSubmit = async (text) => {
+    const handleCommitCandidateNodes = useCallback(() => {
+        if (!pendingChatCandidateGraph) return;
+        handleAddNodesFromChat(pendingChatCandidateGraph, { commitVisibility: "candidate" });
+        setPendingChatCandidateGraph(null);
+    }, [handleAddNodesFromChat, pendingChatCandidateGraph]);
+
+    const handleCommitCandidateNodesAsPrivate = useCallback(() => {
+        if (!pendingChatCandidateGraph) return;
+        handleAddNodesFromChat(pendingChatCandidateGraph, { commitVisibility: "private" });
+        setPendingChatCandidateGraph(null);
+    }, [handleAddNodesFromChat, pendingChatCandidateGraph]);
+
+    const handleDiscardCandidateNodes = useCallback(() => {
+        setPendingChatCandidateGraph(null);
+    }, []);
+
+    const syncVisibilityChangeMock = useCallback((nodeId, nextVisibility) => {
+        void nodeId;
+        void nextVisibility;
+        // TODO: Replace this local-only mock with multi-user sync/persistence when collaboration is introduced.
+    }, []);
+
+    const handleSetNodeVisibility = useCallback((nodeId, nextVisibility) => {
+        const normalizedNext = normalizeVisibility(nextVisibility);
+        let previousVisibility = null;
+        let nextNodeTitle = "";
+        let nextNodeType = "";
+        setNodes((prevNodes) =>
+            prevNodes.map((node) => {
+                if (node.id !== nodeId || node.type !== "thinkingNode") return node;
+                previousVisibility = normalizeVisibility(node.data?.visibility);
+                nextNodeTitle = node.data?.title || "";
+                nextNodeType = node.data?.category || "";
+                const updated = {
+                    ...node,
+                    data: {
+                        ...node.data,
+                        ownerId: MOCK_CURRENT_USER_ID,
+                        editedBy: "You",
+                        visibility: normalizedNext,
+                    },
+                };
+                const rebuilt = toReactFlowNode({
+                    id: updated.id,
+                    position: updated.position,
+                    data: {
+                        label: updated.data?.title,
+                        content: updated.data?.content,
+                        category: updated.data?.category,
+                        phase: updated.data?.phase,
+                        ownerId: updated.data?.ownerId,
+                        editedBy: updated.data?.editedBy,
+                        sourceType: updated.data?.sourceType,
+                        visibility: updated.data?.visibility,
+                        confidence: updated.data?.confidence,
+                    },
+                }, null);
+                return {
+                    ...updated,
+                    ...rebuilt,
+                    parentNode: updated.parentNode,
+                    extent: updated.extent,
+                    hidden: updated.hidden,
+                    selected: updated.selected,
+                };
+            })
+        );
+        if (normalizedNext === "shared" && previousVisibility !== "shared") {
+            recordProjectActivity("node_shared", {
+                nodeId,
+                nodeTitle: nextNodeTitle,
+                nodeType: nextNodeType,
+            });
+        }
+        syncVisibilityChangeMock(nodeId, normalizedNext);
+    }, [recordProjectActivity, setNodes, syncVisibilityChangeMock]);
+
+    const handleNodeSelectionChange = useCallback(
+        ({ nodes: selectedNodes = [] } = {}) => {
+            handleSelectionChange?.({ nodes: selectedNodes });
+            const firstThinkingNode = selectedNodes.find((node) => node?.type === "thinkingNode");
+            if (firstThinkingNode?.id) {
+                setSelectedNodeId(firstThinkingNode.id);
+                setIsDrawerOpen(true);
+            } else {
+                setSelectedNodeId(null);
+            }
+        },
+        [handleSelectionChange]
+    );
+
+    const selectedNode = useMemo(
+        () => nodes.find((node) => node?.id === selectedNodeId && node?.type === "thinkingNode") || null,
+        [nodes, selectedNodeId]
+    );
+
+    const visibleCanvasNodeIds = useMemo(() => {
+        const visibleIds = new Set();
+
+        const isThinkingNodeVisible = (node) => {
+            const visibility = normalizeVisibility(node?.data?.visibility);
+            const ownerId = normalizeOwnerId(node?.data?.ownerId);
+            if (canvasMode === "personal") return ownerId === MOCK_CURRENT_USER_ID && PERSONAL_VISIBILITY.has(visibility);
+            return TEAM_VISIBILITY.has(visibility);
+        };
+
+        nodes.forEach((node) => {
+            if (!node?.id) return;
+
+            if (node.type === "thinkingNode") {
+                if (isThinkingNodeVisible(node)) {
+                    visibleIds.add(node.id);
+                    if (node.parentNode) visibleIds.add(node.parentNode);
+                }
+                return;
+            }
+
+            if (canvasMode === "personal" && (node.type === "postitDraft" || node.type === "imageDraft")) {
+                visibleIds.add(node.id);
+                if (node.parentNode) visibleIds.add(node.parentNode);
+                return;
+            }
+
+            if (node.type === "ideaGroup") {
+                const hasVisibleChildren = nodes.some((candidate) => candidate?.parentNode === node.id && visibleIds.has(candidate.id));
+                if (hasVisibleChildren) visibleIds.add(node.id);
+            }
+        });
+
+        nodes.forEach((node) => {
+            if (node?.type === "ideaGroup") {
+                const hasVisibleChildren = nodes.some((candidate) => candidate?.parentNode === node.id && visibleIds.has(candidate.id));
+                if (hasVisibleChildren) visibleIds.add(node.id);
+            }
+        });
+
+        return visibleIds;
+    }, [canvasMode, nodes]);
+
+    const canvasNodes = useMemo(
+        () =>
+            nodes
+                .filter((node) => visibleCanvasNodeIds.has(node.id))
+                .map((node) => ({
+                    ...node,
+                    className: [node.className || "", node.id === selectedNodeId ? "node-selected-focus" : ""]
+                        .filter(Boolean)
+                        .join(" "),
+                })),
+        [nodes, selectedNodeId, visibleCanvasNodeIds]
+    );
+
+    const canvasEdges = useMemo(
+        () => edges.filter((edge) => visibleCanvasNodeIds.has(edge?.source) && visibleCanvasNodeIds.has(edge?.target)),
+        [edges, visibleCanvasNodeIds]
+    );
+
+    useEffect(() => {
+        if (selectedNodeId && !visibleCanvasNodeIds.has(selectedNodeId)) {
+            setSelectedNodeId(null);
+        }
+    }, [selectedNodeId, visibleCanvasNodeIds]);
+
+    const handlePromoteSelectedNode = useCallback(() => {
+        if (!selectedNodeId || !selectedNode) return;
+        handleSetNodeVisibility(selectedNodeId, getNextVisibility(selectedNode.data?.visibility));
+    }, [handleSetNodeVisibility, selectedNode, selectedNodeId]);
+
+    const handleDemoteSelectedNode = useCallback(() => {
+        if (!selectedNodeId || !selectedNode) return;
+        handleSetNodeVisibility(selectedNodeId, getPreviousVisibility(selectedNode.data?.visibility));
+    }, [handleSetNodeVisibility, selectedNode, selectedNodeId]);
+
+    const selectedNodeLinkedNodes = useMemo(() => {
+        if (!selectedNode) return [];
+        const nodeMap = new Map(nodes.map((node) => [node.id, node]));
+        return edges
+            .filter((edge) => edge?.source === selectedNode.id || edge?.target === selectedNode.id)
+            .map((edge) => {
+                const isOutgoing = edge.source === selectedNode.id;
+                const linkedId = isOutgoing ? edge.target : edge.source;
+                const linkedNode = nodeMap.get(linkedId);
+                if (!linkedNode || linkedNode.type !== "thinkingNode") return null;
+                return {
+                    id: linkedNode.id,
+                    title: linkedNode.data?.title || "Untitled node",
+                    category: linkedNode.data?.category,
+                    visibility: linkedNode.data?.visibility,
+                    relation: normalizeRelationLabel(edge?.data?.label || edge?.label),
+                    direction: isOutgoing ? "outgoing" : "incoming",
+                };
+            })
+            .filter(Boolean);
+    }, [edges, nodes, selectedNode]);
+
+    const pendingCandidatePreview = useMemo(() => {
+        if (!pendingChatCandidateGraph) return null;
+        return {
+            ...pendingChatCandidateGraph,
+            nodes: pendingChatCandidateGraph.nodes.map((node) => toReactFlowNode(node, null)),
+        };
+    }, [pendingChatCandidateGraph]);
+
+    const normalizedStage = useMemo(() => normalizeReasoningStage(stage), [stage]);
+    const reasoningModeProfile = useMemo(() => getReasoningModeProfile(normalizedStage), [normalizedStage]);
+    const composerSuggestedTypes = useMemo(() => {
+        const modeBias = reasoningModeProfile.nodeBias || [];
+        if (!selectedNode) {
+            return modeBias.slice(0, 4);
+        }
+        const category = selectedNode.data?.category;
+        const contextualMap = {
+            Problem: ["Evidence", "Insight", "Risk", "Constraint"],
+            Goal: ["Idea", "Option", "Constraint", "Risk"],
+            Insight: ["Evidence", "Idea", "OpenQuestion", "Risk"],
+            Evidence: ["Insight", "Conflict", "Risk", "OpenQuestion"],
+            Idea: ["Option", "Evidence", "Risk", "Constraint"],
+            Decision: ["Evidence", "Constraint", "Risk", "OpenQuestion"],
+        };
+        const base = contextualMap[category] || ["Insight", "Evidence", "Idea", "Risk"];
+        return [...new Set([...modeBias, ...base])].slice(0, 5);
+    }, [reasoningModeProfile.nodeBias, selectedNode]);
+
+    const composerHintText = useMemo(() => {
+        if (selectedNode) {
+            return reasoningModeProfile.selectedNodePrompt;
+        }
+        return reasoningModeProfile.composerHint;
+    }, [reasoningModeProfile, selectedNode]);
+
+    const handleInputSubmit = useCallback(async ({ text, preferredType, selectedNode: inputContextNode } = {}) => {
+        const rawText = typeof text === "string" ? text.trim() : "";
+        if (!rawText) return;
         setIsAnalyzing(true);
 
         try {
+            const contextualText = inputContextNode
+                ? [
+                    `Project: ${projectTitle}`,
+                    `Selected node context: [${inputContextNode.data?.category}] ${inputContextNode.data?.title} - ${inputContextNode.data?.content || ""}`,
+                    preferredType ? `Preferred new node type: ${preferredType}.` : "",
+                    `User follow-up: ${rawText}`,
+                  ].filter(Boolean).join("\n")
+                : [projectTitle ? `Project: ${projectTitle}` : "", rawText].filter(Boolean).join("\n");
+
             const payload = {
-                text,
+                text: contextualText,
                 history: nodes.map((n) => ({
                     id: n.id,
                     data: {
@@ -202,7 +627,17 @@ export default function ThinkingMachine() {
 
             // 제안 노드(is_ai_generated=true)와 사용자 노드 분리
             const suggestionNodeData = data.nodes.find((n) => n.data.is_ai_generated);
-            const userNodeDatas = data.nodes.filter((n) => !n.data.is_ai_generated);
+            const userNodeDatas = data.nodes
+                .filter((n) => !n.data.is_ai_generated)
+                .map((n) => ({
+                    ...n,
+                    data: {
+                        ...n.data,
+                        ownerId: MOCK_CURRENT_USER_ID,
+                        editedBy: "You",
+                        visibility: "private",
+                    },
+                }));
 
             // e-suggest- 엣지에서 연결된 사용자 노드 ID 파악
             const suggestEdge = data.edges.find((e) => e.id.startsWith("e-suggest-"));
@@ -210,7 +645,12 @@ export default function ThinkingMachine() {
 
             // 사용자 노드 → ReactFlow
             const rawNewNodes = userNodeDatas.map((n) => toReactFlowNode(n, highlightedMainNodeId));
-            const enrichedNodes = nodes.length ? shiftClusterRightOfExisting(nodes, rawNewNodes) : rawNewNodes;
+            const enrichedNodes = inputContextNode
+                ? shiftClusterRelativeToAnchor(inputContextNode, rawNewNodes)
+                : nodes.length
+                    ? shiftClusterRightOfExisting(nodes, rawNewNodes)
+                    : rawNewNodes;
+            const viewportTargets = inputContextNode ? [inputContextNode, ...enrichedNodes] : enrichedNodes;
 
             // 제안 노드 → SuggestionPanel
             if (suggestionNodeData) {
@@ -220,9 +660,13 @@ export default function ThinkingMachine() {
                     content: suggestionNodeData.data.content,
                     category: suggestionNodeData.data.category,
                     phase: suggestionNodeData.data.phase,
+                    sourceType: suggestionNodeData.data.sourceType,
+                    visibility: suggestionNodeData.data.visibility,
+                    confidence: suggestionNodeData.data.confidence,
+                    ownerId: suggestionNodeData.data.ownerId,
                     relatedNodeId: highlightedMainNodeId,
                 };
-                setSuggestions((prev) => [newSuggestion, ...prev]);
+                setSuggestions((prev) => mergeSuggestionUnique(prev, newSuggestion));
                 if (highlightedMainNodeId) {
                     setHighlightedNodeIds((prev) => new Set([...prev, highlightedMainNodeId]));
                 }
@@ -236,9 +680,29 @@ export default function ThinkingMachine() {
             const mergedNodes = [...updatedExistingNodes, ...enrichedNodes];
             const rawEdges = data.edges.filter((e) => !e.id.startsWith("e-suggest-"));
             const newReactFlowEdges = toConnectorEdges(rawEdges, mergedNodes, edges);
+            const nextEdges = [...edges, ...newReactFlowEdges];
+            const relaidNodes = relayoutTopLevelThinkingNodes(mergedNodes, nextEdges);
+            const insertedIds = new Set(enrichedNodes.map((node) => node.id));
+            const relaidViewportTargets = inputContextNode
+                ? relaidNodes.filter((node) => node.id === inputContextNode.id || insertedIds.has(node.id))
+                : relaidNodes.filter((node) => insertedIds.has(node.id));
 
-            setNodes(mergedNodes);
-            setEdges((eds) => [...eds, ...newReactFlowEdges]);
+            setNodes(relaidNodes);
+            setEdges(nextEdges);
+            animateViewportToNodes(relaidViewportTargets.length ? relaidViewportTargets : viewportTargets);
+            userNodeDatas.forEach((node) => {
+                recordProjectActivity("node_created", {
+                    nodeId: node.id,
+                    nodeTitle: node?.data?.label,
+                    nodeType: node?.data?.category,
+                });
+                if (node?.data?.category === "Conflict") {
+                    recordProjectActivity("conflict_created", {
+                        nodeId: node.id,
+                        nodeTitle: node?.data?.label,
+                    });
+                }
+            });
 
         } catch (error) {
             console.error("Failed to analyze input:", error);
@@ -250,11 +714,20 @@ export default function ThinkingMachine() {
         } finally {
             setIsAnalyzing(false);
         }
-    };
+    }, [animateViewportToNodes, edges, highlightedNodeIds, nodes, projectTitle, recordProjectActivity, setEdges, setNodes, stage]);
 
     return (
         <div className="w-full h-screen relative flex flex-col overflow-hidden bg-slate-50">
-            <TopBar stage={stage} onStageChange={setStage} />
+            <TopBar
+                stage={normalizedStage}
+                onStageChange={setStage}
+                projectTitle={projectTitle}
+                onProjectTitleChange={setProjectTitle}
+                projectMetaHref={projectMetaHref}
+                projectMetaLabel="Project workspace"
+                canvasMode={canvasMode}
+                onCanvasModeChange={setCanvasMode}
+            />
 
             {showAdminShortcutHint && (
                 <div className="pointer-events-auto absolute left-1/2 top-14 z-[80] -translate-x-1/2">
@@ -285,7 +758,10 @@ export default function ThinkingMachine() {
                                 Autonomous Agent Active
                             </span>
                             <span className="text-slate-400">|</span>
-                            <span>Nodes {nodes.length}</span>
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${currentRoleMeta.className}`}>
+                                {currentRoleMeta.label}
+                            </span>
+                            <span>Nodes {canvasNodes.length}</span>
                             <span>Suggestions {suggestions.length}</span>
                         </div>
                     )}
@@ -295,36 +771,13 @@ export default function ThinkingMachine() {
             <main className="flex-1 w-full h-full relative">
                 {!hasThinkingGraph ? (
                     <div className="tm-canvas-bg h-full w-full" data-stage={stage}>
-                        <div className="absolute inset-0 z-[5] flex items-center justify-center px-6">
-                            <motion.div
-                                initial={{ opacity: 0, y: 14 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="flex w-full max-w-3xl flex-col items-center gap-6"
-                            >
-                                <div className="text-center">
-                                    <div className="font-heading text-[44px] font-bold tracking-[-0.02em] text-white/90">
-                                        Analyze your idea
-                                    </div>
-                                    <div className="mt-2 text-[14px] font-medium text-white/70">
-                                        Start with a short message. We’ll turn it into connected nodes.
-                                    </div>
-                                </div>
-
-                                <div className="relative h-[110px] w-[220px]">
-                                    <div className="absolute left-1/2 top-1/2 h-[86px] w-[170px] -translate-x-1/2 -translate-y-1/2 rounded-[26px] border border-white/40 bg-white/20 shadow-[0_18px_45px_rgba(0,0,0,0.18)] backdrop-blur-[10px]" />
-                                    <div className="absolute left-1/2 top-1/2 h-[86px] w-[170px] -translate-x-[45%] -translate-y-[60%] rotate-[-6deg] rounded-[26px] border border-white/40 bg-white/18 shadow-[0_18px_45px_rgba(0,0,0,0.18)] backdrop-blur-[10px]" />
-                                    <div className="absolute left-1/2 top-1/2 h-[86px] w-[170px] -translate-x-[55%] -translate-y-[45%] rotate-[7deg] rounded-[26px] border border-white/40 bg-white/22 shadow-[0_18px_45px_rgba(0,0,0,0.18)] backdrop-blur-[10px]" />
-                                </div>
-                            </motion.div>
-                        </div>
-
-                        <InputPanel onSubmit={handleInputSubmit} isAnalyzing={isAnalyzing} />
+                        <div className="absolute inset-0 z-[5]" />
                     </div>
                 ) : (
                     <>
                         <NodeMap
-                            nodes={nodes}
-                            edges={edges}
+                            nodes={canvasNodes}
+                            edges={canvasEdges}
                             onNodesChange={filteredOnNodesChange}
                             onEdgesChange={onEdgesChange}
                             highlightedNodeIds={highlightedNodeIds}
@@ -332,8 +785,9 @@ export default function ThinkingMachine() {
                             onNodeDrag={handleNodeDragUpdate}
                             onNodeDragStop={handleNodeDragStop}
                             onInit={handleFlowInit}
-                            onSelectionChange={handleSelectionChange}
+                            onSelectionChange={handleNodeSelectionChange}
                             selectionBoxEnabled={selectionBoxEnabled}
+                            isCanvasInteractive={isCanvasInteractive}
                             draftHandlers={{
                                 onPostitChangeText: handlePostitChangeText,
                                 onImagePick: handleImagePick,
@@ -344,9 +798,30 @@ export default function ThinkingMachine() {
                             canvasStage={stage}
                         />
 
-                        <LeftCanvasTools onAddPostit={createPostitDraft} onAddImage={createImageDraft} />
+                        <LeftCanvasTools
+                            onAddPostit={createPostitDraft}
+                            onAddImage={createImageDraft}
+                            onZoomIn={handleZoomIn}
+                            onZoomOut={handleZoomOut}
+                            onFitView={handleFitCanvas}
+                            onToggleInteractive={handleToggleCanvasInteractive}
+                            isInteractive={isCanvasInteractive}
+                            uiLanguage="en"
+                        />
                     </>
                 )}
+
+                <InputPanel
+                    onSubmit={handleInputSubmit}
+                    isAnalyzing={isAnalyzing}
+                    selectedNode={selectedNode}
+                    hasThinkingGraph={hasThinkingGraph}
+                    suggestedTypes={composerSuggestedTypes}
+                    hintText={composerHintText}
+                    stage={reasoningModeProfile.label}
+                    placeholderText={reasoningModeProfile.composerPlaceholder}
+                    selectedNodePromptText={reasoningModeProfile.selectedNodePrompt}
+                />
 
                 {showDraftConvertPrompt && (
                     <div className="pointer-events-none absolute inset-x-0 top-20 z-[75] flex justify-center">
@@ -375,25 +850,21 @@ export default function ThinkingMachine() {
                     </div>
                 )}
 
-                {/* Legacy fallback suggestion panel (`?legacyChat=1`) */}
-                {hasThinkingGraph && legacyChatFallbackEnabled && (
-                    <SuggestionPanel
-                        suggestions={suggestions}
-                        onDismiss={handleDismissSuggestion}
-                        onSuggestionClick={handleSuggestionClick}
-                        activeSuggestionId={activeSuggestion?.id}
-                        drawerOpen={isDrawerOpen}
-                    />
-                )}
-
                 {hasThinkingGraph && (
                     <RightAgentDrawer
                         isOpen={isDrawerOpen}
                         mode={drawerMode}
                         suggestions={suggestions}
                         onToggleMode={handleDrawerModeToggle}
-                        onClose={() => setIsDrawerOpen(false)}
                         activeSuggestion={activeSuggestion}
+                        selectedNode={selectedNode}
+                        linkedNodes={selectedNodeLinkedNodes}
+                        candidateGraph={pendingCandidatePreview}
+                        currentUserRole={MOCK_CURRENT_USER_ROLE}
+                        projectLastUpdated={projectLastUpdated}
+                        activityLog={activityLog}
+                        lastRefreshedAt={lastRefreshedAt}
+                        onRefreshActivity={refreshProjectCollaborationMeta}
                         chatMessages={chatMessages}
                         chatInput={chatInput}
                         isChatLoading={isChatLoading}
@@ -401,7 +872,17 @@ export default function ThinkingMachine() {
                         onChatInputChange={setChatInput}
                         onChatSubmit={handleDrawerChatSubmit}
                         onChatConvertToNodes={handleDrawerChatConvertToNodes}
+                        onCommitCandidateNodes={handleCommitCandidateNodes}
+                        onCommitCandidateNodesAsPrivate={handleCommitCandidateNodesAsPrivate}
+                        onDiscardCandidateNodes={handleDiscardCandidateNodes}
+                        onPromoteSelectedNode={handlePromoteSelectedNode}
+                        onDemoteSelectedNode={handleDemoteSelectedNode}
+                        onSetNodeVisibility={handleSetNodeVisibility}
                         onChatContextSelect={handleDrawerContextSelect}
+                        modeLabel={reasoningModeProfile.label}
+                        candidateHint={reasoningModeProfile.candidateHint}
+                        selectedNodeQuickActions={reasoningModeProfile.selectedNodeActions}
+                        uiLanguage="en"
                         attachedContext={
                             attachedNodes.length
                                 ? {
@@ -409,8 +890,11 @@ export default function ThinkingMachine() {
                                     type: "attachedNodes",
                                     title: attachedNodes.length === 1 ? "Attached node" : `Attached nodes (${attachedNodes.length})`,
                                     content: "Use these nodes as the primary context for this chat.",
-                                    category: "What",
+                                    category: "Insight",
                                     phase: "Problem",
+                                    sourceType: "mixed",
+                                    visibility: "shared",
+                                    confidence: "medium",
                                     attached_nodes: attachedNodes,
                                 }
                                 : null
@@ -449,18 +933,6 @@ export default function ThinkingMachine() {
                     )}
                 </AnimatePresence>
 
-                {/* Legacy fallback chat dialog (`?legacyChat=1`) */}
-                {hasThinkingGraph && legacyChatFallbackEnabled && activeSuggestion && (
-                    <ChatDialog
-                        suggestion={activeSuggestion}
-                        onClose={() => setActiveSuggestion(null)}
-                        onAddNodes={handleAddNodesFromChat}
-                        existingNodes={nodes}
-                        stage={stage}
-                    />
-                )}
-
-                {/* Idea input has moved into Post-it drafts (Left toolbar). */}
             </main>
         </div>
     );

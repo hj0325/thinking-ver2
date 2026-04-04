@@ -1,20 +1,30 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Check, GitBranch, Loader2, Send, X } from "lucide-react";
+import { Check, GitBranch, Loader2, RefreshCcw, Send } from "lucide-react";
+import {
+  NODE_VISIBILITY_FLOW,
+  getConfidenceMeta,
+  getNextVisibility,
+  getPreviousVisibility,
+  getRoleMeta,
+  getSourceTypeMeta,
+  getTypeMeta,
+  getVisibilityMeta,
+  getVisibilityIndex,
+  normalizeNodeData,
+} from "@/lib/thinkingMachine/nodeMeta";
+const DRAWER_TOP_SAFE_ZONE = 4;
 
-const CATEGORY_COLORS = {
-  Who: { bg: "bg-rose-50", border: "border-rose-200", text: "text-rose-700" },
-  What: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700" },
-  When: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700" },
-  Where: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700" },
-  Why: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700" },
-  How: { bg: "bg-indigo-50", border: "border-indigo-200", text: "text-indigo-700" },
-};
-const DRAWER_TOP_SAFE_ZONE = 56;
+function MetaPill({ children, className }) {
+  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${className}`}>{children}</span>;
+}
 
 function ContextMiniCard({ item, isActive, onSelect }) {
-  const colors = CATEGORY_COLORS[item?.category] || CATEGORY_COLORS.What;
+  const normalized = normalizeNodeData(item);
+  const colors = getTypeMeta(normalized.category);
+  const sourceMeta = getSourceTypeMeta(normalized.sourceType);
+  const visibilityMeta = getVisibilityMeta(normalized.visibility);
 
   return (
     <button
@@ -28,11 +38,14 @@ function ContextMiniCard({ item, isActive, onSelect }) {
       aria-label={`Select context card ${item?.title ?? ""}`}
     >
       <div className="mb-1 flex items-center gap-1.5 pr-2">
-        <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600">
-          {item.category || "What"}
+        <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${colors.tint} ${colors.text}`}>
+          {normalized.category}
         </span>
-        <span className="rounded-full bg-fuchsia-100 px-1.5 py-0.5 text-[9px] font-semibold text-fuchsia-700">
-          {item.phase || "Problem"}
+        <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${sourceMeta.className}`}>
+          {sourceMeta.label}
+        </span>
+        <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${visibilityMeta.className}`}>
+          {visibilityMeta.label}
         </span>
       </div>
       <div className={`line-clamp-2 text-[11px] font-semibold leading-tight ${isActive ? colors.text : "text-slate-700"}`}>
@@ -43,13 +56,308 @@ function ContextMiniCard({ item, isActive, onSelect }) {
   );
 }
 
+function VisibilityStepper({ currentVisibility, onSetVisibility }) {
+  const currentIndex = getVisibilityIndex(currentVisibility);
+
+  return (
+    <div className="mt-3">
+      <div className="text-[11px] font-semibold text-slate-500">Sharing flow</div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {NODE_VISIBILITY_FLOW.map((step, index) => {
+          const meta = getVisibilityMeta(step);
+          const isActive = index === currentIndex;
+          const isReached = index <= currentIndex;
+          return (
+            <button
+              key={step}
+              type="button"
+              onClick={() => onSetVisibility?.(step)}
+              className={`rounded-full px-2 py-1 text-[10px] font-semibold transition ${
+                isActive ? meta.className : isReached ? "bg-white text-slate-700" : "bg-slate-100/80 text-slate-400"
+              }`}
+            >
+              {meta.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function NodeDetailCard({
+  selectedNode,
+  linkedNodes,
+  currentUserRole,
+  onPromote,
+  onDemote,
+  onShare,
+  onSetVisibility,
+  quickActions = [],
+  modeLabel = "",
+}) {
+  if (!selectedNode) return null;
+
+  const data = normalizeNodeData(selectedNode.data || {});
+  const typeMeta = getTypeMeta(data.category);
+  const sourceMeta = getSourceTypeMeta(data.sourceType);
+  const visibilityMeta = getVisibilityMeta(data.visibility);
+  const confidenceMeta = getConfidenceMeta(data.confidence);
+  const roleMeta = getRoleMeta(currentUserRole);
+  const linked = Array.isArray(linkedNodes) ? linkedNodes : [];
+  const canEdit = currentUserRole === "owner" || currentUserRole === "editor";
+
+  return (
+    <div className="rounded-2xl border border-white/70 bg-white/70 p-3 shadow-sm">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Selected node</div>
+        <MetaPill className={`${typeMeta.tint} ${typeMeta.text}`}>{data.category}</MetaPill>
+      </div>
+      <div className="font-heading text-sm font-semibold text-slate-800">{selectedNode.data?.title || "Untitled node"}</div>
+      <div className="mt-1 text-xs leading-relaxed text-slate-600">{selectedNode.data?.content || "No content yet."}</div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        <MetaPill className={roleMeta.className}>{roleMeta.label}</MetaPill>
+        <MetaPill className={sourceMeta.className}>{sourceMeta.label}</MetaPill>
+        <MetaPill className={visibilityMeta.className}>{visibilityMeta.label}</MetaPill>
+        <MetaPill className={confidenceMeta.className}>{confidenceMeta.label}</MetaPill>
+      </div>
+      {quickActions.length ? (
+        <div className="mt-3 rounded-xl border border-slate-200/80 bg-slate-50/85 px-2.5 py-2">
+          <div className="text-[11px] font-semibold text-slate-500">
+            {modeLabel ? `${modeLabel} quick actions` : "Quick actions"}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {quickActions.map((item) => (
+              <MetaPill key={item} className={`${getTypeMeta(item).tint} ${getTypeMeta(item).text}`}>
+                {item}
+              </MetaPill>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      <VisibilityStepper currentVisibility={data.visibility} onSetVisibility={canEdit ? onSetVisibility : undefined} />
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          onClick={onDemote}
+          disabled={!canEdit || getPreviousVisibility(data.visibility) === data.visibility}
+          className="inline-flex items-center justify-center rounded-xl border border-white/80 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Demote
+        </button>
+        <button
+          type="button"
+          onClick={onPromote}
+          disabled={!canEdit || getNextVisibility(data.visibility) === data.visibility}
+          className="inline-flex items-center justify-center rounded-xl bg-teal-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Promote
+        </button>
+        <button
+          type="button"
+          onClick={onShare}
+          disabled={!canEdit || data.visibility === "shared" || data.visibility === "reviewed" || data.visibility === "agreed"}
+          className="inline-flex items-center justify-center rounded-xl bg-sky-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Share
+        </button>
+      </div>
+      <div className="mt-3">
+        <div className="text-[11px] font-semibold text-slate-500">Linked nodes</div>
+        {linked.length ? (
+          <div className="mt-2 flex flex-col gap-1.5">
+            {linked.map((item) => (
+              <div key={`${item.id}-${item.relation}-${item.direction}`} className="rounded-xl border border-slate-200/80 bg-slate-50/90 px-2.5 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="line-clamp-1 text-[12px] font-semibold text-slate-700">{item.title}</div>
+                  <MetaPill className="bg-white text-slate-500">{item.category}</MetaPill>
+                </div>
+                <div className="mt-1 text-[10px] uppercase tracking-wide text-slate-400">
+                  {item.direction === "outgoing" ? "Outgoing" : "Incoming"} · {item.relation.replace(/_/g, " ")}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-1 text-[11px] text-slate-400">No linked nodes yet.</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CandidateGraphCard({ candidateGraph, onCommit, onCommitAsPrivate, onDiscard, candidateHint }) {
+  const candidateNodes = Array.isArray(candidateGraph?.nodes) ? candidateGraph.nodes : [];
+  const candidateEdges = Array.isArray(candidateGraph?.edges) ? candidateGraph.edges : [];
+  if (!candidateNodes.length) return null;
+
+  return (
+    <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-3 shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-700">Candidate nodes</div>
+          <div className="mt-1 text-[11px] text-amber-800/80">
+            {candidateHint || "Nodes begin private. Mark them as candidate here, then share when ready."}
+          </div>
+        </div>
+        <MetaPill className="bg-white text-amber-700">{candidateNodes.length} nodes</MetaPill>
+      </div>
+
+      <div className="mt-3 flex flex-col gap-2">
+        {candidateNodes.map((node) => {
+          const data = normalizeNodeData(node.data || {});
+          const typeMeta = getTypeMeta(data.category);
+          const confidenceMeta = getConfidenceMeta(data.confidence);
+          return (
+            <div key={node.id} className="rounded-xl border border-amber-200/80 bg-white/85 px-2.5 py-2">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <MetaPill className={`${typeMeta.tint} ${typeMeta.text}`}>{data.category}</MetaPill>
+                <MetaPill className="bg-amber-100 text-amber-700">Candidate</MetaPill>
+                <MetaPill className={confidenceMeta.className}>{confidenceMeta.label}</MetaPill>
+              </div>
+              <div className="mt-1 text-[12px] font-semibold text-slate-800">{node.data?.title || "Untitled node"}</div>
+              <div className="mt-1 text-[11px] leading-relaxed text-slate-600">{node.data?.content || "No content yet."}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {candidateEdges.length ? (
+        <div className="mt-3 rounded-xl border border-white/70 bg-white/70 px-2.5 py-2 text-[11px] text-slate-600">
+          Relations: {candidateEdges.map((edge) => String(edge.label).replace(/_/g, " ")).join(", ")}
+        </div>
+      ) : null}
+
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          onClick={onCommitAsPrivate}
+          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/80 bg-white/85 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-white"
+        >
+          Keep private
+        </button>
+        <button
+          type="button"
+          onClick={onCommit}
+          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-teal-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-600"
+        >
+          <Check className="h-3.5 w-3.5" />
+          Add as candidate
+        </button>
+        <button
+          type="button"
+          onClick={onDiscard}
+          className="inline-flex items-center justify-center rounded-xl border border-white/80 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-white"
+        >
+          Discard
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function formatTimestamp(value) {
+  if (!value) return "Just now";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Unknown";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
+const VISIBLE_ACTIVITY_TYPES = new Set([
+  "node_shared",
+  "conflict_created",
+  "node_reviewed",
+  "node_agreed",
+  "decision_created",
+]);
+
+function shouldDisplayActivityItem(item) {
+  if (!item || typeof item !== "object") return false;
+  return VISIBLE_ACTIVITY_TYPES.has(String(item.type || "").toLowerCase());
+}
+
+function formatActivityTypeLabel(type) {
+  const normalized = String(type || "").toLowerCase();
+  if (normalized === "node_shared") return "Shared";
+  if (normalized === "conflict_created") return "Conflict raised";
+  if (normalized === "node_reviewed") return "Reviewed";
+  if (normalized === "node_agreed") return "Agreed";
+  if (normalized === "decision_created") return "Decision added";
+  return String(type || "").replace(/_/g, " ");
+}
+
+function ActivityLogCard({ projectLastUpdated, lastRefreshedAt, activityLog, onRefresh }) {
+  const items = (Array.isArray(activityLog) ? activityLog : []).filter(shouldDisplayActivityItem);
+
+  return (
+    <div className="rounded-2xl border border-white/70 bg-white/70 p-3 shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Activity</div>
+          <div className="mt-1 text-[11px] text-slate-500">
+            Updated {formatTimestamp(projectLastUpdated)} · Refreshed {formatTimestamp(lastRefreshedAt)}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onRefresh}
+          className="inline-flex items-center gap-1 rounded-full border border-white/80 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
+        >
+          <RefreshCcw className="h-3.5 w-3.5" />
+          Refresh
+        </button>
+      </div>
+
+      {items.length ? (
+        <div className="mt-3 overflow-hidden rounded-xl border border-slate-200/80 bg-white/68">
+          {items.map((item, index) => (
+            <div
+              key={item.id}
+              className={`px-3 py-2.5 ${index !== items.length - 1 ? "border-b border-slate-200/75" : ""}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                    {formatActivityTypeLabel(item.type)}
+                  </div>
+                  <div className="mt-1 line-clamp-1 text-[12px] font-semibold text-slate-700">
+                    {item.nodeTitle || "Untitled node"}
+                  </div>
+                  <div className="mt-0.5 text-[11px] text-slate-500">
+                    {item.nodeType ? `${item.nodeType} · ` : ""}
+                    {item.userRole || "owner"} · {item.userId || "mock-user-1"}
+                  </div>
+                </div>
+                <div className="shrink-0 pt-0.5 text-[10px] text-slate-400">{formatTimestamp(item.timestamp)}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-3 text-[11px] text-slate-400">No team-relevant activity yet in this project.</div>
+      )}
+    </div>
+  );
+}
+
 export default function RightAgentDrawer({
   isOpen,
   mode,
   suggestions,
   onToggleMode,
-  onClose,
   activeSuggestion,
+  selectedNode,
+  linkedNodes,
+  candidateGraph,
+  currentUserRole = "owner",
+  projectLastUpdated,
+  activityLog,
+  lastRefreshedAt,
   chatMessages,
   chatInput,
   isChatLoading,
@@ -57,8 +365,19 @@ export default function RightAgentDrawer({
   onChatInputChange,
   onChatSubmit,
   onChatConvertToNodes,
+  onCommitCandidateNodes,
+  onCommitCandidateNodesAsPrivate,
+  onDiscardCandidateNodes,
+  onPromoteSelectedNode,
+  onDemoteSelectedNode,
+  onSetNodeVisibility,
+  onRefreshActivity,
   onChatContextSelect,
   attachedContext,
+  modeLabel,
+  candidateHint,
+  selectedNodeQuickActions,
+  uiLanguage = "en",
   chatButtonRef,
   chatDropZoneRef,
   isChatDropActive,
@@ -69,7 +388,11 @@ export default function RightAgentDrawer({
     ? [...(attachedContext ? [attachedContext] : [])]
     : suggestions;
   const hasTipSignal = suggestions.length > 0;
-  const categoryColors = CATEGORY_COLORS[activeSuggestion?.category] || CATEGORY_COLORS.What;
+  const activeMeta = normalizeNodeData(activeSuggestion || {});
+  const categoryColors = getTypeMeta(activeMeta.category);
+  const confidenceMeta = getConfidenceMeta(activeMeta.confidence);
+  const sourceMeta = getSourceTypeMeta(activeMeta.sourceType);
+  const visibilityMeta = getVisibilityMeta(activeMeta.visibility);
   const drawerFieldBaseFade =
     "linear-gradient(90deg, rgba(166,255,211,0) 0%, rgba(166,255,211,0.70) 24%, rgba(166,255,211,1) 46%)";
   const drawerFieldRadialAlpha =
@@ -79,11 +402,35 @@ export default function RightAgentDrawer({
   const drawerFieldEdgeOverlay =
     "linear-gradient(90deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.08) 46%, rgba(255,255,255,0) 100%)";
   const chatBottomRef = useRef(null);
+  const contextScrollRef = useRef(null);
+  const panelScrollRef = useRef(null);
+  const copy = uiLanguage === "ko"
+    ? {
+        emptyChat: "노드를 선택해 오른쪽으로 드래그한 뒤 놓으면 채팅 컨텍스트로 첨부됩니다.",
+        emptySuggestions: "제안 카드를 선택해 에이전트와 reasoning 흐름을 확장하세요.",
+        emptyWorkspace: "노드 컨텍스트를 첨부해 워크스페이스 대화를 시작하세요.",
+        emptySuggestionState: "제안을 선택해 구조를 검토하거나 확장하세요.",
+        suggestionsTab: "Suggestions",
+        workspaceTab: "Workspace",
+      }
+    : {
+        emptyChat: "Select a node, drag it to the right, and drop it to attach it as chat context.",
+        emptySuggestions: "Select a suggestion card to expand the reasoning flow with the agent.",
+        emptyWorkspace: "Attach node context to begin the workspace conversation.",
+        emptySuggestionState: "Select a suggestion to inspect, challenge, or extend the reasoning.",
+        suggestionsTab: "Suggestions",
+        workspaceTab: "Workspace",
+      };
 
   useEffect(() => {
     if (!isOpen || !isChat) return;
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, isChatLoading, isOpen, isChat]);
+
+  useEffect(() => {
+    contextScrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
+    panelScrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, [mode, activeSuggestion?.id]);
 
   const handleChatSubmit = (event) => {
     event.preventDefault();
@@ -92,56 +439,18 @@ export default function RightAgentDrawer({
 
   return (
     <div className="pointer-events-none absolute inset-y-0 right-0 z-[45] overflow-visible">
-      <div
-        className={`relative flex h-full w-[508px] transform-gpu transition-transform duration-300 ease-out ${
-          isOpen ? "translate-x-0" : "translate-x-[430px]"
-        }`}
-      >
+      <div className="relative flex h-full w-[430px] transform-gpu">
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 z-[0] w-[172px]"
+          className="pointer-events-none absolute inset-y-0 left-0 z-[0] w-[116px]"
           aria-hidden
           style={{ background: drawerFieldLemonStrip }}
         />
-        <div className="pointer-events-auto relative z-20 w-[78px]">
-          <div className="absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-white/10 to-transparent" />
-          <div className="absolute right-3 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-[10px]">
-            <button
-              type="button"
-              className={`relative inline-flex h-[52px] w-[52px] items-center justify-center rounded-full text-[13px] font-semibold leading-none text-[#111111] shadow-[0_4px_14px_rgba(0,0,0,0.14)] transition ${
-                isTip && isOpen ? "bg-white" : "bg-white/95 hover:bg-white"
-              }`}
-              onClick={() => onToggleMode("tip")}
-              aria-label="Open tip drawer"
-            >
-              Tip
-              {hasTipSignal && (
-                <span
-                  className="absolute right-[-3px] top-[-3px] h-3 w-3 rounded-full border border-white/80"
-                  style={{ backgroundColor: "#C084FC" }}
-                  aria-hidden
-                />
-              )}
-            </button>
-            <button
-              type="button"
-              className={`relative inline-flex h-[52px] w-[52px] items-center justify-center rounded-full text-[13px] font-semibold text-[#111111] shadow-[0_4px_14px_rgba(0,0,0,0.14)] transition ${
-                isChat && isOpen ? "bg-white" : "bg-white/95 hover:bg-white"
-              } ${isChatDropActive ? "ring-4 ring-teal-300/70 scale-[1.05]" : ""}`}
-              onClick={() => onToggleMode("chat")}
-              aria-label="Open chat drawer"
-              ref={chatButtonRef}
-            >
-              Chat
-            </button>
-          </div>
-        </div>
-
         <div
           ref={chatDropZoneRef}
-          className={`relative h-full w-[430px] overflow-hidden rounded-l-[30px] transition-opacity duration-200 ${
-            isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
-          } ${isChat && isChatDropActive ? "ring-4 ring-teal-300/40" : ""}`}
-          aria-hidden={!isOpen}
+          className={`relative h-full w-[430px] overflow-hidden rounded-l-[30px] pointer-events-auto opacity-100 ${
+            isChat && isChatDropActive ? "ring-4 ring-teal-300/40" : ""
+          }`}
+          aria-hidden={false}
           style={{
             background: `${drawerFieldRadialAlpha}, ${drawerFieldBaseFade}`,
           }}
@@ -151,11 +460,13 @@ export default function RightAgentDrawer({
             aria-hidden
             style={{ background: drawerFieldEdgeOverlay }}
           />
-          <div
-            className="relative z-10 flex h-full flex-col gap-3 pb-4 pl-10 pr-7"
-            style={{ paddingTop: DRAWER_TOP_SAFE_ZONE }}
-          >
-            <div className={`grid ${isChat ? "grid-cols-1" : "grid-cols-2"} gap-2`}>
+          <div className="relative z-10 flex h-full min-h-0 flex-col justify-end px-6 pb-5 pl-9 pr-6 pt-[24px]">
+            <div className="flex max-h-[89vh] min-h-0 flex-col gap-3">
+            <div
+              ref={contextScrollRef}
+              className={`grid ${isChat ? "grid-cols-1" : "grid-cols-2"} shrink-0 gap-2 overflow-y-auto overflow-x-visible pl-0.5 pr-2 pb-3`}
+              style={{ maxHeight: "24%", paddingTop: DRAWER_TOP_SAFE_ZONE, scrollbarWidth: "none" }}
+            >
               {contextItems.length > 0 ? (
                 contextItems.map((item) => (
                   <ContextMiniCard
@@ -168,42 +479,78 @@ export default function RightAgentDrawer({
               ) : (
                 <div className="col-span-2 rounded-2xl border border-dashed border-white/75 bg-white/42 px-3 py-2 text-[11px] text-slate-600 backdrop-blur-[8px]">
                   {isChat
-                    ? "노드를 선택한 뒤 오른쪽으로 드래그해서 놓으면, 노드가 채팅 컨텍스트로 첨부됩니다."
-                    : "Tip 컨텍스트를 선택해 AI와 대화하거나 확장할 수 있어요."}
+                    ? copy.emptyChat
+                    : copy.emptySuggestions}
                 </div>
               )}
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col rounded-[24px] border border-white/65 bg-white/32 p-3 shadow-[0_10px_26px_rgba(0,0,0,0.10)] backdrop-blur-[12px]">
-              <div className="mb-3 flex items-center justify-between border-b border-white/65 pb-2">
-                <div className="inline-flex items-center rounded-full bg-white/82 px-3 py-1 text-sm font-semibold text-slate-700 shadow-sm">
-                  {isTip ? "Tip" : "Chat"}
-                </div>
-                <div className="flex items-center gap-2">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-white/65 bg-white/32 p-3 shadow-[0_10px_26px_rgba(0,0,0,0.10)] backdrop-blur-[12px]">
+              <div className="mb-3 flex items-center border-b border-white/65 pb-2">
+                <div className="inline-flex rounded-full border border-white/80 bg-white/76 p-1 shadow-sm">
                   <button
                     type="button"
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/82 text-slate-500 shadow-sm hover:bg-white"
-                    aria-label="Confirm drawer"
+                    onClick={() => onToggleMode("tip")}
+                    className={`relative rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                      isTip ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-white"
+                    }`}
                   >
-                    <Check className="h-4 w-4" />
+                    {copy.suggestionsTab}
+                    {hasTipSignal ? (
+                      <span
+                        className={`ml-1.5 inline-block h-1.5 w-1.5 rounded-full ${isTip ? "bg-white/80" : "bg-fuchsia-400"}`}
+                        aria-hidden
+                      />
+                    ) : null}
                   </button>
                   <button
                     type="button"
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/82 text-slate-500 shadow-sm hover:bg-white"
-                    aria-label="Close drawer"
-                    onClick={onClose}
+                    onClick={() => onToggleMode("chat")}
+                    ref={chatButtonRef}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                      isChat ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-white"
+                    } ${isChatDropActive ? "ring-2 ring-teal-300/70" : ""}`}
                   >
-                    <X className="h-4 w-4" />
+                    {copy.workspaceTab}
                   </button>
                 </div>
               </div>
 
-              <div className="min-h-0 flex-1 rounded-2xl border border-white/60 bg-white/25 px-3 py-2 text-sm text-slate-700 backdrop-blur-[12px]">
-                <div className="flex h-full min-h-0 flex-col gap-2">
+              <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/60 bg-white/25 px-3 py-2 text-sm text-slate-700 backdrop-blur-[12px]">
+                <div className="flex h-full min-h-0 flex-col">
+                  <div
+                    ref={panelScrollRef}
+                    className="min-h-0 flex-1 overflow-y-auto pr-1"
+                    style={{ scrollbarWidth: "none" }}
+                  >
+                    <div className="flex flex-col gap-2 pb-2">
+                    <NodeDetailCard
+                      selectedNode={selectedNode}
+                      linkedNodes={linkedNodes}
+                      currentUserRole={currentUserRole}
+                      modeLabel={modeLabel}
+                      quickActions={selectedNodeQuickActions}
+                      onPromote={onPromoteSelectedNode}
+                      onDemote={onDemoteSelectedNode}
+                      onShare={() => onSetNodeVisibility?.(selectedNode?.id, "shared")}
+                      onSetVisibility={(nextVisibility) => onSetNodeVisibility?.(selectedNode?.id, nextVisibility)}
+                    />
+
                     {activeSuggestion ? (
-                      <div className={`rounded-xl border ${categoryColors.border} ${categoryColors.bg} px-2.5 py-2`}>
-                        <div className={`text-[10px] font-bold uppercase tracking-wider ${categoryColors.text}`}>
-                          {activeSuggestion.category} · {activeSuggestion.phase}
+                      <div className={`rounded-xl border ${categoryColors.border} ${categoryColors.tint} px-2.5 py-2`}>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <div className={`text-[10px] font-bold uppercase tracking-wider ${categoryColors.text}`}>
+                            {activeMeta.category}
+                          </div>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${sourceMeta.className}`}>
+                            {sourceMeta.label}
+                          </span>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${visibilityMeta.className}`}>
+                            {visibilityMeta.label}
+                          </span>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${confidenceMeta.className}`}>
+                            {confidenceMeta.label}
+                          </span>
                         </div>
                         <div className="font-heading mt-1 line-clamp-1 text-xs font-semibold text-slate-800">
                           {activeSuggestion.title}
@@ -224,12 +571,28 @@ export default function RightAgentDrawer({
                       </div>
                     ) : (
                       <div className="rounded-xl border border-dashed border-white/70 bg-white/35 px-3 py-2 text-xs text-slate-600">
-                        {isChat ? "Drag nodes in to start chat." : "Select a tip context card to start chat."}
+                        {isChat
+                          ? copy.emptyWorkspace
+                          : copy.emptySuggestionState}
                       </div>
                     )}
 
-                    <div className="min-h-0 flex-1 overflow-y-auto pr-1" style={{ scrollbarWidth: "none" }}>
-                      <div className="flex flex-col gap-2">
+                    <CandidateGraphCard
+                      candidateGraph={candidateGraph}
+                      candidateHint={candidateHint}
+                      onCommit={onCommitCandidateNodes}
+                      onCommitAsPrivate={onCommitCandidateNodesAsPrivate}
+                      onDiscard={onDiscardCandidateNodes}
+                    />
+
+                    <ActivityLogCard
+                      projectLastUpdated={projectLastUpdated}
+                      lastRefreshedAt={lastRefreshedAt}
+                      activityLog={activityLog}
+                      onRefresh={onRefreshActivity}
+                    />
+
+                    <div className="flex flex-col gap-2">
                         {chatMessages.length === 0 && !isChatLoading && activeSuggestion && (
                           <div className="text-center text-xs text-slate-500">AI is preparing a response...</div>
                         )}
@@ -258,10 +621,11 @@ export default function RightAgentDrawer({
                           </div>
                         )}
                         <div ref={chatBottomRef} />
-                      </div>
                     </div>
+                    </div>
+                  </div>
 
-                    <div className="border-t border-white/65 pt-2">
+                    <div className="shrink-0 border-t border-white/65 pt-2">
                       <form onSubmit={handleChatSubmit} className="flex items-center gap-1.5">
                         <input
                           value={chatInput}
@@ -295,7 +659,7 @@ export default function RightAgentDrawer({
                           ) : (
                             <>
                               <GitBranch className="h-3 w-3" />
-                              Convert conversation to nodes
+                              Convert to node candidates
                             </>
                           )}
                         </button>
@@ -303,6 +667,7 @@ export default function RightAgentDrawer({
                     </div>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </div>
