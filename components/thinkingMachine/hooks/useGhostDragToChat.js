@@ -36,6 +36,9 @@ export function useGhostDragToChat({
         content: n?.data?.content,
         category: n?.data?.category,
         phase: n?.data?.phase,
+        sourceType: n?.data?.sourceType,
+        visibility: n?.data?.visibility,
+        confidence: n?.data?.confidence,
       }))
       .filter((n) => typeof n.id === "string" && n.id && typeof n.title === "string" && n.title.trim().length > 0);
 
@@ -44,8 +47,11 @@ export function useGhostDragToChat({
       type: "attachedNodes",
       title: items.length === 1 ? "Attached node" : `Attached nodes (${items.length})`,
       content: "Use these nodes as the primary context for this chat.",
-      category: "What",
+      category: "Insight",
       phase: "Problem",
+      sourceType: "mixed",
+      visibility: "shared",
+      confidence: "medium",
       attached_nodes: items,
     };
   };
@@ -128,8 +134,7 @@ export function useGhostDragToChat({
     };
   }, [baseOnNodesChange]);
 
-  const handleNodeDragUpdate = useCallback(
-    (event) => {
+  const handleNodeDragUpdate = (event) => {
       const pt = getPointerClientPoint(event);
       const nearAttach = isPointInChatAttachZone(pt);
       setIsChatDropActive(Boolean(nearAttach));
@@ -180,9 +185,7 @@ export function useGhostDragToChat({
         setDrawerMode?.("chat");
         setIsDrawerOpen?.(true);
       }
-    },
-    [setNodes, setDrawerMode, setIsDrawerOpen]
-  );
+  };
 
   const handleNodeDragStart = useCallback(
     (event, node) => {
@@ -207,8 +210,7 @@ export function useGhostDragToChat({
     [nodes]
   );
 
-  const handleNodeDragStop = useCallback(
-    (event, node) => {
+  const handleNodeDragStop = (event, node) => {
       const wasCaptured = ghostCaptureRef.current;
       const pt = getPointerClientPoint(event);
       const shouldAttach = isPointInChatDropZone(pt);
@@ -273,9 +275,7 @@ export function useGhostDragToChat({
       window.setTimeout(() => {
         ghostCaptureRef.current = false;
       }, 0);
-    },
-    [nodes, setAttachedNodes, setActiveSuggestion, setDrawerMode, setIsDrawerOpen]
-  );
+  };
 
   useEffect(() => {
     if (!ghostDrag) return undefined;
@@ -309,4 +309,3 @@ export function useGhostDragToChat({
     handleNodeDragStop,
   };
 }
-

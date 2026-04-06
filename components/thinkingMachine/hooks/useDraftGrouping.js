@@ -13,6 +13,19 @@ import {
   layoutThinkingNodesInGroup,
 } from "@/lib/thinkingMachine/draftLayout";
 
+function mergeSuggestionUnique(prev, nextSuggestion) {
+  if (!nextSuggestion) return prev;
+  const key = `${String(nextSuggestion.category || "").toLowerCase()}::${String(nextSuggestion.title || "").trim().toLowerCase()}::${String(nextSuggestion.content || "").trim().toLowerCase()}`;
+  const existingIndex = prev.findIndex((item) => {
+    const existingKey = `${String(item?.category || "").toLowerCase()}::${String(item?.title || "").trim().toLowerCase()}::${String(item?.content || "").trim().toLowerCase()}`;
+    return existingKey === key;
+  });
+  if (existingIndex === -1) return [nextSuggestion, ...prev];
+  const clone = [...prev];
+  clone.splice(existingIndex, 1);
+  return [nextSuggestion, ...clone];
+}
+
 export function useDraftGrouping({
   nodes,
   edges,
@@ -247,7 +260,21 @@ export function useDraftGrouping({
         const data = await analyze(payload);
 
         const suggestionNodeData = data.nodes.find((n) => n.data.is_ai_generated);
-        const userNodeDatas = data.nodes.filter((n) => !n.data.is_ai_generated);
+        // Draft 에서 생성되는 사용자 노드는 항상
+        // - ownerId: 현재 사용자
+        // - editedBy: "You"
+        // - visibility: "private" (Personal 레이어에서 바로 보이도록)
+        const userNodeDatas = data.nodes
+          .filter((n) => !n.data.is_ai_generated)
+          .map((n) => ({
+            ...n,
+            data: {
+              ...n.data,
+              ownerId: "mock-user-1",
+              editedBy: "You",
+              visibility: "private",
+            },
+          }));
         const rawEdges = data.edges.filter((e) => !e.id.startsWith("e-suggest-"));
 
         const bounds = computeNodeBounds(draftNodes) || { minX: 0, minY: 0, maxX: 520, maxY: 420 };
@@ -276,7 +303,7 @@ export function useDraftGrouping({
             mode: "nodes",
             title: ids.length === 1 ? "Post-it idea" : `Draft bundle (${ids.length})`,
             onToggle: toggleIdeaGroupMode,
-            category: "What",
+            category: "Insight",
             phase: "Problem",
           },
           style: { width: groupW, height: groupH, background: "transparent", border: "none", zIndex: 0 },
@@ -357,9 +384,12 @@ export function useDraftGrouping({
             content: suggestionNodeData.data.content,
             category: suggestionNodeData.data.category,
             phase: suggestionNodeData.data.phase,
+            sourceType: suggestionNodeData.data.sourceType,
+            visibility: suggestionNodeData.data.visibility,
+            confidence: suggestionNodeData.data.confidence,
             relatedNodeId: null,
           };
-          setSuggestions?.((prev) => [newSuggestion, ...prev]);
+          setSuggestions?.((prev) => mergeSuggestionUnique(prev, newSuggestion));
         }
 
         setShowDraftConvertPrompt(false);
@@ -405,4 +435,3 @@ export function useDraftGrouping({
     convertDraftsToGroup,
   };
 }
-

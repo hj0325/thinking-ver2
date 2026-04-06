@@ -2,10 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { chat, chatToNodes, toChatErrorMessage } from "@/lib/thinkingMachine/apiClient";
 
 export function useDrawerChat({
-  legacyChatFallbackEnabled,
   suggestions,
   nodes,
-  onAddNodesFromChat,
+  onPreviewNodesFromChat,
   isDrawerOpen,
   setIsDrawerOpen,
   drawerMode,
@@ -30,47 +29,8 @@ export function useDrawerChat({
     activeSuggestionIdRef.current = activeSuggestion?.id ?? null;
   }, [activeSuggestion?.id]);
 
-  const handleSuggestionClick = useCallback(
-    (suggestion) => {
-      // Legacy fallback path is available with `?legacyChat=1`.
-      if (legacyChatFallbackEnabled) {
-        setIsDrawerOpen(false);
-        if (activeSuggestion?.id === suggestion.id) {
-          setActiveSuggestion(null);
-        } else {
-          setActiveSuggestion(suggestion);
-        }
-        return;
-      }
-
-      if (activeSuggestion?.id === suggestion.id && isDrawerOpen && drawerMode === "chat") {
-        setIsDrawerOpen(false);
-        setActiveSuggestion(null);
-        resetChat();
-        return;
-      }
-
-      setActiveSuggestion(suggestion);
-      setDrawerMode("chat");
-      setIsDrawerOpen(true);
-    },
-    [
-      legacyChatFallbackEnabled,
-      activeSuggestion?.id,
-      isDrawerOpen,
-      drawerMode,
-      setIsDrawerOpen,
-      setDrawerMode,
-      resetChat,
-    ]
-  );
-
   const handleDrawerModeToggle = useCallback(
     (nextMode) => {
-      if (isDrawerOpen && drawerMode === nextMode) {
-        setIsDrawerOpen(false);
-        return;
-      }
       setDrawerMode(nextMode);
       setIsDrawerOpen(true);
       // Chat 모드는 "첨부 노드 컨텍스트" 전용 (Tip 컨텍스트와 분리)
@@ -81,15 +41,10 @@ export function useDrawerChat({
         setActiveSuggestion(suggestions?.[0] || null);
       }
     },
-    [activeSuggestion?.type, drawerMode, isDrawerOpen, setDrawerMode, setIsDrawerOpen, suggestions]
+    [activeSuggestion?.type, setDrawerMode, setIsDrawerOpen, suggestions]
   );
 
   useEffect(() => {
-    if (legacyChatFallbackEnabled) {
-      resetChat();
-      return;
-    }
-
     if (!activeSuggestion) {
       resetChat();
       return;
@@ -134,7 +89,7 @@ export function useDrawerChat({
     return () => {
       cancelled = true;
     };
-  }, [activeSuggestion, legacyChatFallbackEnabled, resetChat, stage]);
+  }, [activeSuggestion, resetChat, stage]);
 
   const handleDrawerChatSubmit = useCallback(async () => {
     const targetSuggestion = activeSuggestion;
@@ -200,11 +155,8 @@ export function useDrawerChat({
         stage,
       };
       const data = await chatToNodes(payload);
-      onAddNodesFromChat?.(data);
-      setIsDrawerOpen(false);
-      setActiveSuggestion(null);
-      setChatMessages([]);
-      setChatInput("");
+      onPreviewNodesFromChat?.(data);
+      setIsDrawerOpen(true);
     } catch (error) {
       const serverMsg = error?.response?.data?.error || error?.response?.data?.detail || error?.message;
       alert(
@@ -215,7 +167,7 @@ export function useDrawerChat({
     } finally {
       setIsChatConverting(false);
     }
-  }, [activeSuggestion, chatMessages, isChatConverting, nodes, onAddNodesFromChat, setIsDrawerOpen]);
+  }, [activeSuggestion, chatMessages, isChatConverting, nodes, onPreviewNodesFromChat, setIsDrawerOpen, stage]);
 
   const handleDrawerContextSelect = useCallback(
     (item) => {
@@ -238,7 +190,6 @@ export function useDrawerChat({
     isChatLoading,
     setIsChatLoading,
     isChatConverting,
-    handleSuggestionClick,
     handleDrawerModeToggle,
     handleDrawerChatSubmit,
     handleDrawerChatConvertToNodes,
@@ -246,4 +197,3 @@ export function useDrawerChat({
     resetChat,
   };
 }
-

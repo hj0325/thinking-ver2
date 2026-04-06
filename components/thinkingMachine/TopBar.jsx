@@ -1,26 +1,54 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { normalizeReasoningStage } from "@/lib/thinkingMachine/nodeMeta";
 
-const TOPBAR_SIDE_SLOT_WIDTH = 92;
+const TOPBAR_SIDE_SLOT_WIDTH = 372;
 const TOPBAR_TEXT_STYLE = {
   fontFamily: '"Instrument Sans", sans-serif',
   lineHeight: "100%",
   letterSpacing: "-0.352px",
 };
+const TOPBAR_META_TEXT_STYLE = {
+  fontFamily: '"Instrument Sans", sans-serif',
+  lineHeight: "130%",
+  letterSpacing: "-0.176px",
+};
+const TOPBAR_CENTER_TEXT_STYLE = {
+  fontFamily: '"Instrument Sans", sans-serif',
+  lineHeight: "110%",
+  letterSpacing: "-0.32px",
+};
 
 function parseStage(stage) {
-  const value = typeof stage === "string" ? stage : "research-diverge";
-  const isIdeation = value.startsWith("ideation-");
+  const value = normalizeReasoningStage(stage);
+  const isDesign = value.startsWith("design-");
   const isConverge = value.endsWith("-converge");
   return {
-    mode: isIdeation ? "ideation" : "research",
+    mode: isDesign ? "design" : "research",
     flow: isConverge ? "converge" : "diverge",
   };
 }
 
-export default function TopBar({ stage = "research-diverge", onStageChange }) {
+export default function TopBar({
+  stage = "research-diverge",
+  onStageChange,
+  projectTitle = "Thinking Machine",
+  onProjectTitleChange,
+  projectMetaHref = "/projects",
+  projectMetaLabel = "Project workspace",
+  canvasMode = "personal",
+  onCanvasModeChange,
+}) {
   const { mode, flow } = parseStage(stage);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(projectTitle);
+
+  useEffect(() => {
+    setDraftTitle(projectTitle);
+  }, [projectTitle]);
 
   const handleModeClick = (nextMode) => {
     if (!onStageChange) return;
@@ -35,56 +63,115 @@ export default function TopBar({ stage = "research-diverge", onStageChange }) {
   };
 
   const isResearch = mode === "research";
-  const isIdeation = mode === "ideation";
+  const isIdeation = mode === "design";
   const isDiverge = flow === "diverge";
   const isConverge = flow === "converge";
 
+  const commitTitle = () => {
+    const nextTitle = draftTitle.trim() || "Untitled Project";
+    setDraftTitle(nextTitle);
+    onProjectTitleChange?.(nextTitle);
+    setIsEditingTitle(false);
+  };
+
   return (
-    <header className="pointer-events-none absolute inset-x-0 top-0 z-[60] px-9 py-3">
+    <header className="pointer-events-none absolute inset-x-0 top-0 z-[60] px-6 py-4">
       <div
-        className="grid items-center"
+        className="grid items-start"
         style={{ gridTemplateColumns: `${TOPBAR_SIDE_SLOT_WIDTH}px minmax(0, 1fr) ${TOPBAR_SIDE_SLOT_WIDTH}px` }}
       >
-        <div className="w-[92px] justify-self-start">
-          <Link
-            href="/"
-            className="pointer-events-auto inline-flex items-center gap-[2px] p-[2px] transition-opacity hover:opacity-85"
-            aria-label="Go to Home"
+        <div className="pointer-events-auto w-[372px] justify-self-start">
+          <div className="text-[13px] font-semibold uppercase tracking-[0.18em] text-slate-700/84">
+            Thinking Machine
+          </div>
+          <div
+            className="mt-1 text-[10px] font-medium text-slate-600/84"
+            style={TOPBAR_META_TEXT_STYLE}
           >
-            <span className="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden
-                className="h-6 w-6"
-              >
-                <path
-                  d="M5 19.0002V10.3082C5 10.0522 5.05733 9.8099 5.172 9.58123C5.28667 9.35257 5.44467 9.16423 5.646 9.01623L11.031 4.93823C11.313 4.7229 11.635 4.61523 11.997 4.61523C12.359 4.61523 12.683 4.7229 12.969 4.93823L18.354 9.01523C18.556 9.16323 18.714 9.3519 18.828 9.58123C18.9427 9.8099 19 10.0522 19 10.3082V19.0002C19 19.2682 18.9003 19.5019 18.701 19.7012C18.5017 19.9006 18.268 20.0002 18 20.0002H14.616C14.3867 20.0002 14.1947 19.9229 14.04 19.7682C13.8853 19.6129 13.808 19.4209 13.808 19.1922V14.4232C13.808 14.1946 13.7307 14.0029 13.576 13.8482C13.4207 13.6929 13.2287 13.6152 13 13.6152H11C10.7713 13.6152 10.5797 13.6929 10.425 13.8482C10.2697 14.0029 10.192 14.1946 10.192 14.4232V19.1932C10.192 19.4219 10.1147 19.6136 9.96 19.7682C9.80533 19.9229 9.61367 20.0002 9.385 20.0002H6C5.732 20.0002 5.49833 19.9006 5.299 19.7012C5.09967 19.5019 5 19.2682 5 19.0002Z"
-                  fill="#838383"
-                />
-              </svg>
-            </span>
-            <span
-              className="text-[16px] font-medium text-[#838383]"
-              style={TOPBAR_TEXT_STYLE}
+            <div>Designed by K-Arts cciD</div>
+            <div>Powered by OpenAI</div>
+          </div>
+          <div className="mt-2 h-px w-[144px] bg-slate-500/30" />
+        </div>
+
+        <div className="pointer-events-auto flex justify-center pt-0.5">
+          <motion.div
+            layout
+            className="flex max-w-[420px] items-center gap-2 text-[14px] font-medium text-slate-700/88"
+            style={TOPBAR_CENTER_TEXT_STYLE}
+            transition={{ layout: { duration: 0.28, ease: [0.22, 1, 0.36, 1] } }}
+          >
+            <Link
+              href={projectMetaHref}
+              className="inline-flex shrink-0 transition hover:text-slate-900"
+              style={TOPBAR_CENTER_TEXT_STYLE}
             >
-              Home
-            </span>
-          </Link>
+              {projectMetaLabel}
+            </Link>
+            <span className="text-slate-400/80">/</span>
+            <div className="min-w-0 flex-1">
+              {isEditingTitle ? (
+                <motion.input
+                  layout="position"
+                  value={draftTitle}
+                  onChange={(event) => setDraftTitle(event.target.value)}
+                  onBlur={commitTitle}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      commitTitle();
+                    }
+                    if (event.key === "Escape") {
+                      setDraftTitle(projectTitle || "Untitled Project");
+                      setIsEditingTitle(false);
+                    }
+                  }}
+                  autoFocus
+                  className="w-full border-none bg-transparent px-0 py-0 text-[14px] font-medium text-slate-800 outline-none shadow-none"
+                  style={TOPBAR_CENTER_TEXT_STYLE}
+                  aria-label="Project title"
+                  transition={{ layout: { duration: 0.28, ease: [0.22, 1, 0.36, 1] } }}
+                />
+              ) : (
+                <motion.button
+                  layout="position"
+                  type="button"
+                  onClick={() => setIsEditingTitle(true)}
+                  className="max-w-full truncate text-left text-[14px] font-medium text-slate-700/88 transition hover:text-slate-900"
+                  style={TOPBAR_CENTER_TEXT_STYLE}
+                  aria-label="Edit project title"
+                  title="Rename project"
+                  transition={{ layout: { duration: 0.28, ease: [0.22, 1, 0.36, 1] } }}
+                >
+                  {projectTitle || "Untitled Project"}
+                </motion.button>
+              )}
+            </div>
+          </motion.div>
         </div>
 
-        <div
-          className="justify-self-center text-[16px] font-medium text-[#838383]"
-          style={TOPBAR_TEXT_STYLE}
-        >
-          Visual Thinking Machine
-        </div>
-
-        <div className="w-[92px] justify-self-end">
-          <div className="pointer-events-auto flex items-center gap-1 justify-end">
+        <div className="w-[372px] justify-self-end">
+          <div className="pointer-events-auto flex items-start gap-1 justify-end">
+            <div className="inline-flex rounded-full bg-white/80 px-1 py-0.5 shadow-sm border border-white/70">
+              <button
+                type="button"
+                onClick={() => onCanvasModeChange?.("personal")}
+                className={`px-2.5 py-0.5 text-[10px] font-semibold rounded-full transition ${
+                  canvasMode === "personal" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-white"
+                }`}
+              >
+                Personal
+              </button>
+              <button
+                type="button"
+                onClick={() => onCanvasModeChange?.("team")}
+                className={`px-2.5 py-0.5 text-[10px] font-semibold rounded-full transition ${
+                  canvasMode === "team" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-white"
+                }`}
+              >
+                Team
+              </button>
+            </div>
             <div className="inline-flex rounded-full bg-white/80 px-1 py-0.5 shadow-sm border border-white/70">
               <button
                 type="button"
@@ -97,7 +184,7 @@ export default function TopBar({ stage = "research-diverge", onStageChange }) {
               </button>
               <button
                 type="button"
-                onClick={() => handleModeClick("ideation")}
+                onClick={() => handleModeClick("design")}
                 className={`px-2 py-0.5 text-[10px] font-semibold rounded-full transition ${
                   isIdeation ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-white"
                 }`}

@@ -1,20 +1,10 @@
 "use client";
 
 import { Handle, Position } from "reactflow";
-
-const CATEGORY_COLORS = {
-  When: "#9DBCFF",
-  Where: "#E6E8B4",
-  How: "#8FE5EA",
-  What: "#97E9C0",
-  Why: "#D2EEA1",
-  Who: "#A999F1",
-  Problem: "#EFAEA8",
-  Solution: "#E8A0E6",
-};
+import { getTypeMeta, normalizeNodeCategory } from "@/lib/thinkingMachine/nodeMeta";
 
 const HANDLE_STYLE = {
-  top: 52,
+  top: 38,
   width: 1,
   height: 1,
   border: "none",
@@ -24,7 +14,27 @@ const HANDLE_STYLE = {
 };
 
 function getPortColor(category) {
-  return CATEGORY_COLORS[category] || "#E5E7EB";
+  return getTypeMeta(normalizeNodeCategory(category)).color;
+}
+
+function AnchorPort({ side, color }) {
+  const sideClass = side === "left" ? "left-[-5px]" : "right-[-5px]";
+
+  return (
+    <span
+      className={`pointer-events-none absolute ${sideClass} top-[31px] z-[40] flex h-[14px] w-[14px] items-center justify-center rounded-full border border-white/55 bg-white/82 shadow-[0_4px_12px_rgba(15,23,42,0.08)] backdrop-blur-sm`}
+      aria-hidden
+    >
+      <span
+        className="absolute h-[8px] w-[8px] rounded-full opacity-30"
+        style={{ backgroundColor: color }}
+      />
+      <span
+        className="relative h-[3px] w-[3px] rounded-full"
+        style={{ backgroundColor: color, boxShadow: `0 0 0 1px ${color}22` }}
+      />
+    </span>
+  );
 }
 
 export default function ThinkingNode({ data }) {
@@ -35,28 +45,8 @@ export default function ThinkingNode({ data }) {
   return (
     <div className="relative h-full w-full">
       {data?.label}
-      {hasLeftPort && (
-        <span
-          className="pointer-events-none absolute left-[-10px] top-[42px] z-[40] h-5 w-5 rounded-full bg-white"
-          aria-hidden
-        >
-          <span
-            className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full"
-            style={{ backgroundColor: portColor }}
-          />
-        </span>
-      )}
-      {hasRightPort && (
-        <span
-          className="pointer-events-none absolute right-[-10px] top-[42px] z-[40] h-5 w-5 rounded-full bg-white"
-          aria-hidden
-        >
-          <span
-            className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full"
-            style={{ backgroundColor: portColor }}
-          />
-        </span>
-      )}
+      {hasLeftPort ? <AnchorPort side="left" color={portColor} /> : null}
+      {hasRightPort ? <AnchorPort side="right" color={portColor} /> : null}
       <Handle
         id="right-source"
         type="source"
