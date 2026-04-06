@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
+import Script from "next/script";
 import { motion } from "framer-motion";
 import { Eye, Lock, Mail, Sparkles } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const LOGIN_STORAGE_KEY = "isLoggedIn";
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
 const DotGrid = dynamic(() => import("@/components/DotGrid/DotGrid"), { ssr: false });
 const ColorBends = dynamic(() => import("@/components/ColorBends/ColorBends"), { ssr: false });
@@ -15,6 +17,7 @@ export default function Home() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [googleScriptReady, setGoogleScriptReady] = useState(false);
 
   const handleLogin = (event) => {
     event.preventDefault();
@@ -29,13 +32,73 @@ export default function Home() {
     void router.push("/projects");
   };
 
-  const handleGoogleLogin = () => {
-    window.localStorage.setItem(LOGIN_STORAGE_KEY, "true");
-    void router.push("/projects");
+  const handleGoogleLogin = async () => {
+    setErrorMessage("");
+
+    if (!GOOGLE_CLIENT_ID) {
+      setErrorMessage("Google sign-in is not configured. Add NEXT_PUBLIC_GOOGLE_CLIENT_ID to .env.local.");
+      return;
+    }
+
+    if (!googleScriptReady || typeof window === "undefined" || !window.google?.accounts?.oauth2) {
+      setErrorMessage("Google sign-in is still loading. Please try again.");
+      return;
+    }
+
+    const tokenClient = window.google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: "openid email profile",
+      prompt: "select_account",
+      callback: async (tokenResponse) => {
+        if (tokenResponse?.error || !tokenResponse?.access_token) {
+          setErrorMessage("Google sign-in failed. Please try again.");
+          return;
+        }
+
+        try {
+          const profileResponse = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+          });
+
+          if (!profileResponse.ok) {
+            setErrorMessage("Google account verification failed.");
+            return;
+          }
+
+          const profile = await profileResponse.json();
+          if (!profile?.sub) {
+            setErrorMessage("Invalid Google account response.");
+            return;
+          }
+
+          window.localStorage.setItem(LOGIN_STORAGE_KEY, "true");
+          window.localStorage.setItem(
+            "googleAuthProfile",
+            JSON.stringify({
+              sub: profile.sub,
+              email: profile.email || "",
+              name: profile.name || "",
+              picture: profile.picture || "",
+            }),
+          );
+          void router.push("/projects");
+        } catch {
+          setErrorMessage("Google sign-in failed. Please try again.");
+        }
+      },
+    });
+
+    tokenClient.requestAccessToken();
   };
 
   return (
     <main className="relative h-dvh overflow-hidden bg-[#0a0f14] text-slate-100">
+      <Script
+        src="https://accounts.google.com/gsi/client"
+        strategy="afterInteractive"
+        onLoad={() => setGoogleScriptReady(true)}
+        onError={() => setErrorMessage("Unable to load Google sign-in script.")}
+      />
       <div className="pointer-events-none absolute inset-0 z-0 bg-[#0a0f14]" />
       <div className="pointer-events-none absolute inset-0 z-8 opacity-90">
         <ColorBends
@@ -70,13 +133,13 @@ export default function Home() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="text-center"
+          className="select-none text-center caret-transparent"
         >
           <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1 text-[10px] text-slate-200/85 backdrop-blur">
             <Sparkles className="h-3.5 w-3.5 text-slate-200/80" />
             Visual node program
           </div>
-          <h1 className="mt-6 text-5xl font-semibold tracking-[-0.04em] text-white sm:text-6xl">
+          <h1 className="mt-6 text-5xl font-light tracking-[-0.04em] text-white sm:text-6xl">
             Visual
             <br />
             Thinking
@@ -134,7 +197,7 @@ export default function Home() {
                 </label>
 
                 {errorMessage ? (
-                  <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-900">
+                  <div className="rounded-2xl border border-rose-400/40 bg-rose-500/15 px-4 py-3 text-sm text-rose-100">
                     {errorMessage}
                   </div>
                 ) : null}
